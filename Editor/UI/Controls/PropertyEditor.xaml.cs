@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace StormingEditor
 {
-    public partial class PreferencesWindow : UserControl
+    public partial class PropertyEditor : UserControl
     {
-        public PreferencesWindow()
+        public PropertyEditor()
         {
             InitializeComponent();
         }
