@@ -1,6 +1,7 @@
 # Storming Engine: 2026 Revival Roadmap
 
 ## Phase 1: The Core Foundation (v2026.0.1)
+*   **[Redesigning]** Improved UI
 *   **[Semi-Done]** New high-performance directory structure for C++ Engine.
 *   **[Semi-Done]** Modern "IntelliJ-style" Java Editor with Dark Theme (FlatLaf).
 *   **[Semi-Done]** Hardware Abstraction Layer (HAL) for multi-backend rendering (OpenGL/Vulkan).

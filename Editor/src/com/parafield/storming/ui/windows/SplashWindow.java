@@ -5,9 +5,14 @@ import java.awt.*;
 
 public class SplashWindow extends JWindow {
 
-    public SplashWindow(String imagePath) {
+    public SplashWindow(String resourcePath) {
         try {
-            ImageIcon original = new ImageIcon(imagePath);
+            java.net.URL imgUrl = getClass().getClassLoader().getResource(resourcePath);
+            if (imgUrl == null) {
+                System.err.println("Could not find splash resource: " + resourcePath);
+                return;
+            }
+            ImageIcon original = new ImageIcon(imgUrl);
             Image img = original.getImage();
             
             // Scaled to a professional size

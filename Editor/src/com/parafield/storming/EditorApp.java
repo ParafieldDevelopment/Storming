@@ -13,7 +13,7 @@ public class EditorApp {
             setupGlobalTheme();
 
             // 1. Show Splash Screen
-            SplashWindow splash = new SplashWindow("assets/splashscreen.png");
+            SplashWindow splash = new SplashWindow("splashscreen.png");
             splash.showSplash();
 
             // 2. Show WIP Dialog

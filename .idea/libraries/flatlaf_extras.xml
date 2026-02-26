@@ -2,6 +2,7 @@
   <library name="flatlaf-extras">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/Editor/lib/flatlaf-extras.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Editor/lib/jsvg.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
