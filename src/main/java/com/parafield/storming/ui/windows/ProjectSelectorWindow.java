@@ -13,42 +13,48 @@ public class ProjectSelectorWindow extends JFrame {
         setSize(900, 600);
         setLocationRelativeTo(null);
         
+        // Modern look
+        rootPane.putClientProperty("apple.awt.fullWindowContent", true);
+        rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
+
         initUI();
     }
 
     private void initUI() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(new Color(30, 30, 30));
         setContentPane(root);
 
         // --- LEFT SIDEBAR (Recent Projects) ---
         JPanel sidebar = new JPanel(new BorderLayout());
-        sidebar.setPreferredSize(new Dimension(300, 0));
-        sidebar.setBackground(new Color(35, 35, 35));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(50, 50, 50)));
+        sidebar.setPreferredSize(new Dimension(280, 0));
+        sidebar.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 2%)");
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Component.borderColor")));
 
-        JLabel recentTitle = new JLabel("Recent Projects");
-        recentTitle.setFont(new Font("Inter", Font.BOLD, 12));
-        recentTitle.setBorder(new EmptyBorder(20, 20, 10, 20));
+        JLabel recentTitle = new JLabel("Projects");
+        recentTitle.setFont(new Font("Inter", Font.BOLD, 13));
+        recentTitle.setBorder(new EmptyBorder(25, 20, 10, 20));
         sidebar.add(recentTitle, BorderLayout.NORTH);
 
-        // Placeholder for empty state
-        JPanel emptyState = new JPanel(new GridBagLayout());
-        emptyState.setOpaque(false);
-        JLabel noProjects = new JLabel("No recent projects");
-        noProjects.setForeground(Color.GRAY);
-        emptyState.add(noProjects);
-        sidebar.add(emptyState, BorderLayout.CENTER);
-
-        // --- SIDEBAR FOOTER (Settings) ---
-        JPanel sidebarFooter = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        sidebarFooter.setOpaque(false);
-        sidebarFooter.setBorder(new EmptyBorder(10, 10, 10, 10));
+        // List of projects (placeholder)
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        listModel.addElement("  Storming Demo (2D)");
+        listModel.addElement("  Test Project");
+        JList<String> projectList = new JList<>(listModel);
+        projectList.setOpaque(false);
+        projectList.setFixedCellHeight(35);
+        projectList.setFont(new Font("Inter", Font.PLAIN, 12));
+        projectList.setBorder(new EmptyBorder(0, 10, 0, 10));
         
-        JButton settingsBtn = new JButton(new com.formdev.flatlaf.extras.FlatSVGIcon("icons/settings.svg", 20, 20));
-        settingsBtn.setToolTipText("Editor Settings");
-        settingsBtn.putClientProperty("FlatLaf.style", "arc: 8;");
-        settingsBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Editor Settings coming soon!"));
+        sidebar.add(new JScrollPane(projectList), BorderLayout.CENTER);
+
+        // Sidebar Footer
+        JPanel sidebarFooter = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        sidebarFooter.setOpaque(false);
+        
+        JButton settingsBtn = new JButton(new com.formdev.flatlaf.extras.FlatSVGIcon("com/parafield/storming/icons/settings.svg", 20, 20));
+        settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        settingsBtn.setToolTipText("Settings");
+        settingsBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Settings coming soon!"));
         
         sidebarFooter.add(settingsBtn);
         sidebar.add(sidebarFooter, BorderLayout.SOUTH);
@@ -56,57 +62,51 @@ public class ProjectSelectorWindow extends JFrame {
         root.add(sidebar, BorderLayout.WEST);
 
         // --- RIGHT CONTENT AREA ---
-        JPanel mainContent = new JPanel(new BorderLayout());
-        mainContent.setOpaque(false);
-        mainContent.setBorder(new EmptyBorder(40, 60, 40, 60));
+        JPanel mainContent = new JPanel(new GridBagLayout());
+        mainContent.setBorder(new EmptyBorder(20, 40, 20, 40));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
 
         // Welcome Header
-        JPanel header = new JPanel(new GridLayout(2, 1));
-        header.setOpaque(false);
-        JLabel welcome = new JLabel("Storming Engine");
-        welcome.setFont(new Font("Inter", Font.BOLD, 32));
-        JLabel version = new JLabel("v2026.001.000 Development Branch");
-        version.setForeground(new Color(120, 120, 120));
-        header.add(welcome);
-        header.add(version);
-        mainContent.add(header, BorderLayout.NORTH);
+        JLabel welcome = new JLabel("Storming");
+        welcome.setFont(new Font("Inter", Font.BOLD, 48));
+        mainContent.add(welcome, gbc);
 
-        // Action Buttons
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 20));
-        actions.setOpaque(false);
+        gbc.gridy++;
+        JLabel version = new JLabel("v2026.1 Preview");
+        version.setForeground(UIManager.getColor("Label.disabledForeground"));
+        version.setBorder(new EmptyBorder(0, 0, 40, 0));
+        mainContent.add(version, gbc);
+
+        // Action Buttons Panel
+        gbc.gridy++;
+        JPanel actionPanel = new JPanel(new GridLayout(1, 2, 15, 0));
+        actionPanel.setOpaque(false);
         
-        JButton newBtn = createActionButton("New Project", "Start a new 2D or 3D adventure");
+        JButton newBtn = createBigButton("New Project", "Primary");
         newBtn.addActionListener(e -> launchMainEditor());
         
-        JButton openBtn = createActionButton("Open", "Open an existing .storm file from disk");
+        JButton openBtn = createBigButton("Open", "Default");
         
-        actions.add(newBtn);
-        actions.add(Box.createHorizontalStrut(20));
-        actions.add(openBtn);
-        
-        mainContent.add(actions, BorderLayout.CENTER);
-
-        // Footer
-        JLabel copyright = new JLabel("© 2026 Parafield Studios");
-        copyright.setForeground(new Color(80, 80, 80));
-        copyright.setFont(new Font("Inter", Font.PLAIN, 10));
-        mainContent.add(copyright, BorderLayout.SOUTH);
+        actionPanel.add(newBtn);
+        actionPanel.add(openBtn);
+        mainContent.add(actionPanel, gbc);
 
         root.add(mainContent, BorderLayout.CENTER);
     }
 
-    private JButton createActionButton(String text, String tooltip) {
+    private JButton createBigButton(String text, String type) {
         JButton btn = new JButton(text);
-        btn.setToolTipText(tooltip);
-        btn.setPreferredSize(new Dimension(160, 45));
-        btn.setFont(new Font("Inter", Font.BOLD, 14));
-        
-        // Use FlatLaf specific styles for a "Primary" look
-        btn.putClientProperty(FlatClientProperties.STYLE, 
-            "arc: 8; " + 
-            "hoverBackground: #454545; " + 
-            "focusedBackground: #505050;");
-            
+        btn.setPreferredSize(new Dimension(150, 40));
+        btn.setFont(new Font("Inter", Font.BOLD, 13));
+        if (type.equals("Primary")) {
+            btn.putClientProperty(FlatClientProperties.STYLE, "background: #36598a; foreground: #ffffff; arc: 8;");
+        } else {
+            btn.putClientProperty(FlatClientProperties.STYLE, "arc: 8;");
+        }
         return btn;
     }
 
