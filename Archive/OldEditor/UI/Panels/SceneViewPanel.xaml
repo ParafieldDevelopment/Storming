@@ -1,7 +1,0 @@
-<UserControl x:Class="StormingEditor.SceneViewPanel"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid>
-        <TextBlock Text="Scene View Panel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </Grid>
-</UserControl>
