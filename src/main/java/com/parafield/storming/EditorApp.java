@@ -1,0 +1,45 @@
+package com.parafield.storming;
+
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import com.parafield.storming.ui.windows.ProjectSelectorWindow;
+import com.parafield.storming.ui.windows.SplashWindow;
+import javax.swing.*;
+
+public class EditorApp {
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            // Apply theme globally
+            setupGlobalTheme();
+
+            // 1. Show Splash Screen
+            SplashWindow splash = new SplashWindow("splashscreen.png");
+            splash.showSplash();
+
+            // 2. Show WIP Dialog
+            JOptionPane.showMessageDialog(null, 
+                "Storming Engine Rework is currently in early development (WIP).\nMany features are not yet implemented.", 
+                "Storming Development Branch", 
+                JOptionPane.INFORMATION_MESSAGE);
+
+            // 3. Launch Project Selector (The initial state)
+            ProjectSelectorWindow projectSelector = new ProjectSelectorWindow();
+            projectSelector.setVisible(true);
+
+            // 4. Close Splash
+            splash.close();
+        });
+    }
+
+    private static void setupGlobalTheme() {
+        try {
+            UIManager.setLookAndFeel(new FlatMacDarkLaf());
+            UIManager.put("Button.arc", 6);
+            UIManager.put("Component.arc", 6);
+            UIManager.put("TabbedPane.showTabSeparators", true);
+            UIManager.put("ScrollBar.width", 12);
+        } catch (Exception ex) {
+            System.err.println("Theme Error: " + ex.getMessage());
+        }
+    }
+}
