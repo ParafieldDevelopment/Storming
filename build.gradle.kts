@@ -13,9 +13,8 @@ repositories {
 dependencies {
     implementation("com.formdev:flatlaf:3.5.4")
     implementation("com.formdev:flatlaf-extras:3.5.4")
-    // jsvg dependency - usually com.github.weisj:jsvg
     implementation("com.github.weisj:jsvg:1.6.0")
-    
+
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
@@ -30,4 +29,16 @@ java {
     }
 }
 
-// Standard source sets are used by default
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.parafield.storming.EditorApp"
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from({
+        configurations.runtimeClasspath.get().map {
+            if (it.isDirectory) it else zipTree(it)
+        }
+    })
+}
