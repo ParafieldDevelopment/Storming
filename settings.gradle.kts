@@ -1,1 +1,1 @@
-rootProject.name = "Storming"
+rootProject.name = extra["projectName"] as String

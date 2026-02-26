@@ -1,21 +1,31 @@
 plugins {
     java
     application
+    id("org.beryx.jlink") version "3.1.1"
 }
 
-group = "com.parafield.storming"
-version = "1.0-SNAPSHOT"
+val projectGroup: String by project
+val projectVersion: String by project
+val projectName: String by project
+val flatlafVersion: String by project
+val jsvgVersion: String by project
+val junitBomVersion: String by project
+val appVersionProperty: String by project
+val vendorName: String by project
+
+group = projectGroup
+version = projectVersion
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("com.formdev:flatlaf:3.5.4")
-    implementation("com.formdev:flatlaf-extras:3.5.4")
-    implementation("com.github.weisj:jsvg:1.6.0")
+    implementation("com.formdev:flatlaf:$flatlafVersion")
+    implementation("com.formdev:flatlaf-extras:$flatlafVersion")
+    implementation("com.github.weisj:jsvg:$jsvgVersion")
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation(platform("org.junit:junit-bom:$junitBomVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
@@ -29,16 +39,38 @@ java {
     }
 }
 
-tasks.jar {
-    manifest {
-        attributes["Main-Class"] = "com.parafield.storming.EditorApp"
+jlink {
+    launcher {
+        name = projectName
+        noConsole = true // GUI-only
     }
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    jpackage {
+        val os = System.getProperty("os.name").lowercase()
 
-    from({
-        configurations.runtimeClasspath.get().map {
-            if (it.isDirectory) it else zipTree(it)
+        when {
+            os.contains("win") -> {
+                // Windows: produce exe if WiX is installed
+                if (System.getenv("PATH")?.contains("WiX Toolset") == true) {
+                    installerType = "exe"
+                } else {
+                    installerType = null // portable folder
+                }
+            }
+            os.contains("mac") || os.contains("nux") -> {
+                // macOS/Linux: just app-image
+                installerType = "app-image"
+            }
         }
-    })
+
+        // Set general options
+        installerName = projectName
+        appVersion = appVersionProperty
+        vendor = vendorName
+
+        // ⚠ Do NOT manually add --app-image anywhere
+        // Optional icons can still be added
+        // installerOptions.add("--icon")
+        // installerOptions.add("src/main/resources/Storming.ico")
+    }
 }
