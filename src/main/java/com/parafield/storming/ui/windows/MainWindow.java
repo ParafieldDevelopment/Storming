@@ -45,7 +45,7 @@ public class MainWindow extends JFrame {
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
 
         consolePanel = new ConsolePanel();
-        engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine", consolePanel::log);
+        engineLauncher = new EngineLauncher("Engine/2D", consolePanel::log);
 
         initUI();
         

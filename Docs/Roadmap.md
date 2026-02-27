@@ -6,7 +6,7 @@
 *   **[Next]** **JSON Command Protocol:** Use stdin/stdout for basic Editor → Engine commands (e.g., Change Clear Color).
 *   **[Next]** **HAL Abstraction:** Move raw OpenGL code from `Application` into a dedicated `OpenGLRendererAPI` class.
 *   **[Next]** **Telemetry Bridge:** Engine reports FPS and Draw Call statistics back to the Editor's Console.
-*   **[REQUIRED]** **Auto Engine Compile:** Automatically make Storming Initalitize the Engine.
+*   **[Done]** **Auto Engine Compile:** Automatically make Storming Initalitize the Engine.
 *   **[Next]** **Scene Synchronization (Proto):** Allow Editor to send "Spawn Object" commands via JSON.
 *   **[Next]** **Input Injection:** Forward Editor mouse clicks into the Engine to select/move objects.
 
