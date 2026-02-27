@@ -68,9 +68,14 @@ jlink {
             icon = "packaging/icon.ico"
             installerType = "msi"
         } else if (isMac) {
-            // macOS uses .icns or .png for jpackage
-            // If .icns is not available, .png might work or we can omit to use default
-            icon = "src/main/resources/com/parafield/storming/icons/icon.png"
+            // macOS requires an .icns file for the application icon to show up correctly in Dock/Finder
+            // If packaging/icon.icns exists, use it. Fallback to icon.png if it doesn't.
+            val icnsIcon = file("packaging/icon.icns")
+            if (icnsIcon.exists()) {
+                icon = "packaging/icon.icns"
+            } else {
+                icon = "src/main/resources/com/parafield/storming/icons/icon.png"
+            }
             installerType = "dmg"
         } else if (isLinux) {
             icon = "src/main/resources/com/parafield/storming/icons/icon.png"
