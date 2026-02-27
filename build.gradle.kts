@@ -29,14 +29,16 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-application {
-    mainClass.set("com.parafield.storming.EditorApp")
-}
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+}
+
+application {
+    mainClass.set("com.parafield.storming.EditorApp")
+    // Tell Gradle the module name explicitly
+    mainModule.set("com.parafield.storming")
 }
 
 jlink {
@@ -48,29 +50,37 @@ jlink {
     jpackage {
         val os = System.getProperty("os.name").lowercase()
 
-        when {
-            os.contains("win") -> {
-                // Windows: produce exe if WiX is installed
-                if (System.getenv("PATH")?.contains("WiX Toolset") == true) {
-                    installerType = "exe"
-                } else {
-                    installerType = null // portable folder
-                }
-            }
-            os.contains("mac") || os.contains("nux") -> {
-                // macOS/Linux: just app-image
-                installerType = "app-image"
-            }
+        // Always set the installer type
+        installerType = when {
+            os.contains("win") && System.getenv("PATH")?.contains("WiX Toolset") == true -> "exe"
+            os.contains("win") -> "msi" // fallback
+            else -> "app-image"
         }
 
-        // Set general options
         installerName = projectName
         appVersion = appVersionProperty
         vendor = vendorName
 
-        // ⚠ Do NOT manually add --app-image anywhere
-        // Optional icons can still be added
-        installerOptions.add("--icon")
-        installerOptions.add("src/main/resources/icon.ico")
+        // Windows icon, Start Menu & Shortcut
+        if (os.contains("win")) {
+            installerOptions.addAll(
+                listOf(
+                    "--icon", "packaging/icon.ico", // <-- your real .ico outside resources
+                    "--win-menu",
+                    "--win-shortcut",
+                    "--win-menu-group", projectName
+                )
+            )
+        }
+
+        // macOS icon
+        if (os.contains("mac")) {
+            installerOptions.addAll(listOf("--icon", "packaging/icon.icns"))
+        }
+
+        // Linux icon
+        if (os.contains("nux")) {
+            installerOptions.addAll(listOf("--icon", "packaging/icon.png"))
+        }
     }
 }

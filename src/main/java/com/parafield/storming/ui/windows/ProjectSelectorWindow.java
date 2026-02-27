@@ -8,6 +8,7 @@ import java.awt.*;
 public class ProjectSelectorWindow extends JFrame {
 
     public ProjectSelectorWindow() {
+        setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/com/parafield/storming/icons/icon.png")));
         setTitle("Storming Engine");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
