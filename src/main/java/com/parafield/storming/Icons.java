@@ -21,4 +21,7 @@ public class Icons {
     public static final ImageIcon PLAY = loadIcon("play", 16, 16);
     public static final ImageIcon STOP = loadIcon("stop", 16, 16);
     public static final ImageIcon SETTINGS = loadIcon("settings", 20, 20);
+    public static final ImageIcon BELL = loadIcon("bell", 20, 20);
+    public static final ImageIcon CONSOLE = loadIcon("console", 20, 20);
+    public static final ImageIcon WARN = loadIcon("warn", 20, 20);
 }

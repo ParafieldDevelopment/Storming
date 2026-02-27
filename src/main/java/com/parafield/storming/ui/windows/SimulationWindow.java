@@ -95,22 +95,12 @@ public class SimulationWindow extends JFrame {
 
     public void startSimulation() {
         setVisible(true);
-        // We use a timer to ensure the Canvas is definitely mapped and has an X11 ID
-        Timer timer = new Timer(500, e -> {
-            long id = 0;
-            for (int i = 0; i < 5 && id == 0; i++) {
-                id = viewport.getNativeWindowID();
-                if (id == 0) {
-                    try { Thread.sleep(100); } catch (Exception ex) {}
-                }
-            }
+        String shmName = "/storming_shm_" + System.currentTimeMillis();
 
-            if (id != 0) {
-                launcher.launch(id);
-            } else {
-                System.err.println("[System] Failed to retrieve Native Window ID. Falling back to standalone.");
-                launcher.launch(0);
-            }
+        // Wait a tiny bit for window to map then launch engine with SHM flag
+        Timer timer = new Timer(300, e -> {
+            launcher.launch(shmName);
+            viewport.startStreaming(shmName);
         });
         timer.setRepeats(false);
         timer.start();
