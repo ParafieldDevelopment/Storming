@@ -6,10 +6,8 @@ import java.awt.Image;
 import java.util.Objects;
 
 public class Icons {
-    private static final ClassLoader loader = EditorApp.class.getClassLoader();
-
     private static ImageIcon loadIcon(String name, int width, int height) {
-        ImageIcon icon = new ImageIcon(Objects.requireNonNull(loader.getResource("com/parafield/storming/icons/" + name + ".png")));
+        ImageIcon icon = new ImageIcon(Objects.requireNonNull(Icons.class.getResource("/com/parafield/storming/icons/" + name + ".png")));
         if (width > 0 && height > 0) {
             icon = new ImageIcon(icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
         }
