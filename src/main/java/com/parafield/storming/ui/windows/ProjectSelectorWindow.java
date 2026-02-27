@@ -52,7 +52,7 @@ public class ProjectSelectorWindow extends JFrame {
         JPanel sidebarFooter = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         sidebarFooter.setOpaque(false);
         
-        JButton settingsBtn = new JButton(new com.formdev.flatlaf.extras.FlatSVGIcon("com/parafield/storming/icons/settings.svg", 20, 20));
+        JButton settingsBtn = new JButton(new com.formdev.flatlaf.extras.FlatSVGIcon("/com/parafield/storming/icons/settings.svg", 20, 20));
         settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         settingsBtn.setToolTipText("Settings");
         settingsBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Settings coming soon!"));
