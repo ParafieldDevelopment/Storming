@@ -24,4 +24,5 @@ public class Icons {
     public static final ImageIcon BELL = loadIcon("bell", 20, 20);
     public static final ImageIcon CONSOLE = loadIcon("console", 20, 20);
     public static final ImageIcon WARN = loadIcon("warn", 20, 20);
+    public static final ImageIcon LOGO = loadIcon("icon", 128, 128);
 }
