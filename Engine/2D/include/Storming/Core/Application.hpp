@@ -3,6 +3,8 @@
 #include <string>
 #include <memory>
 #include "Storming/Renderer/RendererAPI.hpp"
+#include <glm/vec4.hpp>
+#include <thread> // Added for std::thread
 
 struct SDL_Window;
 
@@ -28,6 +30,7 @@ namespace Storming {
     private:
         void Init();
         void Shutdown();
+        void CommandThread(); // Declared here
 
     private:
         ApplicationConfig m_Config;
@@ -35,6 +38,11 @@ namespace Storming {
         SDL_Window* m_Window = nullptr;
         std::unique_ptr<RendererAPI> m_RendererAPI;
         class FrameBuffer* m_FrameBuffer = nullptr;
+
+        glm::vec4 m_ClearColor = { 0.12f, 0.12f, 0.18f, 1.0f }; // Default clear color
+
+        std::thread m_CommandThread;
+        bool m_CommandThreadRunning = false;
     };
 
 }

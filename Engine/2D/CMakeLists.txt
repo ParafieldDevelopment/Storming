@@ -40,6 +40,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# 5. Nlohmann JSON (JSON Parser)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"
@@ -62,6 +70,7 @@ target_link_libraries(StormingEngine PRIVATE
     EnTT::EnTT
     glad
     glm::glm
+    nlohmann_json::nlohmann_json
     rt
 )
 

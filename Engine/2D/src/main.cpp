@@ -2,6 +2,7 @@
 #include <iostream>
 
 int main(int argc, char** argv) {
+    std::cout << "[Engine] Main function started." << std::endl;
     Storming::ApplicationConfig config;
     config.Name = "Storming Engine Runtime";
     

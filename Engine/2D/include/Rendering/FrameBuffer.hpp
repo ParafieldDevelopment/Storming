@@ -23,7 +23,11 @@ namespace Storming {
         uint32_t m_Width, m_Height;
         
         std::string m_ShmName;
+    #ifdef _WIN32
+        HANDLE m_ShmHandle = NULL;
+    #else
         int m_ShmFd = -1;
+    #endif
         void* m_ShmPtr = nullptr;
     };
 

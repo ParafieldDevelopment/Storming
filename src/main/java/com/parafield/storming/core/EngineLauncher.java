@@ -50,44 +50,69 @@ public class EngineLauncher {
         launch("");
     }
 
-    public void launch(String shmName) {
+    public void sendCommand(String command) {
+        if (currentProcess != null && currentProcess.isAlive()) {
+            try {
+                currentProcess.getOutputStream().write((command + "\n").getBytes()); // Add newline for getline in C++
+                currentProcess.getOutputStream().flush();
+            } catch (Exception e) {
+                logConsumer.accept("[Error] Failed to send command to engine: " + e.getMessage());
+            }
+        }
+    }
+
+    public boolean launch(String shmName) {
         if (isRunning()) {
-            return;
+            return true;
         }
 
         File engineFile = new File(enginePath);
         if (!engineFile.exists()) {
             if (!buildEngine()) {
                 logConsumer.accept("[Error] Engine build failed or was cancelled. Cannot launch.");
-                return;
+                return false;
             }
         }
 
         logConsumer.accept("Launching Storming Engine...");
-        new Thread(() -> {
-            try {
-                ProcessBuilder pb;
-                if (!shmName.isEmpty()) {
-                    pb = new ProcessBuilder(enginePath, "--shm", shmName);
-                } else {
-                    pb = new ProcessBuilder(enginePath);
-                }
-                
-                pb.redirectErrorStream(true);
-                currentProcess = pb.start();
-                
-                BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    logConsumer.accept(line);
-                }
-                
-                int exitCode = currentProcess.waitFor();
-                logConsumer.accept("[System] Engine exited with code: " + exitCode);
-            } catch (Exception ex) {
-                logConsumer.accept("[Error] Failed to launch: " + ex.getMessage());
+        try {
+            // engineFile is already defined and checked for existence earlier in the method.
+            // No need to redefine it here.
+            ProcessBuilder pb;
+            if (!shmName.isEmpty()) {
+                pb = new ProcessBuilder(engineFile.getAbsolutePath(), "--shm", shmName);
+            } else {
+                pb = new ProcessBuilder(engineFile.getAbsolutePath());
             }
-        }).start();
+            
+            // Set the working directory to the executable's directory
+            pb.directory(engineFile.getParentFile());
+            pb.redirectErrorStream(true);
+            currentProcess = pb.start();
+            
+            // Start a new thread to consume output to prevent deadlock
+            new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        logConsumer.accept(line);
+                    }
+                } catch (Exception e) {
+                    logConsumer.accept("[Error] Engine output reader error: " + e.getMessage());
+                }
+            }).start();
+            
+            // Wait briefly to check if the process started successfully, e.g., for immediate crash
+            if (!currentProcess.isAlive()) {
+                logConsumer.accept("[Error] Engine process terminated immediately after launch. Exit code: " + currentProcess.exitValue());
+                return false;
+            }
+            logConsumer.accept("[System] Engine process started successfully.");
+            return true;
+        } catch (Exception ex) {
+            logConsumer.accept("[Error] Failed to launch: " + ex.getMessage());
+            return false;
+        }
     }
 
     private boolean buildEngine() {

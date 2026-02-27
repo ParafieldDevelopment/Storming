@@ -151,8 +151,7 @@ public class MainWindow extends JFrame {
             int result = JOptionPane.showConfirmDialog(this, "Restart simulation?", "Running", JOptionPane.YES_NO_OPTION);
             if (result == JOptionPane.YES_OPTION) {
                 engineLauncher.stop();
-                Timer timer = new Timer(500, e -> new SimulationWindow(engineLauncher).startSimulation());
-                timer.setRepeats(false); timer.start();
+                new SimulationWindow(engineLauncher).startSimulation();
             }
         } else {
             new SimulationWindow(engineLauncher).startSimulation();
@@ -164,6 +163,19 @@ public class MainWindow extends JFrame {
         p.setPreferredSize(new Dimension(0, 25));
         p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Component.borderColor")));
         p.add(new JLabel("  ● OpenGL 4.5 Core"), BorderLayout.WEST);
+
+        JButton changeColorButton = new JButton("Change BG Color");
+        changeColorButton.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(this, "Choose Background Color", Color.BLUE);
+            if (newColor != null) {
+                float r = newColor.getRed() / 255.0f;
+                float g = newColor.getGreen() / 255.0f;
+                float b = newColor.getBlue() / 255.0f;
+                String jsonCommand = String.format("{\"command\": \"set_clear_color\", \"r\": %f, \"g\": %f, \"b\": %f}", r, g, b);
+                engineLauncher.sendCommand(jsonCommand);
+            }
+        });
+        p.add(changeColorButton, BorderLayout.EAST);
         return p;
     }
 }

@@ -12,6 +12,7 @@ public class SimulationWindow extends JFrame {
 
     private final SceneViewPanel viewport;
     private final EngineLauncher launcher;
+    private String shmName; // Store the generated SHM name
 
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
@@ -91,18 +92,24 @@ public class SimulationWindow extends JFrame {
     private void closeAndStop() {
         launcher.stop();
         this.dispose();
+        // Stop streaming when the simulation window is closed
+        viewport.stopStreaming();
     }
 
     public void startSimulation() {
         setVisible(true);
-        String shmName = "/storming_shm_" + System.currentTimeMillis();
+        shmName = "/storming_shm_" + System.currentTimeMillis();
 
-        // Wait a tiny bit for window to map then launch engine with SHM flag
-        Timer timer = new Timer(300, e -> {
-            launcher.launch(shmName);
+        if (launcher.launch(shmName)) { // Attempt to launch engine, checks build etc.
             viewport.startStreaming(shmName);
-        });
-        timer.setRepeats(false);
-        timer.start();
+        } else {
+            // If engine launch fails, close this window immediately.
+            this.dispose();
+            JOptionPane.showMessageDialog(this, "Failed to launch the engine. Check console for details.", "Engine Launch Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public String getShmName() {
+        return shmName;
     }
 }
