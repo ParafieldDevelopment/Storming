@@ -1,4 +1,4 @@
-#include "Storming/Renderer/RendererAPI.h"
+#include "Storming/Renderer/RendererAPI.hpp"
 
 namespace Storming {
 

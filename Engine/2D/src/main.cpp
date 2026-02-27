@@ -1,10 +1,11 @@
-#include "Storming/Core/Application.h"
+#include "Storming/Core/Application.hpp"
+#include <iostream>
 
 int main(int argc, char** argv) {
     Storming::ApplicationConfig config;
     config.Name = "Storming Engine Runtime";
     
-    // Check for renderer flag (Editor will pass this)
+    // Parse command line arguments from the Editor
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--vulkan") {
@@ -12,8 +13,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    Storming::Application app(config);
-    app.Run();
+    Storming::Application* app = new Storming::Application(config);
+    app->Run();
+    delete app;
 
     return 0;
 }

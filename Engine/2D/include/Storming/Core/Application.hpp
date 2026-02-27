@@ -2,7 +2,7 @@
 
 #include <string>
 #include <memory>
-#include "Storming/Renderer/RendererAPI.h"
+#include "Storming/Renderer/RendererAPI.hpp"
 
 struct SDL_Window;
 
