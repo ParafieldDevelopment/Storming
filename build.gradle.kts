@@ -59,10 +59,28 @@ jlink {
 
     jpackage {
         imageName = projectName
-        icon = "packaging/icon.ico"
+        val osName = System.getProperty("os.name").lowercase()
+        val isWindows = osName.contains("windows")
+        val isMac = osName.contains("mac")
+        val isLinux = osName.contains("linux")
 
-        // Always MSI
-        installerType = "msi"
+        if (isWindows) {
+            icon = "packaging/icon.ico"
+            installerType = "msi"
+        } else if (isMac) {
+            // macOS requires an .icns file for the application icon to show up correctly in Dock/Finder
+            // If packaging/icon.icns exists, use it. Fallback to icon.png if it doesn't.
+            val icnsIcon = file("packaging/icon.icns")
+            if (icnsIcon.exists()) {
+                icon = "packaging/icon.icns"
+            } else {
+                icon = "src/main/resources/com/parafield/storming/icons/icon.png"
+            }
+            installerType = "dmg"
+        } else if (isLinux) {
+            icon = "src/main/resources/com/parafield/storming/icons/icon.png"
+            installerType = "deb"
+        }
 
         installerName = projectName
         appVersion = appVersionProperty
@@ -75,15 +93,35 @@ jlink {
             )
         )
 
-        installerOptions.addAll(
-            listOf(
-                "--win-menu",
-                "--win-shortcut",
-                "--win-menu-group", projectName,
-                "--win-per-user-install",
-                "--win-dir-chooser",
-                "--win-upgrade-uuid", "4ad9b696-55b9-40b1-8864-edc18a657a6e"
+        if (isWindows) {
+            installerOptions.addAll(
+                listOf(
+                    "--win-menu",
+                    "--win-shortcut",
+                    "--win-menu-group", projectName,
+                    "--win-per-user-install",
+                    "--win-dir-chooser",
+                    "--win-upgrade-uuid", "4ad9b696-55b9-40b1-8864-edc18a657a6e"
+                )
             )
-        )
+        }
+
+        if (isMac) {
+            installerOptions.addAll(
+                listOf(
+                    "--mac-package-name", projectName,
+                    "--mac-package-identifier", projectGroup
+                )
+            )
+        }
+
+        if (isLinux) {
+            installerOptions.addAll(
+                listOf(
+                    "--linux-menu-group", "Development",
+                    "--linux-shortcut"
+                )
+            )
+        }
     }
 }
