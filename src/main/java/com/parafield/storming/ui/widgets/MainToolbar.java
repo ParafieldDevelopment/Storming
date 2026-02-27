@@ -10,10 +10,10 @@ public class MainToolbar extends JToolBar {
     public MainToolbar(Runnable onPlay, Runnable onStop) {
         setFloatable(false);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
-        setPreferredSize(new Dimension(0, 40));
+        setPreferredSize(new Dimension(0, 50));
         
         // Left part: Hamburger Menu
-        add(Box.createHorizontalStrut(5));
+        add(Box.createHorizontalStrut(8));
         JButton menuBtn = new JButton(Icons.HAMBURGER);
         menuBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         menuBtn.addActionListener(e -> {
@@ -35,7 +35,7 @@ public class MainToolbar extends JToolBar {
         add(Box.createHorizontalGlue());
 
         // Right part: Run/Play controls
-        JPanel runControls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JPanel runControls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 7));
         runControls.setOpaque(false);
         
         JButton playBtn = new JButton(Icons.PLAY);

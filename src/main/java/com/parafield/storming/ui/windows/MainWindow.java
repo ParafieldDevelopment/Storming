@@ -56,6 +56,7 @@ public class MainWindow extends JFrame {
         SideBar rightBar = new SideBar(SwingConstants.VERTICAL);
         rightBar.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, UIManager.getColor("Component.borderColor")));
         rightBar.addTab("Inspector", Icons.SEARCH, () -> togglePanel(rightSplit, false));
+        rightBar.addTab("Notifications", Icons.BELL, () -> {});
 
         // Center Panel (The Editor/Scene View)
         JTabbedPane editorTabs = new JTabbedPane();
@@ -69,11 +70,17 @@ public class MainWindow extends JFrame {
         // Construct the splits
         ToolWindow hierarchyTW = new ToolWindow("Hierarchy", new JTree());
         ToolWindow inspectorTW = new ToolWindow("Inspector", new JTextArea("Select an object..."));
-        ToolWindow consoleTW = new ToolWindow("Console", consolePanel);
+        
+        // Bottom Tools (Console, Analyzer)
+        JTabbedPane bottomTabs = new JTabbedPane();
+        bottomTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
+        bottomTabs.putClientProperty(FlatClientProperties.TABBED_PANE_SHOW_TAB_SEPARATORS, true);
+        bottomTabs.addTab("Console", Icons.CONSOLE, consolePanel);
+        bottomTabs.addTab("Analyzer", Icons.WARN, new com.parafield.storming.ui.panels.AnalyzerPanel());
 
         rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, editorTabs, inspectorTW, 1050);
-        mainSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280);
-        bottomSplit = createSplit(JSplitPane.VERTICAL_SPLIT, mainSplit, consoleTW, 650);
+        mainSplit = createSplit(JSplitPane.VERTICAL_SPLIT, rightSplit, bottomTabs, 650);
+        bottomSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, mainSplit, 280);
 
         centerArea.add(leftBar, BorderLayout.WEST);
         centerArea.add(bottomSplit, BorderLayout.CENTER);
