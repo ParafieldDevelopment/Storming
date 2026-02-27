@@ -2,6 +2,7 @@ package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import javax.swing.*;
@@ -14,7 +15,8 @@ public class SimulationWindow extends JFrame {
 
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
-        
+
+        setIconImage(Icons.FRAME_ICON);
         setTitle("Storming Engine | Simulation");
         setSize(1100, 750);
         setLocationRelativeTo(null);
@@ -99,7 +101,7 @@ public class SimulationWindow extends JFrame {
             for (int i = 0; i < 5 && id == 0; i++) {
                 id = viewport.getNativeWindowID();
                 if (id == 0) {
-                    try { Thread.sleep(100); } catch (Exception ex) {}
+                    try { Thread.sleep(100); } catch (Exception ignored) {}
                 }
             }
 

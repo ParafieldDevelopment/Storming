@@ -25,8 +25,7 @@ dependencies {
     implementation("com.formdev:flatlaf:$flatlafVersion")
     implementation("com.formdev:flatlaf-extras:$flatlafVersion")
     implementation("com.github.weisj:jsvg:$jsvgVersion")
-    
-    // Add JNA for Native Access
+
     implementation("net.java.dev.jna:jna:5.14.0")
     implementation("net.java.dev.jna:jna-platform:5.14.0")
 
@@ -49,50 +48,42 @@ idea {
 
 application {
     mainClass.set("com.parafield.storming.EditorApp")
-    // Tell Gradle the module name explicitly
     mainModule.set("com.parafield.storming")
 }
 
 jlink {
     launcher {
         name = projectName
-        noConsole = true // GUI-only
+        noConsole = true
     }
 
     jpackage {
-        val os = System.getProperty("os.name").lowercase()
+        imageName = projectName
+        icon = "packaging/icon.ico"
 
-        // Always set the installer type
-        installerType = when {
-            os.contains("win") && System.getenv("PATH")?.contains("WiX Toolset") == true -> "exe"
-            os.contains("win") -> "msi" // fallback
-            else -> "app-image"
-        }
+        // Always MSI
+        installerType = "msi"
 
         installerName = projectName
         appVersion = appVersionProperty
         vendor = vendorName
 
-        // Windows icon, Start Menu & Shortcut
-        if (os.contains("win")) {
-            installerOptions.addAll(
-                listOf(
-                    "--icon", "packaging/icon.ico", // <-- your real .ico outside resources
-                    "--win-menu",
-                    "--win-shortcut",
-                    "--win-menu-group", projectName
-                )
+        installerOptions.addAll(
+            listOf(
+                "--vendor", vendorName,
+                "--copyright", "© $vendorName"
             )
-        }
+        )
 
-        // macOS icon
-        if (os.contains("mac")) {
-            installerOptions.addAll(listOf("--icon", "packaging/icon.icns"))
-        }
-
-        // Linux icon
-        if (os.contains("nux")) {
-            installerOptions.addAll(listOf("--icon", "packaging/icon.png"))
-        }
+        installerOptions.addAll(
+            listOf(
+                "--win-menu",
+                "--win-shortcut",
+                "--win-menu-group", projectName,
+                "--win-per-user-install",
+                "--win-dir-chooser",
+                "--win-upgrade-uuid", "4ad9b696-55b9-40b1-8864-edc18a657a6e"
+            )
+        )
     }
 }
