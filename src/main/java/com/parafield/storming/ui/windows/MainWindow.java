@@ -51,12 +51,12 @@ public class MainWindow extends JFrame {
         
         // SideBars
         SideBar leftBar = new SideBar(SwingConstants.VERTICAL);
-        leftBar.addTab("Project", Icons.FOLDER, () -> togglePanel(mainSplit, true));
+        leftBar.addTab("Project", Icons.FOLDER, true, () -> togglePanel(bottomSplit, true, 280));
         
         SideBar rightBar = new SideBar(SwingConstants.VERTICAL);
         rightBar.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, UIManager.getColor("Component.borderColor")));
-        rightBar.addTab("Inspector", Icons.SEARCH, () -> togglePanel(rightSplit, false));
-        rightBar.addTab("Notifications", Icons.BELL, () -> {});
+        rightBar.addTab("Inspector", Icons.SEARCH, true, () -> togglePanel(rightSplit, false, 300));
+        rightBar.addTab("Notifications", Icons.BELL, true, () -> togglePanel(rightSplit, false, 300));
 
         // Center Panel (The Editor/Scene View)
         JTabbedPane editorTabs = new JTabbedPane();
@@ -117,17 +117,46 @@ public class MainWindow extends JFrame {
         }
     }
 
-    private void togglePanel(JSplitPane split, boolean isLeft) {
-        int loc = split.getDividerLocation();
-        if (isLeft) {
-            // Logic for Hierarchy (Left component of mainSplit)
-            if (loc < 50) split.setDividerLocation(280);
-            else split.setDividerLocation(0);
+    private int hierarchyLastLoc = 280;
+    private int inspectorLastLoc = 1050;
+    private int consoleLastLoc = 650;
+
+    private void togglePanel(JSplitPane splitPane, boolean isLeftPanel, int defaultOpenLocation) {
+        int currentDividerLocation = splitPane.getDividerLocation();
+        int splitPaneWidthOrHeight = isLeftPanel ? splitPane.getWidth() : splitPane.getHeight();
+
+        // Determine if the panel is currently open or collapsed
+        boolean isOpen;
+        if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+            isOpen = isLeftPanel ? (currentDividerLocation > 5) : (currentDividerLocation < splitPaneWidthOrHeight - 5);
+        } else { // VERTICAL_SPLIT
+            isOpen = isLeftPanel ? (currentDividerLocation > 5) : (currentDividerLocation < splitPaneWidthOrHeight - 5);
+        }
+
+        if (isOpen) {
+            // Panel is open, collapse it
+            if (isLeftPanel) {
+                if (splitPane == bottomSplit) hierarchyLastLoc = currentDividerLocation;
+                else if (splitPane == rightSplit) inspectorLastLoc = currentDividerLocation;
+                else if (splitPane == mainSplit) consoleLastLoc = currentDividerLocation;
+
+                splitPane.setDividerLocation(0); // Collapse left
+            } else {
+                if (splitPane == bottomSplit) hierarchyLastLoc = currentDividerLocation;
+                else if (splitPane == rightSplit) inspectorLastLoc = currentDividerLocation;
+                else if (splitPane == mainSplit) consoleLastLoc = currentDividerLocation;
+                
+                splitPane.setDividerLocation(splitPaneWidthOrHeight); // Collapse right
+            }
         } else {
-            // Logic for Inspector (Right component of rightSplit)
-            int width = split.getWidth();
-            if (loc > width - 50) split.setDividerLocation(width - 300);
-            else split.setDividerLocation(width);
+            // Panel is collapsed, expand it to its last known location or default
+            int targetLocation;
+            if (isLeftPanel) {
+                targetLocation = (splitPane == bottomSplit) ? hierarchyLastLoc : (splitPane == rightSplit ? inspectorLastLoc : consoleLastLoc);
+            } else {
+                targetLocation = (splitPane == bottomSplit) ? hierarchyLastLoc : (splitPane == rightSplit ? inspectorLastLoc : consoleLastLoc);
+            }
+            splitPane.setDividerLocation(targetLocation);
         }
     }
 
