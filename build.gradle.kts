@@ -70,7 +70,7 @@ jlink {
 
         // ⚠ Do NOT manually add --app-image anywhere
         // Optional icons can still be added
-        // installerOptions.add("--icon")
-        // installerOptions.add("src/main/resources/Storming.ico")
+        installerOptions.add("--icon")
+        installerOptions.add("src/main/resources/icon.ico")
     }
 }
