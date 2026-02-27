@@ -1,3 +1,0 @@
-/home/batista/IdeaProjects/Storming/Engine/2D/build/CMakeFiles/StormingEngine.dir
-/home/batista/IdeaProjects/Storming/Engine/2D/build/CMakeFiles/edit_cache.dir
-/home/batista/IdeaProjects/Storming/Engine/2D/build/CMakeFiles/rebuild_cache.dir
