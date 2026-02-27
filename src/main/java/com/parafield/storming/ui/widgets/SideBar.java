@@ -15,7 +15,7 @@ public class SideBar extends JPanel {
         setPreferredSize(new Dimension(48, 0));
     }
 
-    public void addTab(String name, Icon icon, boolean isToggle, Runnable onSelect) {
+    public AbstractButton addTab(String name, Icon icon, boolean isToggle, Runnable onSelect) {
         AbstractButton btn;
         if (isToggle) {
             btn = new JToggleButton(icon);
@@ -37,5 +37,6 @@ public class SideBar extends JPanel {
         btn.addActionListener(e -> onSelect.run());
 
         add(btn);
+        return btn;
     }
 }

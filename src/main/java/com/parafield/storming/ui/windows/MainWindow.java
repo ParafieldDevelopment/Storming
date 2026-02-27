@@ -17,9 +17,9 @@ public class MainWindow extends JFrame {
     private final EngineLauncher engineLauncher;
     private SceneViewPanel sceneViewPanel;
     
-    private JSplitPane mainHorizontalSplit; // Left vs (Center+Right)
-    private JSplitPane rightSplit;          // Center vs Right
-    private JSplitPane centerVerticalSplit; // Editor vs Console
+    private JSplitPane mainHorizontalSplit; 
+    private JSplitPane rightSplit;          
+    private JSplitPane centerVerticalSplit; 
 
     private CardLayout rightCardLayout;
     private JPanel rightCardPanel;
@@ -29,6 +29,10 @@ public class MainWindow extends JFrame {
     private boolean isRightOpen = true;
     private int leftSplitLastLoc = 280;
     private int rightSplitLastLoc = 300; 
+
+    private JToggleButton projectBtn;
+    private JToggleButton inspectorBtn;
+    private JToggleButton notificationsBtn;
 
     public MainWindow() {
         setIconImage(Icons.FRAME_ICON);
@@ -44,6 +48,12 @@ public class MainWindow extends JFrame {
         engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine", consolePanel::log);
 
         initUI();
+        
+        // Ensure dividers are set after layout is ready
+        SwingUtilities.invokeLater(() -> {
+            mainHorizontalSplit.setDividerLocation(leftSplitLastLoc);
+            rightSplit.setDividerLocation(rightSplit.getWidth() - rightSplitLastLoc);
+        });
     }
 
     private void initUI() {
@@ -67,23 +77,23 @@ public class MainWindow extends JFrame {
         bottomTabs.addTab("Console", Icons.CONSOLE, consolePanel);
         bottomTabs.addTab("Analyzer", Icons.WARN, new com.parafield.storming.ui.panels.AnalyzerPanel());
 
-        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, editorTabs, bottomTabs, 600);
+        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, editorTabs, bottomTabs, 600, 0.7);
 
         // --- 3. Independent Splits ---
-        // Right Split starts open
-        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, centerVerticalSplit, rightCardPanel, 1100);
+        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, centerVerticalSplit, rightCardPanel, 1100, 1.0);
         
         ToolWindow hierarchyTW = new ToolWindow("Hierarchy", new JTree());
-        // Main Split starts open
-        mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280);
+        mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280, 0.0);
 
         // --- 4. SideBars ---
         SideBar leftBar = new SideBar(SwingConstants.VERTICAL);
-        leftBar.addTab("Project", Icons.FOLDER, true, this::toggleLeftPanel);
+        projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleLeftPanel);
+        projectBtn.setSelected(true);
         
         SideBar rightBar = new SideBar(SwingConstants.VERTICAL);
-        rightBar.addTab("Inspector", Icons.SEARCH, true, () -> handleRightSidebarClick("INSPECTOR"));
-        rightBar.addTab("Notifications", Icons.BELL, true, () -> handleRightSidebarClick("NOTIFICATIONS"));
+        inspectorBtn = (JToggleButton) rightBar.addTab("Inspector", Icons.SEARCH, true, () -> handleRightSidebarClick("INSPECTOR"));
+        notificationsBtn = (JToggleButton) rightBar.addTab("Notifications", Icons.BELL, true, () -> handleRightSidebarClick("NOTIFICATIONS"));
+        inspectorBtn.setSelected(true);
 
         // --- 5. Assemble ---
         JPanel mainContent = new JPanel(new BorderLayout());
@@ -104,6 +114,7 @@ public class MainWindow extends JFrame {
             mainHorizontalSplit.setDividerLocation(leftSplitLastLoc);
         }
         isLeftOpen = !isLeftOpen;
+        projectBtn.setSelected(isLeftOpen);
     }
 
     private void handleRightSidebarClick(String tabName) {
@@ -122,13 +133,16 @@ public class MainWindow extends JFrame {
                 currentRightTab = tabName;
             }
         }
+        inspectorBtn.setSelected(isRightOpen && currentRightTab.equals("INSPECTOR"));
+        notificationsBtn.setSelected(isRightOpen && currentRightTab.equals("NOTIFICATIONS"));
     }
 
-    private JSplitPane createSplit(int orient, JComponent left, JComponent right, int loc) {
+    private JSplitPane createSplit(int orient, JComponent left, JComponent right, int loc, double weight) {
         JSplitPane split = new JSplitPane(orient, left, right);
         split.setDividerLocation(loc);
         split.setDividerSize(3);
         split.setBorder(null);
+        split.setResizeWeight(weight);
         return split;
     }
 
