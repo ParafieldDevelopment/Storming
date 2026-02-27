@@ -14,6 +14,7 @@ namespace Storming {
         uint32_t Height = 720;
         RendererBackend Backend = RendererBackend::OpenGL;
         uint64_t ParentWindowID = 0;
+        std::string ShmName = "";
     };
 
     class Application {
@@ -33,6 +34,7 @@ namespace Storming {
         bool m_Running = true;
         SDL_Window* m_Window = nullptr;
         std::unique_ptr<RendererAPI> m_RendererAPI;
+        class FrameBuffer* m_FrameBuffer = nullptr;
     };
 
 }

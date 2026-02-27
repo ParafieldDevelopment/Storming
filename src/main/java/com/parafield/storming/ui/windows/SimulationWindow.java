@@ -62,7 +62,7 @@ public class SimulationWindow extends JFrame {
         JPanel footer = new JPanel(new BorderLayout());
         footer.setPreferredSize(new Dimension(0, 25));
         footer.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%)");
-        JLabel stats = new JLabel("  Vulkan 1.3 | Performance: High | Memory: 142MB");
+        JLabel stats = new JLabel("  OpenGL 4.5 | Performance: High | Memory: 142MB");
         stats.setFont(new Font("Inter", Font.PLAIN, 11));
         stats.setForeground(UIManager.getColor("Label.disabledForeground"));
         footer.add(stats, BorderLayout.WEST);
@@ -93,22 +93,12 @@ public class SimulationWindow extends JFrame {
 
     public void startSimulation() {
         setVisible(true);
-        // We use a timer to ensure the Canvas is definitely mapped and has an X11 ID
-        Timer timer = new Timer(500, e -> {
-            long id = 0;
-            for (int i = 0; i < 5 && id == 0; i++) {
-                id = viewport.getNativeWindowID();
-                if (id == 0) {
-                    try { Thread.sleep(100); } catch (Exception ex) {}
-                }
-            }
-
-            if (id != 0) {
-                launcher.launch(id);
-            } else {
-                System.err.println("[System] Failed to retrieve Native Window ID. Falling back to standalone.");
-                launcher.launch(0);
-            }
+        String shmName = "/storming_shm_" + System.currentTimeMillis();
+        
+        // Wait a tiny bit for window to map then launch engine with SHM flag
+        Timer timer = new Timer(300, e -> {
+            launcher.launch(shmName);
+            viewport.startStreaming(shmName);
         });
         timer.setRepeats(false);
         timer.start();

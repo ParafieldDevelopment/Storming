@@ -62,6 +62,7 @@ target_link_libraries(StormingEngine PRIVATE
     EnTT::EnTT
     glad
     glm::glm
+    rt
 )
 
 # Compiler definitions
