@@ -7,7 +7,7 @@ public class SplashWindow extends JWindow {
 
     public SplashWindow(String resourcePath) {
         try {
-            java.net.URL imgUrl = getClass().getClassLoader().getResource(resourcePath);
+            java.net.URL imgUrl = getClass().getResource(resourcePath);
             if (imgUrl == null) {
                 System.err.println("Could not find splash resource: " + resourcePath);
                 return;

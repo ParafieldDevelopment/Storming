@@ -1,6 +1,7 @@
 plugins {
     java
     application
+    idea
     id("org.beryx.jlink") version "3.1.1"
 }
 
@@ -36,6 +37,13 @@ dependencies {
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+idea {
+    module {
+        isDownloadSources = true
+        isDownloadJavadoc = true
     }
 }
 

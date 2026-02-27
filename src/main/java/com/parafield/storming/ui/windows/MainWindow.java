@@ -1,6 +1,7 @@
 package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.ConsolePanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
@@ -50,11 +51,11 @@ public class MainWindow extends JFrame {
         
         // SideBars
         SideBar leftBar = new SideBar(SwingConstants.VERTICAL);
-        leftBar.addTab("Project", new com.formdev.flatlaf.extras.FlatSVGIcon("com/parafield/storming/icons/folder.svg", 20, 20), () -> togglePanel(mainSplit, true));
+        leftBar.addTab("Project", Icons.FOLDER, () -> togglePanel(mainSplit, true));
         
         SideBar rightBar = new SideBar(SwingConstants.VERTICAL);
         rightBar.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, UIManager.getColor("Component.borderColor")));
-        rightBar.addTab("Inspector", new com.formdev.flatlaf.extras.FlatSVGIcon("com/parafield/storming/icons/search.svg", 20, 20), () -> togglePanel(rightSplit, false));
+        rightBar.addTab("Inspector", Icons.SEARCH, () -> togglePanel(rightSplit, false));
 
         // Center Panel (The Editor/Scene View)
         JTabbedPane editorTabs = new JTabbedPane();

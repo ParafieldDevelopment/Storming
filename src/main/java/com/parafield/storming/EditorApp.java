@@ -4,6 +4,9 @@ import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.parafield.storming.ui.windows.ProjectSelectorWindow;
 import com.parafield.storming.ui.windows.SplashWindow;
 import javax.swing.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.jar.JarFile;
 
 public class EditorApp {
 
@@ -13,7 +16,7 @@ public class EditorApp {
             setupGlobalTheme();
 
             // 1. Show Splash Screen
-            SplashWindow splash = new SplashWindow("splashscreen.png");
+            SplashWindow splash = new SplashWindow("/com/parafield/storming/splashscreen.png");
             splash.showSplash();
 
             // 2. Show WIP Dialog
