@@ -1,7 +1,7 @@
 package com.parafield.storming.ui.widgets;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
@@ -14,7 +14,7 @@ public class MainToolbar extends JToolBar {
         
         // Left part: Hamburger Menu
         add(Box.createHorizontalStrut(5));
-        JButton menuBtn = new JButton(new FlatSVGIcon("com/parafield/storming/icons/hamburger.svg", 18, 18));
+        JButton menuBtn = new JButton(Icons.HAMBURGER);
         menuBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         menuBtn.addActionListener(e -> {
             JPopupMenu menu = new JPopupMenu();
@@ -38,12 +38,12 @@ public class MainToolbar extends JToolBar {
         JPanel runControls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         runControls.setOpaque(false);
         
-        JButton playBtn = new JButton(new FlatSVGIcon("com/parafield/storming/icons/play.svg", 16, 16));
+        JButton playBtn = new JButton(Icons.PLAY);
         playBtn.setToolTipText("Run (F5)");
         playBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         playBtn.addActionListener(e -> onPlay.run());
         
-        JButton stopBtn = new JButton(new FlatSVGIcon("com/parafield/storming/icons/stop.svg", 16, 16));
+        JButton stopBtn = new JButton(Icons.STOP);
         stopBtn.setToolTipText("Stop (Shift+F5)");
         stopBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         stopBtn.addActionListener(e -> onStop.run());
