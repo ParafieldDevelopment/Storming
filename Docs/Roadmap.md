@@ -1,5 +1,14 @@
 # Storming Engine: 2026 Revival Roadmap
 
+## Pre-Phase: Engine Startup (v2026.0.0)
+*   **[Done]** **Shared Memory (SHM) Pipeline:** Establish a high-speed pixel transfer between C++ Engine and Java Editor.
+*   **[Semi-Done]** **Embedded Mode:** Engine can run hidden (`--shm`) while streaming its output to the Editor's viewport.
+*   **[Next]** **JSON Command Protocol:** Use stdin/stdout for basic Editor -> Engine commands (e.g., Change Clear Color).
+*   **[Next]** **HAL Abstraction:** Move raw OpenGL code from `Application` into a dedicated `OpenGLRendererAPI` class.
+*   **[Next]** **Telemetry Bridge:** Engine reports FPS and Draw Call statistics back to the Editor's Console.
+
+*   **[REQUIRED]** **Auto Engine Compile:** Automatically make Storming Initalitize the Engine.
+
 ## Phase 1: The Core Foundation (v2026.0.1)
 *   **[Redesigning]** Improved UI
 *   **[Semi-Done]** New high-performance directory structure for C++ Engine.
