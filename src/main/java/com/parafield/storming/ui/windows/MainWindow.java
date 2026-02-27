@@ -32,7 +32,7 @@ public class MainWindow extends JFrame {
 
         // Initialize Core Logic
         consolePanel = new ConsolePanel();
-        engineLauncher = new EngineLauncher("../Engine/2D/build/bin/StormingEngine", consolePanel::log);
+        engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine", consolePanel::log);
 
         initUI();
     }
@@ -42,7 +42,7 @@ public class MainWindow extends JFrame {
         setContentPane(root);
 
         // 1. TOP TOOLBAR
-        root.add(new MainToolbar(engineLauncher::launch, () -> {}), BorderLayout.NORTH);
+        root.add(new MainToolbar(this::handlePlay, engineLauncher::stop), BorderLayout.NORTH);
 
         // 2. CENTER CONTENT AREA
         JPanel centerArea = new JPanel(new BorderLayout());
@@ -79,6 +79,28 @@ public class MainWindow extends JFrame {
 
         // 3. STATUS BAR
         root.add(createStatusBar(), BorderLayout.SOUTH);
+    }
+
+    private void handlePlay() {
+        if (engineLauncher.isRunning()) {
+            int result = JOptionPane.showConfirmDialog(
+                this,
+                "Another instance of the engine is already running. Do you want to restart it?",
+                "Engine Running",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (result == JOptionPane.YES_OPTION) {
+                engineLauncher.stop();
+                // Brief pause to ensure OS releases resources
+                Timer timer = new Timer(500, e -> engineLauncher.launch());
+                timer.setRepeats(false);
+                timer.start();
+            }
+        } else {
+            engineLauncher.launch();
+        }
     }
 
     private void togglePanel(JSplitPane split, boolean isLeft) {

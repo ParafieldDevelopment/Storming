@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Window.h"
+#include "Window.hpp"
 
 namespace Storming {
     class Application {
