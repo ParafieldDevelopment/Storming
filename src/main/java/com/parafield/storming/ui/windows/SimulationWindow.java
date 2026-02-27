@@ -64,7 +64,7 @@ public class SimulationWindow extends JFrame {
         JPanel footer = new JPanel(new BorderLayout());
         footer.setPreferredSize(new Dimension(0, 25));
         footer.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%)");
-        JLabel stats = new JLabel("  Vulkan 1.3 | Performance: High | Memory: 142MB");
+        JLabel stats = new JLabel("  OpenGL 4.5 | Performance: High | Memory: 142MB");
         stats.setFont(new Font("Inter", Font.PLAIN, 11));
         stats.setForeground(UIManager.getColor("Label.disabledForeground"));
         footer.add(stats, BorderLayout.WEST);
@@ -101,7 +101,7 @@ public class SimulationWindow extends JFrame {
             for (int i = 0; i < 5 && id == 0; i++) {
                 id = viewport.getNativeWindowID();
                 if (id == 0) {
-                    try { Thread.sleep(100); } catch (Exception ignored) {}
+                    try { Thread.sleep(100); } catch (Exception ex) {}
                 }
             }
 

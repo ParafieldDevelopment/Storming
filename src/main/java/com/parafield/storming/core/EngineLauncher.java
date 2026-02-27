@@ -36,10 +36,10 @@ public class EngineLauncher {
     }
 
     public void launch() {
-        launch(0);
+        launch("");
     }
 
-    public void launch(long parentWindowID) {
+    public void launch(String shmName) {
         if (isRunning()) {
             return;
         }
@@ -48,8 +48,8 @@ public class EngineLauncher {
         new Thread(() -> {
             try {
                 ProcessBuilder pb;
-                if (parentWindowID != 0) {
-                    pb = new ProcessBuilder(enginePath, "--parent-id", String.valueOf(parentWindowID));
+                if (!shmName.isEmpty()) {
+                    pb = new ProcessBuilder(enginePath, "--shm", shmName);
                 } else {
                     pb = new ProcessBuilder(enginePath);
                 }
