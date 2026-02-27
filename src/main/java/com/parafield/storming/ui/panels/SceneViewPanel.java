@@ -1,28 +1,39 @@
 package com.parafield.storming.ui.panels;
 
-import javax.swing.*;
-import java.awt.*;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import java.awt.Canvas;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import javax.swing.JPanel;
 
 public class SceneViewPanel extends JPanel {
 
+    private final Canvas canvas;
+
     public SceneViewPanel() {
         setLayout(new BorderLayout());
+        setBackground(new Color(30, 30, 46)); // Match "Storming Blue"
+
+        canvas = new Canvas();
+        canvas.setBackground(new Color(30, 30, 46));
+        add(canvas, BorderLayout.CENTER);
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(new Color(20, 20, 20));
-        g2.fillRect(0, 0, getWidth(), getHeight());
+    public long getNativeWindowID() {
+        if (!canvas.isDisplayable()) {
+            return 0;
+        }
         
-        // Draw a very subtle grid
-        g2.setColor(new Color(40, 40, 40, 100));
-        for(int i=0; i<getWidth(); i+=40) g2.drawLine(i, 0, i, getHeight());
-        for(int i=0; i<getHeight(); i+=40) g2.drawLine(0, i, getWidth(), i);
-        
-        g2.setColor(Color.GRAY);
-        g2.drawString("Scene View (Engine Window will render here)", 20, 30);
+        try {
+            if (Platform.isLinux()) {
+                // Force the component to be realized
+                canvas.getGraphics().dispose();
+                return Native.getComponentID(canvas);
+            }
+        } catch (Exception e) {
+            System.err.println("[System] Failed to get Native ID: " + e.getMessage());
+        }
+        return 0;
     }
 }

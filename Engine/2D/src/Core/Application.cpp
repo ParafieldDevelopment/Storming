@@ -23,14 +23,23 @@ namespace Storming {
             return;
         }
 
-        // Create Window
-        Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
-        m_Window = SDL_CreateWindow(
-            m_Config.Name.c_str(),
-            m_Config.Width,
-            m_Config.Height,
-            flags
-        );
+        // Create Window with Properties
+        SDL_PropertiesID props = SDL_CreateProperties();
+        SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, m_Config.Name.c_str());
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_Config.Width);
+        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_Config.Height);
+        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
+
+        if (m_Config.ParentWindowID != 0) {
+            // Embed into Java's Canvas (X11 Specific for now)
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER, m_Config.ParentWindowID);
+            SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN, true);
+            std::cout << "[Engine] Embedding into X11 Window ID: " << m_Config.ParentWindowID << std::endl;
+        }
+
+        m_Window = SDL_CreateWindowWithProperties(props);
+        SDL_DestroyProperties(props);
 
         if (!m_Window) {
             std::cerr << "[Engine] Window Creation Error: " << SDL_GetError() << std::endl;

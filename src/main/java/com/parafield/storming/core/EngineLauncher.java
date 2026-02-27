@@ -36,14 +36,24 @@ public class EngineLauncher {
     }
 
     public void launch() {
+        launch(0);
+    }
+
+    public void launch(long parentWindowID) {
         if (isRunning()) {
-            return; // Safety check, handled by UI usually
+            return;
         }
 
         logConsumer.accept("Launching Storming Engine...");
         new Thread(() -> {
             try {
-                ProcessBuilder pb = new ProcessBuilder(enginePath);
+                ProcessBuilder pb;
+                if (parentWindowID != 0) {
+                    pb = new ProcessBuilder(enginePath, "--parent-id", String.valueOf(parentWindowID));
+                } else {
+                    pb = new ProcessBuilder(enginePath);
+                }
+                
                 pb.redirectErrorStream(true);
                 currentProcess = pb.start();
                 

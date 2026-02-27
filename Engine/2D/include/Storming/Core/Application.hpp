@@ -13,6 +13,7 @@ namespace Storming {
         uint32_t Width = 1280;
         uint32_t Height = 720;
         RendererBackend Backend = RendererBackend::OpenGL;
+        uint64_t ParentWindowID = 0;
     };
 
     class Application {

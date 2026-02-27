@@ -10,6 +10,8 @@ int main(int argc, char** argv) {
         std::string arg = argv[i];
         if (arg == "--vulkan") {
             config.Backend = Storming::RendererBackend::Vulkan;
+        } else if (arg == "--parent-id" && i + 1 < argc) {
+            config.ParentWindowID = std::stoull(argv[++i]);
         }
     }
 

@@ -24,6 +24,10 @@ dependencies {
     implementation("com.formdev:flatlaf:$flatlafVersion")
     implementation("com.formdev:flatlaf-extras:$flatlafVersion")
     implementation("com.github.weisj:jsvg:$jsvgVersion")
+    
+    // Add JNA for Native Access
+    implementation("net.java.dev.jna:jna:5.14.0")
+    implementation("net.java.dev.jna:jna-platform:5.14.0")
 
     testImplementation(platform("org.junit:junit-bom:$junitBomVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")

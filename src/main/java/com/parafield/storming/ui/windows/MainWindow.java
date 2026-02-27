@@ -14,6 +14,7 @@ public class MainWindow extends JFrame {
 
     private final ConsolePanel consolePanel;
     private final EngineLauncher engineLauncher;
+    private SceneViewPanel sceneViewPanel;
     
     private JSplitPane mainSplit;
     private JSplitPane rightSplit;
@@ -59,7 +60,9 @@ public class MainWindow extends JFrame {
         JTabbedPane editorTabs = new JTabbedPane();
         editorTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
         editorTabs.putClientProperty(FlatClientProperties.TABBED_PANE_SHOW_TAB_SEPARATORS, true);
-        editorTabs.addTab("Scene", new SceneViewPanel());
+        
+        sceneViewPanel = new SceneViewPanel();
+        editorTabs.addTab("Scene", sceneViewPanel);
         editorTabs.addTab("Game", new JPanel());
 
         // Construct the splits
@@ -85,21 +88,24 @@ public class MainWindow extends JFrame {
         if (engineLauncher.isRunning()) {
             int result = JOptionPane.showConfirmDialog(
                 this,
-                "Another instance of the engine is already running. Do you want to restart it?",
-                "Engine Running",
+                "A simulation is already running. Do you want to restart it?",
+                "Simulation Running",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE
             );
 
             if (result == JOptionPane.YES_OPTION) {
                 engineLauncher.stop();
-                // Brief pause to ensure OS releases resources
-                Timer timer = new Timer(500, e -> engineLauncher.launch());
+                Timer timer = new Timer(500, e -> {
+                    SimulationWindow sim = new SimulationWindow(engineLauncher);
+                    sim.startSimulation();
+                });
                 timer.setRepeats(false);
                 timer.start();
             }
         } else {
-            engineLauncher.launch();
+            SimulationWindow sim = new SimulationWindow(engineLauncher);
+            sim.startSimulation();
         }
     }
 
