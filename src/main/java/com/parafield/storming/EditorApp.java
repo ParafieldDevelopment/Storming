@@ -4,6 +4,7 @@ import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.parafield.storming.ui.windows.ProjectSelectorWindow;
 import com.parafield.storming.ui.windows.SplashWindow;
 import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.jar.JarFile;
@@ -11,6 +12,17 @@ import java.util.jar.JarFile;
 public class EditorApp {
 
     public static void main(String[] args) {
+        // Unified window decorations for all platforms
+        System.setProperty("flatlaf.useWindowDecorations", "true");
+        System.setProperty("flatlaf.menuBarEmbedded", "true");
+        
+        // Hide icons and remove gaps in title pane
+        UIManager.put("TitlePane.showIcon", false);
+        UIManager.put("TitlePane.embeddedMenuBarGap", 0);
+
+        JFrame.setDefaultLookAndFeelDecorated(true);
+        JDialog.setDefaultLookAndFeelDecorated(true);
+
         SwingUtilities.invokeLater(() -> {
             // Apply theme globally
             setupGlobalTheme();
@@ -37,10 +49,17 @@ public class EditorApp {
     private static void setupGlobalTheme() {
         try {
             UIManager.setLookAndFeel(new FlatMacDarkLaf());
-            UIManager.put("Button.arc", 6);
-            UIManager.put("Component.arc", 6);
+            
+            // Refine UI for "Cleanliness"
+            UIManager.put("Button.arc", 8);
+            UIManager.put("Component.arc", 8);
+            UIManager.put("TextComponent.arc", 8);
             UIManager.put("TabbedPane.showTabSeparators", true);
-            UIManager.put("ScrollBar.width", 12);
+            UIManager.put("TabbedPane.tabHeight", 32);
+            UIManager.put("ScrollBar.width", 10);
+            UIManager.put("ScrollBar.trackArc", 999);
+            UIManager.put("ScrollBar.thumbArc", 999);
+            
         } catch (Exception ex) {
             System.err.println("Theme Error: " + ex.getMessage());
         }

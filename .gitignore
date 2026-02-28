@@ -5,6 +5,7 @@ build/
 # CMake
 Engine/2D/build
 Engine/3D/build
+**/_deps/
 
 # IDE
 .idea/

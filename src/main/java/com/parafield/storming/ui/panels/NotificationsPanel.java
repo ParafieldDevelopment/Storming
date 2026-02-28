@@ -4,11 +4,10 @@ import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
-public class AnalyzerPanel extends JPanel {
-    public AnalyzerPanel() {
+public class NotificationsPanel extends JPanel {
+    public NotificationsPanel() {
         setLayout(new BorderLayout());
-        JLabel label = new JLabel("Script & Asset Analyzer", SwingConstants.CENTER);
-        label.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 14f));
+        JLabel label = new JLabel("No new notifications.", SwingConstants.CENTER);
         label.setForeground(UIManager.getColor("Label.disabledForeground"));
         add(label, BorderLayout.CENTER);
     }
@@ -23,8 +22,8 @@ public class AnalyzerPanel extends JPanel {
         int size = 80;
         int x = getWidth() - size - 25;
         int y = getHeight() - size - 25;
-        if (Icons.WARN_80 != null) {
-            Icons.WARN_80.paintIcon(this, g2, x, y);
+        if (Icons.BELL_80 != null) {
+            Icons.BELL_80.paintIcon(this, g2, x, y);
         }
         g2.dispose();
     }

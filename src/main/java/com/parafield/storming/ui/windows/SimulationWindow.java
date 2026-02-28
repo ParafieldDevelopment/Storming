@@ -1,10 +1,10 @@
 package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.SceneViewPanel;
+import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import java.awt.*;
 
@@ -16,93 +16,110 @@ public class SimulationWindow extends JFrame {
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
 
-        setIconImage(Icons.FRAME_ICON);
-        setTitle("Storming Engine | Simulation");
-        setSize(1100, 750);
+        setTitle("New Adventure (DEBUG) - Storming Engine");
+        setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
-        // Modern Window setup
+        // Integrated Title Bar setup
         rootPane.putClientProperty("apple.awt.fullWindowContent", true);
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
+        rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
-        JPanel mainContent = new JPanel(new BorderLayout());
-        setContentPane(mainContent);
+        initMenuBar();
 
-        // 1. Header Bar (Godot Style)
-        JPanel header = new JPanel(new BorderLayout());
-        header.setPreferredSize(new Dimension(0, 45));
-        header.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 7%)");
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
+        JPanel root = new JPanel(new BorderLayout());
+        setContentPane(root);
 
-        JPanel leftGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        leftGroup.setOpaque(false);
-        JLabel titleLabel = new JLabel("RUNNING SIMULATION");
-        titleLabel.setFont(new Font("Inter", Font.BOLD, 12));
-        titleLabel.setForeground(new Color(52, 152, 219)); // Blue
-        leftGroup.add(titleLabel);
-        
-        JPanel centerGroup = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 8));
-        centerGroup.setOpaque(false);
-        
-        JButton stopBtn = new JButton(new FlatSVGIcon("com/parafield/storming/icons/stop.svg", 18, 18));
-        stopBtn.setToolTipText("Stop Simulation (Esc)");
-        stopBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        stopBtn.addActionListener(e -> closeAndStop());
-        centerGroup.add(stopBtn);
-
-        header.add(leftGroup, BorderLayout.WEST);
-        header.add(centerGroup, BorderLayout.CENTER);
-        
-        mainContent.add(header, BorderLayout.NORTH);
-
-        // 2. The Viewport
+        // 1. The Viewport (Godot style: pure game focus)
         viewport = new SceneViewPanel();
-        mainContent.add(viewport, BorderLayout.CENTER);
+        root.add(viewport, BorderLayout.CENTER);
 
-        // 3. Footer / Stats
+        // 2. Minimal Footer (Optional, can be removed for full clean look)
         JPanel footer = new JPanel(new BorderLayout());
-        footer.setPreferredSize(new Dimension(0, 25));
-        footer.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%)");
-        JLabel stats = new JLabel("  OpenGL 4.5 | Performance: High | Memory: 142MB");
-        stats.setFont(new Font("Inter", Font.PLAIN, 11));
-        stats.setForeground(UIManager.getColor("Label.disabledForeground"));
+        footer.setPreferredSize(new Dimension(0, 22));
+        footer.setBackground(new Color(20, 20, 25));
+        footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(100, 100, 100, 30)));
+        
+        JLabel stats = new JLabel("  ● Live | 60 FPS | OpenGL 4.5 Core");
+        stats.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        stats.setForeground(new Color(150, 150, 150));
         footer.add(stats, BorderLayout.WEST);
         
-        mainContent.add(footer, BorderLayout.SOUTH);
+        root.add(footer, BorderLayout.SOUTH);
 
-        // Keyboard Shortcut: ESC to stop
-        mainContent.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "stopSim");
-        mainContent.getActionMap().put("stopSim", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                closeAndStop();
-            }
+        // ESC to stop
+        root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "stopSim");
+        root.getActionMap().put("stopSim", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) { closeAndStop(); }
         });
 
         addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                closeAndStop();
-            }
+            @Override public void windowClosing(java.awt.event.WindowEvent e) { closeAndStop(); }
         });
+    }
+
+    private void initMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setPreferredSize(new Dimension(0, 40));
+        menuBar.setBackground(new Color(25, 25, 30));
+        
+        // Left: Title
+        JLabel titleLabel = new JLabel("  New Adventure (DEBUG)");
+        titleLabel.setFont(UIUtils.getFont(Font.BOLD, 12f));
+        titleLabel.setForeground(new Color(200, 200, 200));
+        menuBar.add(titleLabel);
+
+        menuBar.add(Box.createHorizontalGlue());
+
+        // Center: Godot-style Playback Controls
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        centerPanel.setOpaque(false);
+
+        JButton restartBtn = createControlBtn(Icons.RESTART, "Restart (F5)");
+        restartBtn.addActionListener(e -> restartSimulation());
+        
+        JButton pauseBtn = createControlBtn(Icons.PAUSE, "Pause");
+        
+        JButton stopBtn = createControlBtn(Icons.STOP, "Stop (Esc)");
+        stopBtn.addActionListener(e -> closeAndStop());
+
+        centerPanel.add(restartBtn);
+        centerPanel.add(pauseBtn);
+        centerPanel.add(stopBtn);
+        
+        menuBar.add(centerPanel);
+        menuBar.add(Box.createHorizontalGlue());
+        
+        // Right: Window controls space
+        menuBar.add(Box.createHorizontalStrut(120));
+
+        setJMenuBar(menuBar);
+    }
+
+    private JButton createControlBtn(Icon icon, String tip) {
+        JButton btn = new JButton(icon);
+        btn.setToolTipText(tip);
+        btn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        btn.setPreferredSize(new Dimension(34, 34));
+        return btn;
+    }
+
+    private void restartSimulation() {
+        launcher.stop();
+        Timer t = new Timer(500, e -> startSimulation());
+        t.setRepeats(false); t.start();
     }
 
     private void closeAndStop() {
         launcher.stop();
-        this.dispose();
+        dispose();
     }
 
     public void startSimulation() {
         setVisible(true);
         String shmName = "/storming_shm_" + System.currentTimeMillis();
-
-        // Wait a tiny bit for window to map then launch engine with SHM flag
-        Timer timer = new Timer(300, e -> {
-            launcher.launch(shmName);
-            viewport.startStreaming(shmName);
-        });
-        timer.setRepeats(false);
-        timer.start();
+        launcher.launch(shmName);
+        viewport.startStreaming(shmName);
     }
 }

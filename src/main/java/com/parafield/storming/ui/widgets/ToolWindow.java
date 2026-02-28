@@ -1,6 +1,7 @@
 package com.parafield.storming.ui.widgets;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.parafield.storming.Icons;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -23,19 +24,27 @@ public class ToolWindow extends JPanel {
         header.setPreferredSize(new Dimension(0, 28));
 
         JLabel titleLabel = new JLabel(title.toUpperCase());
-        titleLabel.setFont(new Font("Inter", Font.BOLD, 10));
+        titleLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 10f));
         titleLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         titleLabel.setBorder(new EmptyBorder(0, 10, 0, 0));
         
         header.add(titleLabel, BorderLayout.WEST);
         
-        // Action buttons (like Hide) could go here
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
+        // Action buttons
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 2));
         actions.setOpaque(false);
         
-        JButton hideBtn = new JButton("_"); // Placeholder for an icon
+        JButton optionsBtn = new JButton(Icons.SETTINGS); // Reuse settings icon
+        optionsBtn.setToolTipText("Options");
+        optionsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        optionsBtn.setPreferredSize(new Dimension(24, 24));
+        
+        JButton hideBtn = new JButton("−"); // Em-dash for hide
+        hideBtn.setToolTipText("Hide");
         hideBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        hideBtn.setPreferredSize(new Dimension(20, 20));
+        hideBtn.setPreferredSize(new Dimension(24, 24));
+        
+        actions.add(optionsBtn);
         actions.add(hideBtn);
         
         header.add(actions, BorderLayout.EAST);
