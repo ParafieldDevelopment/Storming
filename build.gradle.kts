@@ -3,6 +3,7 @@ plugins {
     application
     idea
     id("org.beryx.jlink") version "3.1.1"
+    id("org.javamodularity.moduleplugin") version "1.8.12"
 }
 
 val projectGroup: String by project
@@ -10,6 +11,8 @@ val projectVersion: String by project
 val projectName: String by project
 val flatlafVersion: String by project
 val jsvgVersion: String by project
+val jeditermVersion: String by project
+val pty4jVersion: String by project
 val junitBomVersion: String by project
 val appVersionProperty: String by project
 val vendorName: String by project
@@ -19,12 +22,18 @@ version = projectVersion
 
 repositories {
     mavenCentral()
+    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
 }
 
 dependencies {
     implementation("com.formdev:flatlaf:$flatlafVersion")
     implementation("com.formdev:flatlaf-extras:$flatlafVersion")
     implementation("com.github.weisj:jsvg:$jsvgVersion")
+
+    // Terminal Emulator Dependencies
+    implementation("org.jetbrains.jediterm:jediterm-ui:$jeditermVersion")
+    implementation("org.jetbrains.jediterm:jediterm-core:$jeditermVersion")
+    implementation("org.jetbrains.pty4j:pty4j:$pty4jVersion")
 
     implementation("net.java.dev.jna:jna:5.14.0")
     implementation("net.java.dev.jna:jna-platform:5.14.0")
@@ -48,7 +57,7 @@ idea {
 
 application {
     mainClass.set("com.parafield.storming.EditorApp")
-    mainModule.set("com.parafield.storming")
+    // mainModule.set("com.parafield.storming")
 }
 
 jlink {

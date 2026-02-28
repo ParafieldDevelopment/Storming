@@ -8,5 +8,8 @@ module com.parafield.storming {
     requires com.sun.jna;
     requires com.sun.jna.platform;
 
+    requires jediterm.ui;
+    requires pty4j;
+
     exports com.parafield.storming;
 }
