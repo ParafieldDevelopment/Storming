@@ -35,35 +35,50 @@ public class MainToolbar extends JToolBar {
         add(menuBtn);
         
         add(Box.createHorizontalStrut(12));
-        
-        // Project Icon (Letter in rounded square)
+
+        // --- Project Dropdown Button ---
         String projectName = "New Adventure";
-        JLabel projectIcon = new JLabel(projectName.substring(0, 1).toUpperCase());
-        projectIcon.setOpaque(true);
-        projectIcon.setBackground(new Color(52, 152, 219)); // Storm Blue
-        projectIcon.setForeground(Color.WHITE);
-        projectIcon.setFont(new Font("Inter", Font.BOLD, 11));
-        projectIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        JButton projectBtn = new JButton(projectName, new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(52, 152, 219));
+                g2.fillRoundRect(x, y, 18, 18, 6, 6);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Inter", Font.BOLD, 11));
+                String letter = projectName.substring(0, 1).toUpperCase();
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return 18; }
+            @Override public int getIconHeight() { return 18; }
+        });
         
-        Dimension iconSize = new Dimension(20, 20);
-        projectIcon.setPreferredSize(iconSize);
-        projectIcon.setMinimumSize(iconSize);
-        projectIcon.setMaximumSize(iconSize);
-        projectIcon.putClientProperty(FlatClientProperties.STYLE, "arc: 5");
-        add(projectIcon);
+        projectBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        projectBtn.setFont(new Font("Inter", Font.BOLD, 12));
+        projectBtn.addActionListener(e -> {
+            JPopupMenu projectMenu = new JPopupMenu();
+            projectMenu.add(new JMenuItem("New Project..."));
+            projectMenu.add(new JMenuItem("Open Project..."));
+            projectMenu.addSeparator();
+            
+            JMenu recentMenu = new JMenu("Recent Projects");
+            recentMenu.add(new JMenuItem("Storming Demo"));
+            recentMenu.add(new JMenuItem("Old Project X"));
+            projectMenu.add(recentMenu);
+            
+            projectMenu.show(projectBtn, 0, projectBtn.getHeight());
+        });
+        add(projectBtn);
         
-        add(Box.createHorizontalStrut(6));
-        JLabel nameLabel = new JLabel(projectName);
-        nameLabel.setFont(new Font("Inter", Font.BOLD, 12));
-        add(nameLabel);
-
-        add(Box.createHorizontalStrut(15));
-
+        add(Box.createHorizontalStrut(8));
+        
         // --- Git Branch Button ---
         JButton branchBtn = new JButton("master", Icons.GIT);
         branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        branchBtn.setFont(new Font("Inter", Font.PLAIN, 11));
-        branchBtn.setForeground(UIManager.getColor("Label.disabledForeground"));
+        branchBtn.setFont(new Font("Inter", Font.BOLD, 12));
         branchBtn.addActionListener(e -> {
             JPopupMenu gitMenu = new JPopupMenu();
 
