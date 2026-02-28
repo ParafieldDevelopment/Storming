@@ -82,4 +82,8 @@ public class SideBar extends JPanel {
         add(sep);
         add(Box.createVerticalStrut(6));
     }
+
+    public void addGlue() {
+        add(Box.createVerticalGlue());
+    }
 }

@@ -8,6 +8,7 @@ import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.InspectorPanel;
 import com.parafield.storming.ui.panels.NotificationsPanel;
 import com.parafield.storming.ui.panels.ProjectBrowserPanel;
+import com.parafield.storming.ui.panels.GitPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.widgets.SideBar;
@@ -37,9 +38,13 @@ public class MainWindow extends JFrame {
     private JPanel rightCardPanel;
     private String currentRightTab = "INSPECTOR";
 
+    private CardLayout leftBottomCardLayout;
+    private JPanel leftBottomCardPanel;
+    private String currentLeftBottomTab = "PROJECT";
+
     private boolean isLeftOpen = true;
     private boolean isHierarchyOpen = true;
-    private boolean isProjectOpen = true;
+    private boolean isLeftBottomOpen = true;
     private boolean isRightOpen = true;
     
     private int leftSplitLastLoc = 280;
@@ -48,6 +53,7 @@ public class MainWindow extends JFrame {
 
     private JToggleButton hierarchyBtn;
     private JToggleButton projectBtn;
+    private JToggleButton commitBtn;
     private JToggleButton inspectorBtn;
     private JToggleButton notificationsBtn;
 
@@ -127,10 +133,12 @@ public class MainWindow extends JFrame {
         HierarchyPanel hierarchyPanel = new HierarchyPanel();
         ToolWindow hierarchyTW = new ToolWindow("Hierarchy", hierarchyPanel);
         
-        ProjectBrowserPanel projectPanel = new ProjectBrowserPanel();
-        ToolWindow projectTW = new ToolWindow("Project", projectPanel);
+        leftBottomCardLayout = new CardLayout();
+        leftBottomCardPanel = new JPanel(leftBottomCardLayout);
+        leftBottomCardPanel.add(new ToolWindow("Project", new ProjectBrowserPanel()), "PROJECT");
+        leftBottomCardPanel.add(new ToolWindow("Commit", new GitPanel()), "GIT");
         
-        leftVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, hierarchyTW, projectTW, 450, 0.5);
+        leftVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, hierarchyTW, leftBottomCardPanel, 450, 0.5);
         mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, leftVerticalSplit, rightSplit, 280, 0.0);
 
         // Final Vertical Split: Top Workspace / Bottom Tabs
@@ -141,11 +149,13 @@ public class MainWindow extends JFrame {
         leftBar.setAlpha(0.0f);
         hierarchyBtn = (JToggleButton) leftBar.addTab("Hierarchy", Icons.GRID, true, this::toggleHierarchy);
         leftBar.addSeparator();
-        projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleProject);
+        projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, () -> handleLeftBottomClick("PROJECT"));
+        
+        leftBar.addGlue();
+        commitBtn = (JToggleButton) leftBar.addTab("Commit", Icons.GIT, true, () -> handleLeftBottomClick("GIT"));
+        
         hierarchyBtn.setSelected(true);
         projectBtn.setSelected(true);
-        
-        leftBar.add(Box.createVerticalGlue());
         
         rightBar = new SideBar(SwingConstants.VERTICAL, 40);
         rightBar.setAlpha(0.0f);
@@ -171,14 +181,14 @@ public class MainWindow extends JFrame {
 
     private void toggleHierarchy() {
         if (isHierarchyOpen) {
-            if (isProjectOpen) {
+            if (isLeftBottomOpen) {
                 leftVerticalSplitLastLoc = leftVerticalSplit.getDividerLocation();
                 UIAnimator.animateSplit(leftVerticalSplit, 0, 250);
             } else {
                 toggleLeftDrawer();
             }
         } else {
-            if (isProjectOpen) {
+            if (isLeftBottomOpen) {
                 UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplitLastLoc, 250);
             } else {
                 toggleLeftDrawer();
@@ -188,22 +198,27 @@ public class MainWindow extends JFrame {
         updateLeftBar();
     }
 
-    private void toggleProject() {
-        if (isProjectOpen) {
-            if (isHierarchyOpen) {
-                leftVerticalSplitLastLoc = leftVerticalSplit.getDividerLocation();
-                UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplit.getHeight(), 250);
-            } else {
-                toggleLeftDrawer();
-            }
+    private void handleLeftBottomClick(String tabName) {
+        if (!isLeftBottomOpen) {
+            leftBottomCardLayout.show(leftBottomCardPanel, tabName);
+            currentLeftBottomTab = tabName;
+            UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplitLastLoc, 250);
+            isLeftBottomOpen = true;
+            if (!isLeftOpen) toggleLeftDrawer();
         } else {
-            if (isHierarchyOpen) {
-                UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplitLastLoc, 250);
+            if (currentLeftBottomTab.equals(tabName)) {
+                if (isHierarchyOpen) {
+                    leftVerticalSplitLastLoc = leftVerticalSplit.getDividerLocation();
+                    UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplit.getHeight(), 250);
+                } else {
+                    toggleLeftDrawer();
+                }
+                isLeftBottomOpen = false;
             } else {
-                toggleLeftDrawer();
+                leftBottomCardLayout.show(leftBottomCardPanel, tabName);
+                currentLeftBottomTab = tabName;
             }
         }
-        isProjectOpen = !isProjectOpen;
         updateLeftBar();
     }
 
@@ -219,14 +234,15 @@ public class MainWindow extends JFrame {
 
     private void updateLeftBar() {
         hierarchyBtn.setSelected(isHierarchyOpen && isLeftOpen);
-        projectBtn.setSelected(isProjectOpen && isLeftOpen);
+        projectBtn.setSelected(isLeftBottomOpen && isLeftOpen && currentLeftBottomTab.equals("PROJECT"));
+        commitBtn.setSelected(isLeftBottomOpen && isLeftOpen && currentLeftBottomTab.equals("GIT"));
         
         // If both are closed, close the whole drawer
-        if (!isHierarchyOpen && !isProjectOpen && isLeftOpen) {
+        if (!isHierarchyOpen && !isLeftBottomOpen && isLeftOpen) {
             toggleLeftDrawer();
         } 
         // If opening one when drawer is closed, open the drawer
-        else if ((isHierarchyOpen || isProjectOpen) && !isLeftOpen) {
+        else if ((isHierarchyOpen || isLeftBottomOpen) && !isLeftOpen) {
             toggleLeftDrawer();
         }
     }
