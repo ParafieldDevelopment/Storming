@@ -2,7 +2,7 @@ plugins {
     java
     application
     idea
-    id("org.beryx.jlink") version "3.1.1"
+    id("org.beryx.runtime") version "2.0.1"
 }
 
 val projectGroup: String by project
@@ -58,40 +58,34 @@ application {
     mainClass.set("com.parafield.storming.EditorApp")
 }
 
-jlink {
-    launcher {
-        name = projectName
-        noConsole = true
-    }
+runtime {
+    options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
+    modules.set(listOf("java.base", "java.desktop", "java.logging", "java.naming", "java.xml"))
 
     jpackage {
-        imageName = projectName
         val osName = System.getProperty("os.name").lowercase()
         val isWindows = osName.contains("windows")
         val isMac = osName.contains("mac")
         val isLinux = osName.contains("linux")
 
-        if (isWindows) {
-            icon = "packaging/icon.ico"
-            installerType = "msi"
-        } else if (isMac) {
-            // macOS requires an .icns file for the application icon to show up correctly in Dock/Finder
-            // If packaging/icon.icns exists, use it. Fallback to icon.png if it doesn't.
-            val icnsIcon = file("packaging/icon.icns")
-            if (icnsIcon.exists()) {
-                icon = "packaging/icon.icns"
-            } else {
-                icon = "src/main/resources/com/parafield/storming/icons/icon.png"
-            }
-            installerType = "dmg"
-        } else if (isLinux) {
-            icon = "src/main/resources/com/parafield/storming/icons/icon.png"
-            installerType = "deb"
-        }
+        installerOptions.addAll(
+            listOf(
+                "--name", projectName,
+                "--vendor", vendorName,
+                "--app-version", appVersionProperty,
+                "--copyright", "© $vendorName"
+            )
+        )
 
-        installerName = projectName
-        appVersion = appVersionProperty
-        vendor = vendorName
+        if (isWindows) {
+            installerOptions.addAll(listOf("--icon", "packaging/icon.ico", "--type", "msi"))
+        } else if (isMac) {
+            val icnsIcon = file("packaging/icon.icns")
+            val iconPath = if (icnsIcon.exists()) "packaging/icon.icns" else "src/main/resources/com/parafield/storming/icons/icon.png"
+            installerOptions.addAll(listOf("--icon", iconPath, "--type", "dmg"))
+        } else if (isLinux) {
+            installerOptions.addAll(listOf("--icon", "src/main/resources/com/parafield/storming/icons/icon.png", "--type", "deb"))
+        }
 
         installerOptions.addAll(
             listOf(
