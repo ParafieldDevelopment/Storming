@@ -59,6 +59,10 @@ application {
 }
 
 jlink {
+    moduleName.set("com.parafield.storming")
+    mergedModule {
+        additive = true
+    }
     launcher {
         name = projectName
         noConsole = true
