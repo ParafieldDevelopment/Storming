@@ -17,7 +17,7 @@ public class Icons {
 
     public static final ImageIcon FOLDER = loadIcon("folder", 20, 20);
     public static final ImageIcon SEARCH = loadIcon("search", 20, 20);
-    public static final ImageIcon HAMBURGER = loadIcon("hamburger", 23, 23);
+    public static final ImageIcon HAMBURGER = loadIcon("hamburger", 30, 30);
     public static final ImageIcon PLAY = loadIcon("play", 23, 23);
     public static final ImageIcon STOP = loadIcon("stop", 23, 23);
     public static final ImageIcon SETTINGS = loadIcon("settings", 20, 20);
@@ -25,4 +25,5 @@ public class Icons {
     public static final ImageIcon CONSOLE = loadIcon("console", 20, 20);
     public static final ImageIcon WARN = loadIcon("warn", 20, 20);
     public static final ImageIcon LOGO = loadIcon("icon", 128, 128);
+    public static final ImageIcon EXE_ICON = loadIcon("exe-icon", 18, 18);
 }

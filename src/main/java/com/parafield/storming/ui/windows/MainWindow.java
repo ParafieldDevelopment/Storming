@@ -85,12 +85,14 @@ public class MainWindow extends JFrame {
         ToolWindow hierarchyTW = new ToolWindow("Hierarchy", new JTree());
         mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280, 0.0);
 
-        // --- 4. SideBars ---
-        SideBar leftBar = new SideBar(SwingConstants.VERTICAL);
+        // --- 4. SideBars (JetBrains Style) ---
+        SideBar leftBar = new SideBar(SwingConstants.VERTICAL, 40);
         projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleLeftPanel);
         projectBtn.setSelected(true);
         
-        SideBar rightBar = new SideBar(SwingConstants.VERTICAL);
+        leftBar.add(Box.createVerticalGlue());
+        
+        SideBar rightBar = new SideBar(SwingConstants.VERTICAL, 40);
         inspectorBtn = (JToggleButton) rightBar.addTab("Inspector", Icons.SEARCH, true, () -> handleRightSidebarClick("INSPECTOR"));
         notificationsBtn = (JToggleButton) rightBar.addTab("Notifications", Icons.BELL, true, () -> handleRightSidebarClick("NOTIFICATIONS"));
         inspectorBtn.setSelected(true);
@@ -161,9 +163,32 @@ public class MainWindow extends JFrame {
 
     private JPanel createStatusBar() {
         JPanel p = new JPanel(new BorderLayout());
-        p.setPreferredSize(new Dimension(0, 25));
+        p.setPreferredSize(new Dimension(0, 26));
         p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Component.borderColor")));
-        p.add(new JLabel("  ● OpenGL 4.5 Core"), BorderLayout.WEST);
+        
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
+        left.setOpaque(false);
+        left.add(new JLabel("  ● OpenGL 4.5 Core"));
+        left.add(new JLabel(" |  Branch: master"));
+        
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 2));
+        right.setOpaque(false);
+        JLabel mem = new JLabel("Memory: -- / --");
+        mem.setForeground(UIManager.getColor("Label.disabledForeground"));
+        
+        Timer t = new Timer(2000, e -> {
+            Runtime r = Runtime.getRuntime();
+            long total = r.totalMemory() / 1024 / 1024;
+            long used = (r.totalMemory() - r.freeMemory()) / 1024 / 1024;
+            mem.setText(String.format("Memory: %dMB / %dMB", used, total));
+        });
+        t.start();
+        
+        right.add(mem);
+        right.add(new JLabel("UTF-8  "));
+        
+        p.add(left, BorderLayout.WEST);
+        p.add(right, BorderLayout.EAST);
         return p;
     }
 }
