@@ -9,7 +9,6 @@ import com.parafield.storming.ui.panels.InspectorPanel;
 import com.parafield.storming.ui.panels.NotificationsPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.panels.TerminalPanel;
-import com.parafield.storming.ui.widgets.MainToolbar;
 import com.parafield.storming.ui.widgets.SideBar;
 import com.parafield.storming.ui.widgets.ToolWindow;
 import com.parafield.storming.ui.widgets.StormingMenuBar;

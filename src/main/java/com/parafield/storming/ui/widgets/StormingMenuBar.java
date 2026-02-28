@@ -158,7 +158,7 @@ public class StormingMenuBar extends JMenuBar {
         );
         
         g2.setPaint(p);
-        g2.fillRect(xOffset, 0, w, getHeight());
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
         // Subtle bottom border
         g2.setColor(new Color(255, 255, 255, 15));
