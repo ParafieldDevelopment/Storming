@@ -26,6 +26,11 @@ public class MainWindow extends JFrame {
     private JSplitPane rightSplit;          
     private JSplitPane centerVerticalSplit; 
 
+    private MainToolbar toolbar;
+    private SideBar leftBar;
+    private SideBar rightBar;
+    private JPanel statusBar;
+
     private CardLayout rightCardLayout;
     private JPanel rightCardPanel;
     private String currentRightTab = "INSPECTOR";
@@ -33,7 +38,7 @@ public class MainWindow extends JFrame {
     private boolean isLeftOpen = true;
     private boolean isRightOpen = true;
     private int leftSplitLastLoc = 280;
-    private int rightSplitLastLoc = 300; 
+    private int rightSplitLastLoc = 280; 
 
     private JToggleButton projectBtn;
     private JToggleButton inspectorBtn;
@@ -54,11 +59,36 @@ public class MainWindow extends JFrame {
 
         initUI();
         
-        // Ensure dividers are set after layout is ready
+        // Initial "closed" state for animation
         SwingUtilities.invokeLater(() -> {
-            mainHorizontalSplit.setDividerLocation(leftSplitLastLoc);
-            rightSplit.setDividerLocation(rightSplit.getWidth() - rightSplitLastLoc);
+            mainHorizontalSplit.setDividerLocation(0);
+            // Don't use getWidth() here as it might be 0. Use a large constant.
+            rightSplit.setDividerLocation(1400); 
+            centerVerticalSplit.setDividerLocation(900);
+            
+            // Trigger entrance animation after a small delay
+            Timer delay = new Timer(300, e -> animateEntrance());
+            delay.setRepeats(false);
+            delay.start();
         });
+    }
+
+    private void animateEntrance() {
+        // Unfolding Animation (Drawer style)
+        UIAnimator.animateSplit(mainHorizontalSplit, leftSplitLastLoc, 600);
+        
+        // Animates relative to the RIGHT edge (fixed width)
+        UIAnimator.animateSplitTrailing(rightSplit, rightSplitLastLoc, 650);
+        
+        // Animates relative to the BOTTOM edge (fixed height)
+        UIAnimator.animateSplitTrailing(centerVerticalSplit, 250, 700);
+        
+        // Alpha Fade-in Animation
+        UIAnimator.animate(0.0f, 1.0f, 800, alpha -> {
+            toolbar.setAlpha(alpha);
+            leftBar.setAlpha(alpha);
+            rightBar.setAlpha(alpha);
+        }, null);
     }
 
     private void initUI() {
@@ -85,23 +115,25 @@ public class MainWindow extends JFrame {
 
         // --- 3. Construct Layout Hierarchy ---
         // Top: [ Hierarchy | [ Scene | Inspector ] ]
-        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, editorTabs, rightCardPanel, 800, 1.0);
+        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, editorTabs, rightCardPanel, 800, 0.0);
         
         HierarchyPanel hierarchyPanel = new HierarchyPanel();
         ToolWindow hierarchyTW = new ToolWindow("Hierarchy", hierarchyPanel);
         mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280, 0.0);
 
         // Final Vertical Split: Top Workspace / Bottom Tabs
-        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, mainHorizontalSplit, bottomTabs, 600, 0.8);
+        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, mainHorizontalSplit, bottomTabs, 650, 0.0);
 
         // --- 4. SideBars (JetBrains Style) ---
-        SideBar leftBar = new SideBar(SwingConstants.VERTICAL, 40);
+        leftBar = new SideBar(SwingConstants.VERTICAL, 40);
+        leftBar.setAlpha(0.0f);
         projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleLeftPanel);
         projectBtn.setSelected(true);
         
         leftBar.add(Box.createVerticalGlue());
         
-        SideBar rightBar = new SideBar(SwingConstants.VERTICAL, 40);
+        rightBar = new SideBar(SwingConstants.VERTICAL, 40);
+        rightBar.setAlpha(0.0f);
         inspectorBtn = (JToggleButton) rightBar.addTab("Inspector", Icons.SEARCH, true, () -> handleRightSidebarClick("INSPECTOR"));
         notificationsBtn = (JToggleButton) rightBar.addTab("Notifications", Icons.BELL, true, () -> handleRightSidebarClick("NOTIFICATIONS"));
         inspectorBtn.setSelected(true);
@@ -112,9 +144,13 @@ public class MainWindow extends JFrame {
         mainContent.add(centerVerticalSplit, BorderLayout.CENTER);
         mainContent.add(rightBar, BorderLayout.EAST);
 
-        root.add(new MainToolbar(this::handlePlay, engineLauncher::stop), BorderLayout.NORTH);
+        toolbar = new MainToolbar(this::handlePlay, engineLauncher::stop);
+        toolbar.setAlpha(0.0f);
+        statusBar = createStatusBar();
+        
+        root.add(toolbar, BorderLayout.NORTH);
         root.add(mainContent, BorderLayout.CENTER);
-        root.add(createStatusBar(), BorderLayout.SOUTH);
+        root.add(statusBar, BorderLayout.SOUTH);
     }
 
     private void toggleLeftPanel() {

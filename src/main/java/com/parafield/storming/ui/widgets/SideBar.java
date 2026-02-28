@@ -7,6 +7,20 @@ import java.awt.*;
 public class SideBar extends JPanel {
     private final ButtonGroup group = new ButtonGroup();
     private final int barWidth;
+    private float alpha = 1.0f;
+
+    public void setAlpha(float alpha) {
+        this.alpha = alpha;
+        repaint();
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        super.paint(g2);
+        g2.dispose();
+    }
 
     public SideBar(int orientation, int width) {
         this.barWidth = width;

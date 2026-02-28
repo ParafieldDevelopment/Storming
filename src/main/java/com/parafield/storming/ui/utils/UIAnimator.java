@@ -58,4 +58,20 @@ public class UIAnimator {
         animate(splitPane.getDividerLocation(), target, durationMs, 
             val -> splitPane.setDividerLocation(val.intValue()), null);
     }
+
+    /**
+     * Animates a JSplitPane divider relative to its right/bottom edge.
+     * Useful when the split pane itself is resizing.
+     */
+    public static void animateSplitTrailing(JSplitPane splitPane, int fixedSize, int durationMs) {
+        animate(0.0f, 1.0f, durationMs, progress -> {
+            int currentSize = (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) 
+                ? splitPane.getWidth() : splitPane.getHeight();
+            
+            if (currentSize > 0) {
+                int target = currentSize - (int)(fixedSize * progress);
+                splitPane.setDividerLocation(target);
+            }
+        }, null);
+    }
 }

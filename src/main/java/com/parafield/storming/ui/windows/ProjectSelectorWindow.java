@@ -9,6 +9,7 @@ import java.awt.*;
 
 public class ProjectSelectorWindow extends JFrame {
     private AnimatedPanel mainContent;
+    private JPanel sidebar;
 
     public ProjectSelectorWindow() {
         setIconImage(Icons.FRAME_ICON);
@@ -28,7 +29,7 @@ public class ProjectSelectorWindow extends JFrame {
         setContentPane(root);
 
         // --- LEFT SIDEBAR ---
-        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(300, 0));
         sidebar.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 2%)");
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Component.borderColor")));
@@ -144,8 +145,8 @@ public class ProjectSelectorWindow extends JFrame {
     }
 
     private static class AnimatedPanel extends JPanel {
-        private float alpha = 0.0f;
-        private int yOffset = 30; 
+        float alpha = 0.0f;
+        int yOffset = 30; 
 
         public AnimatedPanel(LayoutManager layout) {
             super(layout);
@@ -184,8 +185,26 @@ public class ProjectSelectorWindow extends JFrame {
     }
 
     private void launchMainEditor() {
-        dispose();
-        new MainWindow().setVisible(true);
+        animateExit(() -> {
+            dispose();
+            new MainWindow().setVisible(true);
+        });
+    }
+
+    private void animateExit(Runnable onComplete) {
+        // Slide sidebar left and fade
+        UIAnimator.animate(0, -350, 350, x -> {
+            sidebar.setMinimumSize(new Dimension(0, 0));
+            sidebar.setPreferredSize(new Dimension((int)Math.max(0, 300 + x), 0));
+            sidebar.revalidate();
+        }, null);
+
+        // Slide main content right and fade
+        UIAnimator.animate(1.0f, 0.0f, 350, alpha -> {
+            mainContent.alpha = alpha;
+            mainContent.yOffset = (int)(80 * (1.0f - alpha)); // Larger slide distance
+            mainContent.repaint();
+        }, onComplete);
     }
 
     // Inner classes for the list
