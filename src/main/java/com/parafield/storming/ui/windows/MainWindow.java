@@ -140,6 +140,7 @@ public class MainWindow extends JFrame {
         leftBar = new SideBar(SwingConstants.VERTICAL, 40);
         leftBar.setAlpha(0.0f);
         hierarchyBtn = (JToggleButton) leftBar.addTab("Hierarchy", Icons.GRID, true, this::toggleHierarchy);
+        leftBar.addSeparator();
         projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleProject);
         hierarchyBtn.setSelected(true);
         projectBtn.setSelected(true);

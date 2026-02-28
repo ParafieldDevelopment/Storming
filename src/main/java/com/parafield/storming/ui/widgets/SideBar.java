@@ -70,4 +70,16 @@ public class SideBar extends JPanel {
         add(Box.createVerticalStrut(2));
         return btn;
     }
+
+    public void addSeparator() {
+        JPanel sep = new JPanel();
+        sep.setMaximumSize(new Dimension(barWidth - 14, 1));
+        sep.setPreferredSize(new Dimension(barWidth - 14, 1));
+        sep.setBackground(UIManager.getColor("Component.borderColor"));
+        sep.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        add(Box.createVerticalStrut(6));
+        add(sep);
+        add(Box.createVerticalStrut(6));
+    }
 }
