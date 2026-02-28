@@ -11,11 +11,18 @@ import java.util.jar.JarFile;
 public class EditorApp {
 
     public static void main(String[] args) {
+        // Unified window decorations for all platforms
+        System.setProperty("flatlaf.useWindowDecorations", "true");
+        System.setProperty("flatlaf.menuBarEmbedded", "true");
+
         // Font rendering hints for Linux
         if (System.getProperty("os.name").toLowerCase().contains("linux")) {
             System.setProperty("awt.useSystemAAFontSettings", "on");
             System.setProperty("swing.aatext", "true");
         }
+
+        JFrame.setDefaultLookAndFeelDecorated(true);
+        JDialog.setDefaultLookAndFeelDecorated(true);
 
         SwingUtilities.invokeLater(() -> {
             // Apply theme globally

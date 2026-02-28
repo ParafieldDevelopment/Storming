@@ -12,6 +12,7 @@ import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.widgets.MainToolbar;
 import com.parafield.storming.ui.widgets.SideBar;
 import com.parafield.storming.ui.widgets.ToolWindow;
+import com.parafield.storming.ui.widgets.StormingMenuBar;
 import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import java.awt.*;
@@ -26,7 +27,7 @@ public class MainWindow extends JFrame {
     private JSplitPane rightSplit;          
     private JSplitPane centerVerticalSplit; 
 
-    private MainToolbar toolbar;
+    private StormingMenuBar menuBar;
     private SideBar leftBar;
     private SideBar rightBar;
     private JPanel statusBar;
@@ -85,7 +86,7 @@ public class MainWindow extends JFrame {
         
         // Alpha Fade-in Animation
         UIAnimator.animate(0.0f, 1.0f, 800, alpha -> {
-            toolbar.setAlpha(alpha);
+            menuBar.setAlpha(alpha);
             leftBar.setAlpha(alpha);
             rightBar.setAlpha(alpha);
         }, null);
@@ -144,11 +145,12 @@ public class MainWindow extends JFrame {
         mainContent.add(centerVerticalSplit, BorderLayout.CENTER);
         mainContent.add(rightBar, BorderLayout.EAST);
 
-        toolbar = new MainToolbar(this::handlePlay, engineLauncher::stop);
-        toolbar.setAlpha(0.0f);
+        menuBar = new StormingMenuBar(this::handlePlay, engineLauncher::stop);
+        menuBar.setAlpha(0.0f);
+        setJMenuBar(menuBar);
+        
         statusBar = createStatusBar();
         
-        root.add(toolbar, BorderLayout.NORTH);
         root.add(mainContent, BorderLayout.CENTER);
         root.add(statusBar, BorderLayout.SOUTH);
     }
