@@ -1,0 +1,110 @@
+package com.parafield.storming.ui.panels;
+
+import com.formdev.flatlaf.FlatClientProperties;
+import com.parafield.storming.Icons;
+import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import java.awt.*;
+import java.io.File;
+
+public class ProjectBrowserPanel extends JPanel {
+
+    private final JTree fileTree;
+    private final File rootDir;
+
+    public ProjectBrowserPanel() {
+        setLayout(new BorderLayout());
+        
+        // Use current directory as root for now
+        rootDir = new File(System.getProperty("user.dir"));
+        
+        // --- 1. Toolbar ---
+        JToolBar toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        toolbar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
+        
+        JButton refreshBtn = new JButton("Refresh");
+        refreshBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        refreshBtn.addActionListener(e -> refreshTree());
+        
+        toolbar.add(Box.createHorizontalStrut(5));
+        toolbar.add(refreshBtn);
+        toolbar.addSeparator();
+        
+        JLabel pathLabel = new JLabel(rootDir.getAbsolutePath());
+        pathLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
+        pathLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        toolbar.add(Box.createHorizontalStrut(10));
+        toolbar.add(pathLabel);
+        
+        add(toolbar, BorderLayout.NORTH);
+
+        // --- 2. File Tree ---
+        DefaultMutableTreeNode rootNode = createTreeNodes(rootDir);
+        fileTree = new JTree(new DefaultTreeModel(rootNode));
+        fileTree.setCellRenderer(new FileTreeCellRenderer());
+        fileTree.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 2%)");
+        fileTree.setRowHeight(24);
+        fileTree.setShowsRootHandles(true);
+        
+        JScrollPane scrollPane = new JScrollPane(fileTree);
+        scrollPane.setBorder(null);
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void refreshTree() {
+        DefaultMutableTreeNode rootNode = createTreeNodes(rootDir);
+        fileTree.setModel(new DefaultTreeModel(rootNode));
+    }
+
+    private DefaultMutableTreeNode createTreeNodes(File file) {
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(file.getName().isEmpty() ? file.getPath() : file.getName());
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                // Sort files: directories first
+                java.util.Arrays.sort(files, (f1, f2) -> {
+                    if (f1.isDirectory() && !f2.isDirectory()) return -1;
+                    if (!f1.isDirectory() && f2.isDirectory()) return 1;
+                    return f1.getName().compareToIgnoreCase(f2.getName());
+                });
+                for (File child : files) {
+                    if (child.getName().startsWith(".")) continue; // Skip hidden files
+                    node.add(createTreeNodes(child));
+                }
+            }
+        }
+        return node;
+    }
+
+    private static class FileTreeCellRenderer extends DefaultTreeCellRenderer {
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean exp, boolean leaf, int row, boolean hasFocus) {
+            super.getTreeCellRendererComponent(tree, value, sel, exp, leaf, row, hasFocus);
+            if (leaf) {
+                setIcon(UIManager.getIcon("FileView.fileIcon"));
+            } else {
+                setIcon(Icons.FOLDER);
+            }
+            return this;
+        }
+    }
+
+    @Override
+    protected void paintChildren(Graphics g) {
+        super.paintChildren(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
+        
+        int size = 80;
+        int x = getWidth() - size - 25;
+        int y = getHeight() - size - 25;
+        if (Icons.FOLDER_80 != null) {
+            Icons.FOLDER_80.paintIcon(this, g2, x, y);
+        }
+        g2.dispose();
+    }
+}

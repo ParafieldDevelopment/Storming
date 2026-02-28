@@ -7,6 +7,7 @@ import com.parafield.storming.ui.panels.ConsolePanel;
 import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.InspectorPanel;
 import com.parafield.storming.ui.panels.NotificationsPanel;
+import com.parafield.storming.ui.panels.ProjectBrowserPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.widgets.SideBar;
@@ -109,6 +110,7 @@ public class MainWindow extends JFrame {
         
         JTabbedPane bottomTabs = new JTabbedPane();
         bottomTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
+        bottomTabs.addTab("Project", Icons.FOLDER, new ProjectBrowserPanel());
         bottomTabs.addTab("Console", Icons.CONSOLE, consolePanel);
         bottomTabs.addTab("Analyzer", Icons.WARN, new com.parafield.storming.ui.panels.AnalyzerPanel());
         bottomTabs.addTab("Terminal", Icons.TERMINAL, new TerminalPanel());
