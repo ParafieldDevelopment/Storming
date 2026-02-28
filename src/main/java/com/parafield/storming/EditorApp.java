@@ -11,6 +11,12 @@ import java.util.jar.JarFile;
 public class EditorApp {
 
     public static void main(String[] args) {
+        // Font rendering hints for Linux
+        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+            System.setProperty("awt.useSystemAAFontSettings", "on");
+            System.setProperty("swing.aatext", "true");
+        }
+
         SwingUtilities.invokeLater(() -> {
             // Apply theme globally
             setupGlobalTheme();

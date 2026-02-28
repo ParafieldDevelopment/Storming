@@ -2,6 +2,9 @@ package com.parafield.storming.ui.panels;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.jediterm.terminal.TtyConnector;
+import com.jediterm.terminal.TextStyle;
+import com.jediterm.terminal.TerminalColor;
+import com.jediterm.terminal.emulator.ColorPalette;
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.jediterm.terminal.ui.settings.DefaultSettingsProvider;
 import com.parafield.storming.Icons;
@@ -102,37 +105,108 @@ public class TerminalPanel extends JPanel {
         menu.show(invoker, x, y);
     }
 
+    private static class StormingTerminalSettings extends DefaultSettingsProvider {
+        @Override
+        public ColorPalette getTerminalColorPalette() {
+            return new ColorPalette() {
+                @Override
+                protected com.jediterm.core.Color getForegroundByColorIndex(int index) {
+                    return getByColorIndex(index);
+                }
+
+                @Override
+                protected com.jediterm.core.Color getBackgroundByColorIndex(int index) {
+                    return getByColorIndex(index);
+                }
+
+                private com.jediterm.core.Color getByColorIndex(int index) {
+                    switch (index) {
+                        case 0: return new com.jediterm.core.Color(40, 44, 52); // Black
+                        case 1: return new com.jediterm.core.Color(231, 76, 60); // Red
+                        case 2: return new com.jediterm.core.Color(46, 204, 113); // Green
+                        case 3: return new com.jediterm.core.Color(241, 196, 15); // Yellow
+                        case 4: return new com.jediterm.core.Color(52, 152, 219); // Blue
+                        case 5: return new com.jediterm.core.Color(155, 89, 182); // Magenta
+                        case 6: return new com.jediterm.core.Color(26, 188, 156); // Cyan
+                        case 7: return new com.jediterm.core.Color(220, 220, 220); // White
+                        default: return null;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public TextStyle getDefaultStyle() {
+            return new TextStyle(
+                    new TerminalColor(220, 220, 220), // Foreground
+                    new TerminalColor(15, 15, 20)     // Background
+            );
+        }
+
+        @Override
+        public TextStyle getSelectionColor() {
+            return new TextStyle(
+                    new TerminalColor(220, 220, 220),
+                    new TerminalColor(60, 60, 70)
+            );
+        }
+
+        @Override
+        public Font getTerminalFont() {
+            String os = System.getProperty("os.name").toLowerCase();
+            String fontName = "JetBrains Mono";
+            int fontSize = os.contains("linux") ? 14 : 13; // 14 usually looks better on Linux/X11
+            
+            if (os.contains("linux")) {
+                String[] linuxFonts = {"JetBrains Mono", "DejaVu Sans Mono", "Fira Code", "Liberation Mono", "Monospaced"};
+                for (String f : linuxFonts) {
+                    Font font = new Font(f, Font.PLAIN, fontSize);
+                    if (!font.getFamily().equals("Dialog") || f.equals("Monospaced")) {
+                        fontName = f;
+                        break;
+                    }
+                }
+            }
+            
+            return new Font(fontName, Font.PLAIN, fontSize);
+        }
+
+        @Override
+        public float getTerminalFontSize() {
+            return System.getProperty("os.name").toLowerCase().contains("linux") ? 14.0f : 13.0f;
+        }
+
+        @Override
+        public float getLineSpacing() {
+            return 1.2f; // Increased slightly for better readability
+        }
+
+        @Override
+        public boolean useAntialiasing() {
+            return true;
+        }
+
+        @Override
+        public int caretBlinkingMs() {
+            return 500;
+        }
+
+        @Override
+        public int getBufferMaxLinesCount() {
+            return 5000;
+        }
+    }
+
     private static class TerminalSession extends JPanel {
         private JediTermWidget terminalWidget;
         private PtyProcess process;
 
         public TerminalSession() {
             setLayout(new BorderLayout());
+            setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            setBackground(new Color(15, 15, 20));
             
-            DefaultSettingsProvider settings = new DefaultSettingsProvider() {
-                /*
-                @Override
-                public Color paletteRed() { return new Color(231, 76, 60); }
-                @Override
-                public Color paletteGreen() { return new Color(46, 204, 113); }
-                @Override
-                public Color paletteYellow() { return new Color(241, 196, 15); }
-                @Override
-                public Color paletteBlue() { return new Color(52, 152, 219); }
-                */
-                
-                @Override
-                public Font getTerminalFont() {
-                    return new Font("JetBrains Mono", Font.PLAIN, 13);
-                }
-
-                @Override
-                public float getTerminalFontSize() {
-                    return 13.0f;
-                }
-            };
-
-            terminalWidget = new JediTermWidget(settings);
+            terminalWidget = new JediTermWidget(new StormingTerminalSettings());
             terminalWidget.setTtyConnector(createTtyConnector());
             terminalWidget.start();
 

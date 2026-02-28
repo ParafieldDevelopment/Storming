@@ -3,7 +3,6 @@ plugins {
     application
     idea
     id("org.beryx.jlink") version "3.1.1"
-    id("org.javamodularity.moduleplugin") version "1.8.12"
 }
 
 val projectGroup: String by project
@@ -57,7 +56,6 @@ idea {
 
 application {
     mainClass.set("com.parafield.storming.EditorApp")
-    // mainModule.set("com.parafield.storming")
 }
 
 jlink {
