@@ -123,8 +123,8 @@ public class MainWindow extends JFrame {
         // --- 1. Right Side Panels ---
         rightCardLayout = new CardLayout();
         rightCardPanel = new JPanel(rightCardLayout);
-        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel()), "INSPECTOR");
-        rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel()), "NOTIFICATIONS");
+        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel(), () -> handleRightSidebarClick("INSPECTOR")), "INSPECTOR");
+        rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel(), () -> handleRightSidebarClick("NOTIFICATIONS")), "NOTIFICATIONS");
 
         // --- 2. Center & Bottom Panels ---
         editorTabs = new JTabbedPane();
@@ -144,12 +144,12 @@ public class MainWindow extends JFrame {
         
         leftUpperCardLayout = new CardLayout();
         leftUpperCardPanel = new JPanel(leftUpperCardLayout);
-        leftUpperCardPanel.add(new ToolWindow("Hierarchy", new HierarchyPanel()), "HIERARCHY");
-        leftUpperCardPanel.add(new ToolWindow("Commit", new GitPanel()), "COMMIT");
-        leftUpperCardPanel.add(new ToolWindow("Pull Requests", new PRPanel()), "PR");
+        leftUpperCardPanel.add(new ToolWindow("Hierarchy", new HierarchyPanel(), () -> handleLeftUpperClick("HIERARCHY")), "HIERARCHY");
+        leftUpperCardPanel.add(new ToolWindow("Commit", new GitPanel(), () -> handleLeftUpperClick("COMMIT")), "COMMIT");
+        leftUpperCardPanel.add(new ToolWindow("Pull Requests", new PRPanel(), () -> handleLeftUpperClick("PR")), "PR");
         
         ProjectBrowserPanel projectPanel = new ProjectBrowserPanel();
-        ToolWindow projectTW = new ToolWindow("Project", projectPanel);
+        ToolWindow projectTW = new ToolWindow("Project", projectPanel, this::toggleProject);
         
         leftVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, leftUpperCardPanel, projectTW, 450, 0.5);
         mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, leftVerticalSplit, rightSplit, 280, 0.0);
