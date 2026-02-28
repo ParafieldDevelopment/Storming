@@ -46,7 +46,6 @@ public class MainWindow extends JFrame {
     private JToggleButton notificationsBtn;
 
     public MainWindow() {
-        setIconImage(Icons.FRAME_ICON);
         setTitle("Storming Engine");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 900);
@@ -54,6 +53,7 @@ public class MainWindow extends JFrame {
         
         rootPane.putClientProperty("apple.awt.fullWindowContent", true);
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
+        rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
         consolePanel = new ConsolePanel();
         engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine", consolePanel::log);

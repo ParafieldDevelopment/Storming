@@ -28,17 +28,46 @@ public class StormingMenuBar extends JMenuBar {
     private void initMenuBar() {
         add(Box.createHorizontalStrut(10));
         
-        // App Icon
+        // App Icon (exe-icon.png)
         JLabel appLogo = new JLabel(Icons.EXE_ICON);
         add(appLogo);
-        add(Box.createHorizontalStrut(10));
+        add(Box.createHorizontalStrut(5));
 
-        // Menus
-        add(createMenu("File"));
-        add(createMenu("Edit"));
-        add(createMenu("View"));
+        // Hamburger Menu (Contains File, Edit, View, etc.)
+        JButton menuBtn = new JButton(Icons.HAMBURGER);
+        menuBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        menuBtn.addActionListener(e -> {
+            JPopupMenu menu = new JPopupMenu();
+            
+            // File Submenu
+            JMenu fileMenu = new JMenu("File");
+            fileMenu.add(new JMenuItem("New Project..."));
+            fileMenu.add(new JMenuItem("Open Project..."));
+            fileMenu.addSeparator();
+            fileMenu.add(new JMenuItem("Save Scene"));
+            menu.add(fileMenu);
+
+            // Edit Submenu
+            JMenu editMenu = new JMenu("Edit");
+            editMenu.add(new JMenuItem("Undo"));
+            editMenu.add(new JMenuItem("Redo"));
+            menu.add(editMenu);
+
+            // View Submenu
+            JMenu viewMenu = new JMenu("View");
+            viewMenu.add(new JCheckBoxMenuItem("Hierarchy", true));
+            viewMenu.add(new JCheckBoxMenuItem("Inspector", true));
+            menu.add(viewMenu);
+
+            menu.addSeparator();
+            menu.add(new JMenuItem("Settings..."));
+            menu.add(new JMenuItem("Exit"));
+
+            menu.show(menuBtn, 0, menuBtn.getHeight());
+        });
+        add(menuBtn);
         
-        add(Box.createHorizontalStrut(20));
+        add(Box.createHorizontalStrut(12));
 
         // Project Info (Center-ish)
         String projectName = "New Adventure";

@@ -14,6 +14,9 @@ public class EditorApp {
         // Unified window decorations for all platforms
         System.setProperty("flatlaf.useWindowDecorations", "true");
         System.setProperty("flatlaf.menuBarEmbedded", "true");
+        
+        // Hide icons in title pane globally
+        UIManager.put("TitlePane.showIcon", false);
 
         // Font rendering hints for Linux
         if (System.getProperty("os.name").toLowerCase().contains("linux")) {

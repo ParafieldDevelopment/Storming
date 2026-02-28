@@ -12,7 +12,6 @@ public class ProjectSelectorWindow extends JFrame {
     private JPanel sidebar;
 
     public ProjectSelectorWindow() {
-        setIconImage(Icons.FRAME_ICON);
         setTitle("Storming Engine Launcher");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(950, 650);
@@ -20,6 +19,7 @@ public class ProjectSelectorWindow extends JFrame {
         
         rootPane.putClientProperty("apple.awt.fullWindowContent", true);
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
+        rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
         initUI();
     }

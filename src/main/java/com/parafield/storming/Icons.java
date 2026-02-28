@@ -7,7 +7,7 @@ import java.net.URL;
 import java.util.Objects;
 
 public class Icons {
-    public static final Image FRAME_ICON = Toolkit.getDefaultToolkit().getImage(Icons.class.getResource("/com/parafield/storming/icons/icon.png"));
+    public static final Image FRAME_ICON = Toolkit.getDefaultToolkit().getImage(Icons.class.getResource("/com/parafield/storming/icons/exe-icon.png"));
 
     private static ImageIcon loadIcon(String name, int width, int height) {
         String svgPath = "/com/parafield/storming/icons/" + name + ".svg";
