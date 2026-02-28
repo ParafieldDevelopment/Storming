@@ -38,7 +38,7 @@ public class SimulationWindow extends JFrame {
         JPanel leftGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         leftGroup.setOpaque(false);
         JLabel titleLabel = new JLabel("RUNNING SIMULATION");
-        titleLabel.setFont(new Font("Inter", Font.BOLD, 12));
+        titleLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 12f));
         titleLabel.setForeground(new Color(52, 152, 219)); // Blue
         leftGroup.add(titleLabel);
         
@@ -65,7 +65,7 @@ public class SimulationWindow extends JFrame {
         footer.setPreferredSize(new Dimension(0, 25));
         footer.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%)");
         JLabel stats = new JLabel("  OpenGL 4.5 | Performance: High | Memory: 142MB");
-        stats.setFont(new Font("Inter", Font.PLAIN, 11));
+        stats.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         stats.setForeground(UIManager.getColor("Label.disabledForeground"));
         footer.add(stats, BorderLayout.WEST);
         

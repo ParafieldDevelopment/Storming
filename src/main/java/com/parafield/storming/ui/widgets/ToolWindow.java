@@ -24,7 +24,7 @@ public class ToolWindow extends JPanel {
         header.setPreferredSize(new Dimension(0, 28));
 
         JLabel titleLabel = new JLabel(title.toUpperCase());
-        titleLabel.setFont(new Font("Inter", Font.BOLD, 10));
+        titleLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 10f));
         titleLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         titleLabel.setBorder(new EmptyBorder(0, 10, 0, 0));
         

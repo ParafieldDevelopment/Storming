@@ -79,7 +79,7 @@ public class StormingMenuBar extends JMenuBar {
                 g2.setColor(new Color(52, 152, 219));
                 g2.fillRoundRect(x, y, 18, 18, 6, 6);
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Inter", Font.BOLD, 11));
+                g2.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
                 String letter = projectName.substring(0, 1).toUpperCase();
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
@@ -89,14 +89,12 @@ public class StormingMenuBar extends JMenuBar {
             @Override public int getIconHeight() { return 18; }
         });
         projectBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        projectBtn.setFont(new Font("Inter", Font.BOLD, 12));
         add(projectBtn);
         
         add(Box.createHorizontalStrut(10));
         
         JButton branchBtn = new JButton("master", Icons.GIT);
         branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        branchBtn.setFont(new Font("Inter", Font.PLAIN, 12));
         add(branchBtn);
 
         add(Box.createHorizontalGlue());
@@ -117,7 +115,6 @@ public class StormingMenuBar extends JMenuBar {
 
     private JMenu createMenu(String title) {
         JMenu menu = new JMenu(title);
-        menu.setFont(new Font("Inter", Font.PLAIN, 12));
         return menu;
     }
 

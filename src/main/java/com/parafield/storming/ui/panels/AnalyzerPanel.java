@@ -8,7 +8,7 @@ public class AnalyzerPanel extends JPanel {
     public AnalyzerPanel() {
         setLayout(new BorderLayout());
         JLabel label = new JLabel("Script & Asset Analyzer", SwingConstants.CENTER);
-        label.setFont(new Font("Inter", Font.BOLD, 14));
+        label.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 14f));
         label.setForeground(UIManager.getColor("Label.disabledForeground"));
         add(label, BorderLayout.CENTER);
     }

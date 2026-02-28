@@ -60,7 +60,7 @@ public class SceneViewPanel extends JPanel {
         JComboBox<String> zoomCombo = new JComboBox<>(new String[]{"25%", "50%", "100%", "200%"});
         zoomCombo.setSelectedIndex(2);
         zoomCombo.putClientProperty(FlatClientProperties.STYLE, "background: #00000000; borderWidth: 0; focusWidth: 0");
-        zoomCombo.setFont(new Font("Inter", Font.PLAIN, 11));
+        zoomCombo.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         overlayToolbar.add(zoomCombo);
 
         overlayToolbar.setBounds(20, 15, 320, 32);

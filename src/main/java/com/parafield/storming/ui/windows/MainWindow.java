@@ -217,17 +217,17 @@ public class MainWindow extends JFrame {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 2));
         left.setOpaque(false);
         JLabel apiLabel = new JLabel("  ● OpenGL 4.5 Core");
-        apiLabel.setFont(new Font("Inter", Font.BOLD, 11));
+        apiLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
         apiLabel.setForeground(new Color(46, 204, 113));
         left.add(apiLabel);
         
         JLabel branchLabel = new JLabel("master", Icons.GIT, SwingConstants.LEFT);
-        branchLabel.setFont(new Font("Inter", Font.PLAIN, 11));
+        branchLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         branchLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         left.add(branchLabel);
         
         JLabel statsLabel = new JLabel("Draw Calls: 0 | Sprites: 0");
-        statsLabel.setFont(new Font("Inter", Font.PLAIN, 11));
+        statsLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         statsLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         left.add(statsLabel);
         
@@ -242,7 +242,7 @@ public class MainWindow extends JFrame {
         memBar.setBorder(null);
         
         JLabel memText = new JLabel("-- / --");
-        memText.setFont(new Font("Inter", Font.PLAIN, 11));
+        memText.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         memText.setForeground(UIManager.getColor("Label.disabledForeground"));
         
         Timer t = new Timer(2000, e -> {

@@ -112,7 +112,7 @@ public class ConsolePanel extends JPanel {
         JToggleButton btn = new JToggleButton(text);
         btn.setSelected(selected);
         btn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        btn.setFont(new Font("Inter", Font.PLAIN, 11));
+        btn.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
         btn.addActionListener(e -> onToggle.accept(btn.isSelected()));
         return btn;
     }

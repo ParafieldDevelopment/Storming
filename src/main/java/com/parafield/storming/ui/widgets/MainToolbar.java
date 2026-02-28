@@ -60,7 +60,7 @@ public class MainToolbar extends JToolBar {
                 g2.setColor(new Color(52, 152, 219));
                 g2.fillRoundRect(x, y, 18, 18, 6, 6);
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Inter", Font.BOLD, 11));
+                g2.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
                 String letter = projectName.substring(0, 1).toUpperCase();
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
@@ -72,7 +72,6 @@ public class MainToolbar extends JToolBar {
         
         projectBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         projectBtn.putClientProperty(FlatClientProperties.STYLE, "margin: 0,10,0,10; arc: 8");
-        projectBtn.setFont(new Font("Inter", Font.BOLD, 12));
         projectBtn.addActionListener(e -> {
             JPopupMenu projectMenu = new JPopupMenu();
             projectMenu.add(new JMenuItem("New Project..."));
@@ -94,7 +93,6 @@ public class MainToolbar extends JToolBar {
         JButton branchBtn = new JButton("master", Icons.GIT);
         branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         branchBtn.putClientProperty(FlatClientProperties.STYLE, "margin: 0,10,0,10; arc: 8");
-        branchBtn.setFont(new Font("Inter", Font.BOLD, 12));
         branchBtn.addActionListener(e -> {
             JPopupMenu gitMenu = new JPopupMenu();
 

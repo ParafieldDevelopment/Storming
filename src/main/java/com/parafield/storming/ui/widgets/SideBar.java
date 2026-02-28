@@ -57,7 +57,7 @@ public class SideBar extends JPanel {
         btn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         btn.setPreferredSize(new Dimension(barWidth, barWidth));
         btn.setMaximumSize(new Dimension(barWidth, barWidth));
-        btn.setFont(new Font("Inter", Font.BOLD, 14));
+        btn.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 14f));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         btn.addActionListener(e -> onSelect.run());
