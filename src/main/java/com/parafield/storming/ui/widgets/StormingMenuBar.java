@@ -135,30 +135,23 @@ public class StormingMenuBar extends JMenuBar {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Linear Gradient for a perfectly smooth fade from the absolute left
-        Window win = SwingUtilities.getWindowAncestor(this);
-        int w = (win != null) ? win.getWidth() : getWidth();
-        
-        // Find our offset relative to the window to ensure gradient starts at 0
-        int xOffset = 0;
-        if (win != null) {
-            Point pInWin = SwingUtilities.convertPoint(this, 0, 0, win);
-            xOffset = -pInWin.x;
-        }
+        // Focused Glow: Small and short, centered around the project icon area
+        int centerX = 220; 
+        int centerY = getHeight() / 2;
+        int radiusX = 250; // Much smaller horizontal reach
+        int radiusY = getHeight() * 2;
 
-        Color glowColor = new Color(52, 152, 219);
-        LinearGradientPaint p = new LinearGradientPaint(
-            xOffset, 0, xOffset + Math.max(1, w), 0,
-            new float[]{0.0f, 0.4f, 1.0f},
-            new Color[]{
-                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 70),
-                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
-                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
-            }
-        );
+        float[] dist = {0.0f, 0.5f, 1.0f};
+        Color glowColor = new Color(52, 152, 219); 
+        Color[] colors = {
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 80),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
+        };
         
+        RadialGradientPaint p = new RadialGradientPaint(centerX, centerY, radiusX, dist, colors);
         g2.setPaint(p);
-        g2.fillRect(0, 0, getWidth(), getHeight());
+        g2.fillOval(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
 
         // Subtle bottom border
         g2.setColor(new Color(255, 255, 255, 15));
