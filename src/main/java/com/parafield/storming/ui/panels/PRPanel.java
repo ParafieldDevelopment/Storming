@@ -64,11 +64,15 @@ public class PRPanel extends JPanel {
     }
 
     private void addPRItem(String title, String author, String time) {
-        JPanel item = new JPanel(new GridBagLayout());
+        JPanel item = new JPanel();
+        item.setLayout(new BoxLayout(item, BoxLayout.Y_AXIS));
         item.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         item.setPreferredSize(new Dimension(0, 50));
         item.setOpaque(false);
-        item.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
+        item.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")),
+            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+        ));
         item.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         item.addMouseListener(new MouseAdapter() {
@@ -80,22 +84,18 @@ public class PRPanel extends JPanel {
             }
         });
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        gbc.insets = new Insets(5, 10, 0, 10);
-        
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 12f));
-        gbc.gridy = 0;
-        item.add(titleLabel, gbc);
-
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
         JLabel infoLabel = new JLabel(author + " • " + time);
         infoLabel.setFont(UIManager.getFont("defaultFont").deriveFont(10f));
         infoLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
-        gbc.gridy = 1;
-        gbc.insets = new Insets(0, 10, 5, 10);
-        item.add(infoLabel, gbc);
+        infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        item.add(titleLabel);
+        item.add(Box.createVerticalStrut(2));
+        item.add(infoLabel);
         
         prList.add(item);
     }

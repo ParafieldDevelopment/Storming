@@ -36,6 +36,7 @@ public class PRDetailsSidePanel extends JPanel {
         JLabel titleLbl = new JLabel("Files Changed");
         titleLbl.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
         titleLbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+        titleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(titleLbl);
         content.add(Box.createVerticalStrut(10));
 
@@ -48,6 +49,7 @@ public class PRDetailsSidePanel extends JPanel {
         JLabel checkLbl = new JLabel("Checks (3 Passed)");
         checkLbl.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
         checkLbl.setForeground(new Color(46, 204, 113));
+        checkLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(checkLbl);
         
         addCheckItem("Build", true);
@@ -63,6 +65,7 @@ public class PRDetailsSidePanel extends JPanel {
         JPanel item = new JPanel(new BorderLayout());
         item.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         item.setOpaque(false);
+        item.setAlignmentX(Component.LEFT_ALIGNMENT);
         
         JLabel nameLbl = new JLabel(name);
         nameLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -81,6 +84,7 @@ public class PRDetailsSidePanel extends JPanel {
         JLabel lbl = new JLabel("  ✓ " + name);
         lbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
         lbl.setForeground(UIManager.getColor("Label.foreground"));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(lbl);
     }
 }
