@@ -111,6 +111,12 @@ public class StormingMenuBar extends JMenuBar {
         stopBtn.addActionListener(e -> onStop.run());
         add(stopBtn);
 
+        add(Box.createHorizontalStrut(5));
+        JButton settingsBtn = new JButton(Icons.SETTINGS);
+        settingsBtn.setToolTipText("Settings");
+        settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        add(settingsBtn);
+
         add(Box.createHorizontalStrut(120)); // Space for window controls (min/max/close)
     }
 
@@ -130,13 +136,13 @@ public class StormingMenuBar extends JMenuBar {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Refined Glow: Centered more around the project info area
-        int centerX = 280; 
+        // Refined Glow: Moved further left and widened to ensure smooth fade
+        int centerX = 150; 
         int centerY = getHeight() / 2;
-        int radiusX = 450;
+        int radiusX = 600;
         int radiusY = getHeight() * 3;
 
-        float[] dist = {0.0f, 0.4f, 1.0f};
+        float[] dist = {0.0f, 0.2f, 1.0f};
         Color glowColor = new Color(52, 152, 219); 
         Color[] colors = {
             new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 60),
