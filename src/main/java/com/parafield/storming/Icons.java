@@ -60,4 +60,6 @@ public class Icons {
     
     public static final ImageIcon EXE_ICON = loadIcon("exe-icon", 18, 18);
     public static final ImageIcon GIT = loadIcon("Git", 18, 18);
+    public static final ImageIcon GRID = loadIcon("grid", 16, 16);
+    public static final ImageIcon MAGNET = loadIcon("magnet", 16, 16);
 }

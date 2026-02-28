@@ -175,6 +175,12 @@ public class MainWindow extends JFrame {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
         left.setOpaque(false);
         left.add(new JLabel("  ● OpenGL 4.5 Core"));
+        left.add(new JSeparator(SwingConstants.VERTICAL));
+        
+        JLabel statsLabel = new JLabel("Draw Calls: 0 | Sprites: 0");
+        statsLabel.setFont(new Font("Inter", Font.PLAIN, 11));
+        statsLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        left.add(statsLabel);
         
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 2));
         right.setOpaque(false);
