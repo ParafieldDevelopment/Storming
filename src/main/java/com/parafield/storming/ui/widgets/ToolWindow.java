@@ -10,10 +10,12 @@ public class ToolWindow extends JPanel {
     private final String title;
     private final JComponent content;
     private final JPanel header;
+    private final Runnable onHide;
 
-    public ToolWindow(String title, JComponent content) {
+    public ToolWindow(String title, JComponent content, Runnable onHide) {
         this.title = title;
         this.content = content;
+        this.onHide = onHide;
         
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createMatteBorder(0, 1, 0, 1, UIManager.getColor("Component.borderColor")));
@@ -43,6 +45,9 @@ public class ToolWindow extends JPanel {
         hideBtn.setToolTipText("Hide");
         hideBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         hideBtn.setPreferredSize(new Dimension(24, 24));
+        if (onHide != null) {
+            hideBtn.addActionListener(e -> onHide.run());
+        }
         
         actions.add(optionsBtn);
         actions.add(hideBtn);

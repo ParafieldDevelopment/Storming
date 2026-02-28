@@ -7,8 +7,13 @@ import com.parafield.storming.ui.panels.ConsolePanel;
 import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.InspectorPanel;
 import com.parafield.storming.ui.panels.NotificationsPanel;
+import com.parafield.storming.ui.panels.ProjectBrowserPanel;
+import com.parafield.storming.ui.panels.GitPanel;
+import com.parafield.storming.ui.panels.PRPanel;
+import com.parafield.storming.ui.panels.PRDetailsCenterPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.panels.TerminalPanel;
+import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.widgets.SideBar;
 import com.parafield.storming.ui.widgets.ToolWindow;
 import com.parafield.storming.ui.widgets.StormingMenuBar;
@@ -25,6 +30,7 @@ public class MainWindow extends JFrame {
     private JSplitPane mainHorizontalSplit; 
     private JSplitPane rightSplit;          
     private JSplitPane centerVerticalSplit; 
+    private JSplitPane leftVerticalSplit;
 
     private StormingMenuBar menuBar;
     private SideBar leftBar;
@@ -35,16 +41,35 @@ public class MainWindow extends JFrame {
     private JPanel rightCardPanel;
     private String currentRightTab = "INSPECTOR";
 
+    private CardLayout leftUpperCardLayout;
+    private JPanel leftUpperCardPanel;
+    private String currentLeftUpperTab = "HIERARCHY";
+
     private boolean isLeftOpen = true;
+    private boolean isLeftUpperOpen = true;
+    private boolean isProjectOpen = true;
     private boolean isRightOpen = true;
+    
     private int leftSplitLastLoc = 280;
     private int rightSplitLastLoc = 280; 
+    private int leftVerticalSplitLastLoc = 450;
 
+    private JToggleButton hierarchyBtn;
+    private JToggleButton commitBtn;
+    private JToggleButton prBtn;
     private JToggleButton projectBtn;
     private JToggleButton inspectorBtn;
     private JToggleButton notificationsBtn;
+    
+    private JTabbedPane editorTabs;
+    private static MainWindow instance;
+
+    public static MainWindow getInstance() {
+        return instance;
+    }
 
     public MainWindow() {
+        instance = this;
         setTitle("Storming Engine");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 900);
@@ -98,11 +123,11 @@ public class MainWindow extends JFrame {
         // --- 1. Right Side Panels ---
         rightCardLayout = new CardLayout();
         rightCardPanel = new JPanel(rightCardLayout);
-        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel()), "INSPECTOR");
-        rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel()), "NOTIFICATIONS");
+        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel(), () -> handleRightSidebarClick("INSPECTOR")), "INSPECTOR");
+        rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel(), () -> handleRightSidebarClick("NOTIFICATIONS")), "NOTIFICATIONS");
 
         // --- 2. Center & Bottom Panels ---
-        JTabbedPane editorTabs = new JTabbedPane();
+        editorTabs = new JTabbedPane();
         editorTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
         sceneViewPanel = new SceneViewPanel();
         editorTabs.addTab("Scene", sceneViewPanel);
@@ -114,12 +139,20 @@ public class MainWindow extends JFrame {
         bottomTabs.addTab("Terminal", Icons.TERMINAL, new TerminalPanel());
 
         // --- 3. Construct Layout Hierarchy ---
-        // Top: [ Hierarchy | [ Scene | Inspector ] ]
+        // Top: [ Hierarchy/Commit/PR | [ Scene | Inspector ] ]
         rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, editorTabs, rightCardPanel, 800, 0.0);
         
-        HierarchyPanel hierarchyPanel = new HierarchyPanel();
-        ToolWindow hierarchyTW = new ToolWindow("Hierarchy", hierarchyPanel);
-        mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280, 0.0);
+        leftUpperCardLayout = new CardLayout();
+        leftUpperCardPanel = new JPanel(leftUpperCardLayout);
+        leftUpperCardPanel.add(new ToolWindow("Hierarchy", new HierarchyPanel(), () -> handleLeftUpperClick("HIERARCHY")), "HIERARCHY");
+        leftUpperCardPanel.add(new ToolWindow("Commit", new GitPanel(), () -> handleLeftUpperClick("COMMIT")), "COMMIT");
+        leftUpperCardPanel.add(new ToolWindow("Pull Requests", new PRPanel(), () -> handleLeftUpperClick("PR")), "PR");
+        
+        ProjectBrowserPanel projectPanel = new ProjectBrowserPanel();
+        ToolWindow projectTW = new ToolWindow("Project", projectPanel, this::toggleProject);
+        
+        leftVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, leftUpperCardPanel, projectTW, 450, 0.5);
+        mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, leftVerticalSplit, rightSplit, 280, 0.0);
 
         // Final Vertical Split: Top Workspace / Bottom Tabs
         centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, mainHorizontalSplit, bottomTabs, 650, 0.0);
@@ -127,10 +160,15 @@ public class MainWindow extends JFrame {
         // --- 4. SideBars (JetBrains Style) ---
         leftBar = new SideBar(SwingConstants.VERTICAL, 40);
         leftBar.setAlpha(0.0f);
-        projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleLeftPanel);
-        projectBtn.setSelected(true);
+        hierarchyBtn = (JToggleButton) leftBar.addTab("Hierarchy", Icons.GRID, true, () -> handleLeftUpperClick("HIERARCHY"));
+        commitBtn = (JToggleButton) leftBar.addTab("Commit", Icons.COMMIT, true, () -> handleLeftUpperClick("COMMIT"));
+        prBtn = (JToggleButton) leftBar.addTab("Pull Requests", Icons.PR, true, () -> handleLeftUpperClick("PR"));
         
-        leftBar.add(Box.createVerticalGlue());
+        leftBar.addSeparator();
+        projectBtn = (JToggleButton) leftBar.addTab("Project", Icons.FOLDER, true, this::toggleProject);
+        
+        hierarchyBtn.setSelected(true);
+        projectBtn.setSelected(true);
         
         rightBar = new SideBar(SwingConstants.VERTICAL, 40);
         rightBar.setAlpha(0.0f);
@@ -154,7 +192,56 @@ public class MainWindow extends JFrame {
         root.add(statusBar, BorderLayout.SOUTH);
     }
 
-    private void toggleLeftPanel() {
+    public void openPRDetails(String title, String author) {
+        PRDetailsCenterPanel centerPanel = new PRDetailsCenterPanel(title, author);
+        editorTabs.addTab("PR: " + title.split(":")[0], Icons.PR, centerPanel);
+        editorTabs.setSelectedComponent(centerPanel);
+    }
+
+    private void handleLeftUpperClick(String tabName) {
+        if (!isLeftUpperOpen) {
+            leftUpperCardLayout.show(leftUpperCardPanel, tabName);
+            currentLeftUpperTab = tabName;
+            UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplitLastLoc, 250);
+            isLeftUpperOpen = true;
+            if (!isLeftOpen) toggleLeftDrawer();
+        } else {
+            if (currentLeftUpperTab.equals(tabName)) {
+                if (isProjectOpen) {
+                    leftVerticalSplitLastLoc = leftVerticalSplit.getDividerLocation();
+                    UIAnimator.animateSplit(leftVerticalSplit, 0, 250);
+                } else {
+                    toggleLeftDrawer();
+                }
+                isLeftUpperOpen = false;
+            } else {
+                leftUpperCardLayout.show(leftUpperCardPanel, tabName);
+                currentLeftUpperTab = tabName;
+            }
+        }
+        updateLeftBar();
+    }
+
+    private void toggleProject() {
+        if (isProjectOpen) {
+            if (isLeftUpperOpen) {
+                leftVerticalSplitLastLoc = leftVerticalSplit.getDividerLocation();
+                UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplit.getHeight(), 250);
+            } else {
+                toggleLeftDrawer();
+            }
+        } else {
+            if (isLeftUpperOpen) {
+                UIAnimator.animateSplit(leftVerticalSplit, leftVerticalSplitLastLoc, 250);
+            } else {
+                toggleLeftDrawer();
+            }
+        }
+        isProjectOpen = !isProjectOpen;
+        updateLeftBar();
+    }
+
+    private void toggleLeftDrawer() {
         if (isLeftOpen) {
             leftSplitLastLoc = mainHorizontalSplit.getDividerLocation();
             UIAnimator.animateSplit(mainHorizontalSplit, 0, 250);
@@ -162,7 +249,22 @@ public class MainWindow extends JFrame {
             UIAnimator.animateSplit(mainHorizontalSplit, leftSplitLastLoc, 250);
         }
         isLeftOpen = !isLeftOpen;
-        projectBtn.setSelected(isLeftOpen);
+    }
+
+    private void updateLeftBar() {
+        hierarchyBtn.setSelected(isLeftUpperOpen && isLeftOpen && currentLeftUpperTab.equals("HIERARCHY"));
+        commitBtn.setSelected(isLeftUpperOpen && isLeftOpen && currentLeftUpperTab.equals("COMMIT"));
+        prBtn.setSelected(isLeftUpperOpen && isLeftOpen && currentLeftUpperTab.equals("PR"));
+        projectBtn.setSelected(isProjectOpen && isLeftOpen);
+        
+        // If both are closed, close the whole drawer
+        if (!isLeftUpperOpen && !isProjectOpen && isLeftOpen) {
+            toggleLeftDrawer();
+        } 
+        // If opening one when drawer is closed, open the drawer
+        else if ((isLeftUpperOpen || isProjectOpen) && !isLeftOpen) {
+            toggleLeftDrawer();
+        }
     }
 
     private void handleRightSidebarClick(String tabName) {

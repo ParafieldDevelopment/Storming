@@ -5,11 +5,22 @@ import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.AWTEventListener;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StormingMenuBar extends JMenuBar {
     private float alpha = 1.0f;
     private final Runnable onPlay;
     private final Runnable onStop;
+    
+    private boolean expanded = false;
+    private final List<JMenu> menus = new ArrayList<>();
+    private JButton projectBtn;
+    private JButton branchBtn;
+    private Component projectStrut;
+    private Component branchStrut;
 
     public StormingMenuBar(Runnable onPlay, Runnable onStop) {
         this.onPlay = onPlay;
@@ -21,6 +32,43 @@ public class StormingMenuBar extends JMenuBar {
         putClientProperty(FlatClientProperties.STYLE, "hoverBackground: #ffffff10;");
         
         initMenuBar();
+        setupClickOutDetection();
+    }
+
+    private void setupClickOutDetection() {
+        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if (event instanceof MouseEvent me && me.getID() == MouseEvent.MOUSE_PRESSED) {
+                    if (expanded && !SwingUtilities.isDescendingFrom(me.getComponent(), StormingMenuBar.this)) {
+                        // Check if a menu is currently showing its popup
+                        boolean anyMenuShowing = false;
+                        for (JMenu m : menus) {
+                            if (m.isPopupMenuVisible()) {
+                                anyMenuShowing = true;
+                                break;
+                            }
+                        }
+                        if (!anyMenuShowing) {
+                            SwingUtilities.invokeLater(() -> setMenuExpanded(false));
+                        }
+                    }
+                }
+            }
+        }, AWTEvent.MOUSE_EVENT_MASK);
+    }
+
+    private void setMenuExpanded(boolean expanded) {
+        this.expanded = expanded;
+        for (JMenu m : menus) {
+            m.setVisible(expanded);
+        }
+        projectBtn.setVisible(!expanded);
+        branchBtn.setVisible(!expanded);
+        projectStrut.setVisible(!expanded);
+        branchStrut.setVisible(!expanded);
+        revalidate();
+        repaint();
     }
 
     public void setAlpha(float alpha) {
@@ -36,45 +84,38 @@ public class StormingMenuBar extends JMenuBar {
         add(appLogo);
         add(Box.createHorizontalStrut(5));
 
-        // Hamburger Menu (Contains File, Edit, View, etc.)
+        // Hamburger Menu
         JButton menuBtn = new JButton(Icons.HAMBURGER);
         menuBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        menuBtn.addActionListener(e -> {
-            JPopupMenu menu = new JPopupMenu();
-            
-            // File Submenu
-            JMenu fileMenu = new JMenu("File");
-            fileMenu.add(new JMenuItem("New Project..."));
-            fileMenu.add(new JMenuItem("Open Project..."));
-            fileMenu.addSeparator();
-            fileMenu.add(new JMenuItem("Save Scene"));
-            menu.add(fileMenu);
-
-            // Edit Submenu
-            JMenu editMenu = new JMenu("Edit");
-            editMenu.add(new JMenuItem("Undo"));
-            editMenu.add(new JMenuItem("Redo"));
-            menu.add(editMenu);
-
-            // View Submenu
-            JMenu viewMenu = new JMenu("View");
-            viewMenu.add(new JCheckBoxMenuItem("Hierarchy", true));
-            viewMenu.add(new JCheckBoxMenuItem("Inspector", true));
-            menu.add(viewMenu);
-
-            menu.addSeparator();
-            menu.add(new JMenuItem("Settings..."));
-            menu.add(new JMenuItem("Exit"));
-
-            menu.show(menuBtn, 0, menuBtn.getHeight());
-        });
+        menuBtn.addActionListener(e -> setMenuExpanded(!expanded));
         add(menuBtn);
         
         add(Box.createHorizontalStrut(12));
 
+        // Main Menus (Hidden by default)
+        menus.add(createFileMenu());
+        menus.add(createEditMenu());
+        menus.add(createMenu("View"));
+        menus.add(createMenu("Navigate"));
+        menus.add(createMenu("Code"));
+        menus.add(createMenu("Build"));
+        menus.add(createMenu("Run"));
+        menus.add(createMenu("Git"));
+        menus.add(createMenu("Window"));
+        menus.add(createMenu("Help"));
+
+        for (JMenu m : menus) {
+            m.setVisible(false);
+            m.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 12f));
+            add(m);
+        }
+
         // Project Info (Center-ish)
         String projectName = "New Adventure";
-        JButton projectBtn = new JButton(projectName, new Icon() {
+        projectStrut = Box.createHorizontalStrut(10);
+        add(projectStrut);
+        
+        projectBtn = new JButton(projectName, new Icon() {
             @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -94,9 +135,10 @@ public class StormingMenuBar extends JMenuBar {
         projectBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         add(projectBtn);
         
-        add(Box.createHorizontalStrut(10));
+        branchStrut = Box.createHorizontalStrut(10);
+        add(branchStrut);
         
-        JButton branchBtn = new JButton("master", Icons.GIT);
+        branchBtn = new JButton("master", Icons.GIT);
         branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         add(branchBtn);
 
@@ -120,8 +162,32 @@ public class StormingMenuBar extends JMenuBar {
         add(settingsBtn);
     }
 
+    private JMenu createFileMenu() {
+        JMenu menu = new JMenu("File");
+        menu.add(new JMenuItem("New Project...", Icons.PLUS));
+        menu.add(new JMenuItem("Open Project...", Icons.FOLDER));
+        menu.addSeparator();
+        menu.add(new JMenuItem("Save Scene", Icons.CLIPBOARD));
+        menu.addSeparator();
+        menu.add(new JMenuItem("Settings...", Icons.SETTINGS));
+        menu.add(new JMenuItem("Exit"));
+        return menu;
+    }
+
+    private JMenu createEditMenu() {
+        JMenu menu = new JMenu("Edit");
+        menu.add(new JMenuItem("Undo"));
+        menu.add(new JMenuItem("Redo"));
+        menu.addSeparator();
+        menu.add(new JMenuItem("Cut"));
+        menu.add(new JMenuItem("Copy"));
+        menu.add(new JMenuItem("Paste"));
+        return menu;
+    }
+
     private JMenu createMenu(String title) {
         JMenu menu = new JMenu(title);
+        menu.add(new JMenuItem("Placeholder Action"));
         return menu;
     }
 
@@ -135,14 +201,14 @@ public class StormingMenuBar extends JMenuBar {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Focused Linear Glow: Starts slightly inward but fills from absolute left
+        // Focused Linear Glow
         Color glowColor = new Color(52, 152, 219);
         LinearGradientPaint p = new LinearGradientPaint(
             0, 0, 500, 0,
-            new float[]{0.0f, 0.15f, 0.5f, 1.0f}, // Added step to start peak further right
+            new float[]{0.0f, 0.15f, 0.5f, 1.0f},
             new Color[]{
-                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0),  // Transparent at absolute left
-                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 70), // Peak starts at ~75px
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0),
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 70),
                 new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
                 new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
             }
