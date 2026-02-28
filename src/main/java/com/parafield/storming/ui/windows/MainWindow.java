@@ -172,12 +172,20 @@ public class MainWindow extends JFrame {
     private JPanel createStatusBar() {
         JPanel p = new JPanel(new BorderLayout());
         p.setPreferredSize(new Dimension(0, 26));
+        p.setBackground(new Color(25, 25, 30));
         p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Component.borderColor")));
         
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 2));
         left.setOpaque(false);
-        left.add(new JLabel("  ● OpenGL 4.5 Core"));
-        left.add(new JSeparator(SwingConstants.VERTICAL));
+        JLabel apiLabel = new JLabel("  ● OpenGL 4.5 Core");
+        apiLabel.setFont(new Font("Inter", Font.BOLD, 11));
+        apiLabel.setForeground(new Color(46, 204, 113));
+        left.add(apiLabel);
+        
+        JLabel branchLabel = new JLabel("master", Icons.GIT, SwingConstants.LEFT);
+        branchLabel.setFont(new Font("Inter", Font.PLAIN, 11));
+        branchLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        left.add(branchLabel);
         
         JLabel statsLabel = new JLabel("Draw Calls: 0 | Sprites: 0");
         statsLabel.setFont(new Font("Inter", Font.PLAIN, 11));
@@ -186,18 +194,29 @@ public class MainWindow extends JFrame {
         
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 2));
         right.setOpaque(false);
-        JLabel mem = new JLabel("Memory: -- / --");
-        mem.setForeground(UIManager.getColor("Label.disabledForeground"));
+        
+        JProgressBar memBar = new JProgressBar(0, 100);
+        memBar.setPreferredSize(new Dimension(100, 8));
+        memBar.putClientProperty("JProgressBar.largeHeight", false);
+        memBar.setForeground(new Color(52, 152, 219));
+        memBar.setBackground(new Color(40, 40, 45));
+        memBar.setBorder(null);
+        
+        JLabel memText = new JLabel("-- / --");
+        memText.setFont(new Font("Inter", Font.PLAIN, 11));
+        memText.setForeground(UIManager.getColor("Label.disabledForeground"));
         
         Timer t = new Timer(2000, e -> {
             Runtime r = Runtime.getRuntime();
             long total = r.totalMemory() / 1024 / 1024;
             long used = (r.totalMemory() - r.freeMemory()) / 1024 / 1024;
-            mem.setText(String.format("Memory: %dMB / %dMB", used, total));
+            memText.setText(String.format("%dMB / %dMB", used, total));
+            memBar.setValue((int)((double)used / total * 100));
         });
         t.start();
         
-        right.add(mem);
+        right.add(memText);
+        right.add(memBar);
         right.add(new JLabel("UTF-8  "));
         
         p.add(left, BorderLayout.WEST);

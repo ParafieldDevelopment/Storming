@@ -20,7 +20,20 @@ public class SideBar extends JPanel {
     public AbstractButton addTab(String name, Icon icon, boolean isToggle, Runnable onSelect) {
         AbstractButton btn;
         if (isToggle) {
-            btn = new JToggleButton(icon);
+            btn = new JToggleButton(icon) {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    if (isSelected()) {
+                        g.setColor(new Color(52, 152, 219)); // Blue indicator
+                        if (barWidth < 50) { // Vertical sidebar
+                            g.fillRect(0, 8, 2, getHeight() - 16);
+                        } else { // Horizontal (if used)
+                            g.fillRect(8, getHeight() - 2, getWidth() - 16, 2);
+                        }
+                    }
+                }
+            };
             group.add(btn);
         } else {
             btn = new JButton(icon);
