@@ -57,6 +57,7 @@ public class MainToolbar extends JToolBar {
         });
         
         projectBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        projectBtn.putClientProperty(FlatClientProperties.STYLE, "margin: 0,10,0,10; arc: 8");
         projectBtn.setFont(new Font("Inter", Font.BOLD, 12));
         projectBtn.addActionListener(e -> {
             JPopupMenu projectMenu = new JPopupMenu();
@@ -78,6 +79,7 @@ public class MainToolbar extends JToolBar {
         // --- Git Branch Button ---
         JButton branchBtn = new JButton("master", Icons.GIT);
         branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        branchBtn.putClientProperty(FlatClientProperties.STYLE, "margin: 0,10,0,10; arc: 8");
         branchBtn.setFont(new Font("Inter", Font.BOLD, 12));
         branchBtn.addActionListener(e -> {
             JPopupMenu gitMenu = new JPopupMenu();
@@ -151,7 +153,7 @@ public class MainToolbar extends JToolBar {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Calculate center for the glow (around project icon/name)
-        int centerX = 160; 
+        int centerX = 220; 
         int centerY = getHeight() / 2;
         
         // Spread it more horizontally

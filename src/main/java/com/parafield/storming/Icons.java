@@ -23,7 +23,9 @@ public class Icons {
     public static final ImageIcon SETTINGS = loadIcon("settings", 20, 20);
     public static final ImageIcon BELL = loadIcon("bell", 20, 20);
     public static final ImageIcon CONSOLE = loadIcon("console", 20, 20);
+    public static final ImageIcon CONSOLE_64 = loadIcon("console", 64, 64);
     public static final ImageIcon WARN = loadIcon("warn", 20, 20);
+    public static final ImageIcon WARN_64 = loadIcon("warn", 64, 64);
     public static final ImageIcon LOGO = loadIcon("icon", 128, 128);
     public static final ImageIcon EXE_ICON = loadIcon("exe-icon", 18, 18);
     public static final ImageIcon GIT = loadIcon("Git", 18, 18);
