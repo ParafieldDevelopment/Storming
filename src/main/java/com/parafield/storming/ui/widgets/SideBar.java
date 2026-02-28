@@ -5,7 +5,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class SideBar extends JPanel {
-    private final ButtonGroup group = new ButtonGroup();
     private final int barWidth;
     private float alpha = 1.0f;
 
@@ -41,23 +40,31 @@ public class SideBar extends JPanel {
             btn = new JToggleButton(icon) {
                 @Override
                 protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
                     if (isSelected()) {
-                        g.setColor(new Color(52, 152, 219)); // Blue indicator
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(new Color(52, 152, 219, 30)); // Subtle blue background
+                        g2.fillRect(0, 0, getWidth(), getHeight());
+                        
+                        g2.setColor(new Color(52, 152, 219)); // Bright blue indicator
                         if (barWidth < 50) { // Vertical sidebar
-                            g.fillRect(0, 8, 2, getHeight() - 16);
+                            g2.fillRect(0, 8, 2, getHeight() - 16);
                         } else { // Horizontal (if used)
-                            g.fillRect(8, getHeight() - 2, getWidth() - 16, 2);
+                            g2.fillRect(8, getHeight() - 2, getWidth() - 16, 2);
                         }
+                        g2.dispose();
                     }
+                    super.paintComponent(g);
                 }
             };
-            group.add(btn);
         } else {
             btn = new JButton(icon);
         }
 
         btn.setToolTipText(name);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
         btn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         btn.setPreferredSize(new Dimension(barWidth, barWidth));
         btn.setMaximumSize(new Dimension(barWidth, barWidth));
