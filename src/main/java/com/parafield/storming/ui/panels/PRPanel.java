@@ -2,18 +2,28 @@ package com.parafield.storming.ui.panels;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class PRPanel extends JPanel {
 
     private final JPanel prList;
+    private final CardLayout cardLayout;
+    private final JPanel mainContainer;
 
     public PRPanel() {
         setLayout(new BorderLayout());
         
-        // --- 1. Header ---
+        cardLayout = new CardLayout();
+        mainContainer = new JPanel(cardLayout);
+        
+        // --- 1. PR List View ---
+        JPanel listView = new JPanel(new BorderLayout());
+        
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
         header.setPreferredSize(new Dimension(0, 32));
@@ -28,9 +38,8 @@ public class PRPanel extends JPanel {
         createBtn.setToolTipText("New Pull Request");
         header.add(createBtn, BorderLayout.EAST);
 
-        add(header, BorderLayout.NORTH);
+        listView.add(header, BorderLayout.NORTH);
 
-        // --- 2. PR List ---
         prList = new JPanel();
         prList.setLayout(new BoxLayout(prList, BoxLayout.Y_AXIS));
         prList.setBackground(UIManager.getColor("TextArea.background"));
@@ -41,15 +50,17 @@ public class PRPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(prList);
         scrollPane.setBorder(null);
-        add(scrollPane, BorderLayout.CENTER);
+        listView.add(scrollPane, BorderLayout.CENTER);
 
-        // --- 3. Footer ---
         JButton createPRBigBtn = new JButton("Create Pull Request...");
         createPRBigBtn.putClientProperty(FlatClientProperties.STYLE, "background: #27ae60; foreground: #ffffff;");
         JPanel footer = new JPanel(new BorderLayout());
         footer.setBorder(new EmptyBorder(10, 10, 10, 10));
         footer.add(createPRBigBtn, BorderLayout.CENTER);
-        add(footer, BorderLayout.SOUTH);
+        listView.add(footer, BorderLayout.SOUTH);
+
+        mainContainer.add(listView, "LIST");
+        add(mainContainer, BorderLayout.CENTER);
     }
 
     private void addPRItem(String title, String author, String time) {
@@ -58,6 +69,16 @@ public class PRPanel extends JPanel {
         item.setPreferredSize(new Dimension(0, 50));
         item.setOpaque(false);
         item.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
+        item.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        item.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    showDetails(title, author);
+                }
+            }
+        });
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -77,5 +98,13 @@ public class PRPanel extends JPanel {
         item.add(infoLabel, gbc);
         
         prList.add(item);
+    }
+
+    public void showDetails(String title, String author) {
+        PRDetailsSidePanel detailView = new PRDetailsSidePanel(title, () -> cardLayout.show(mainContainer, "LIST"));
+        mainContainer.add(detailView, "DETAIL");
+        cardLayout.show(mainContainer, "DETAIL");
+        
+        MainWindow.getInstance().openPRDetails(title, author);
     }
 }

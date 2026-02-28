@@ -10,6 +10,7 @@ import com.parafield.storming.ui.panels.NotificationsPanel;
 import com.parafield.storming.ui.panels.ProjectBrowserPanel;
 import com.parafield.storming.ui.panels.GitPanel;
 import com.parafield.storming.ui.panels.PRPanel;
+import com.parafield.storming.ui.panels.PRDetailsCenterPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.panels.HierarchyPanel;
@@ -59,8 +60,16 @@ public class MainWindow extends JFrame {
     private JToggleButton projectBtn;
     private JToggleButton inspectorBtn;
     private JToggleButton notificationsBtn;
+    
+    private JTabbedPane editorTabs;
+    private static MainWindow instance;
+
+    public static MainWindow getInstance() {
+        return instance;
+    }
 
     public MainWindow() {
+        instance = this;
         setTitle("Storming Engine");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 900);
@@ -118,7 +127,7 @@ public class MainWindow extends JFrame {
         rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel()), "NOTIFICATIONS");
 
         // --- 2. Center & Bottom Panels ---
-        JTabbedPane editorTabs = new JTabbedPane();
+        editorTabs = new JTabbedPane();
         editorTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
         sceneViewPanel = new SceneViewPanel();
         editorTabs.addTab("Scene", sceneViewPanel);
@@ -181,6 +190,12 @@ public class MainWindow extends JFrame {
         
         root.add(mainContent, BorderLayout.CENTER);
         root.add(statusBar, BorderLayout.SOUTH);
+    }
+
+    public void openPRDetails(String title, String author) {
+        PRDetailsCenterPanel centerPanel = new PRDetailsCenterPanel(title, author);
+        editorTabs.addTab("PR: " + title.split(":")[0], Icons.PR, centerPanel);
+        editorTabs.setSelectedComponent(centerPanel);
     }
 
     private void handleLeftUpperClick(String tabName) {
