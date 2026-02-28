@@ -12,6 +12,7 @@ import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.widgets.MainToolbar;
 import com.parafield.storming.ui.widgets.SideBar;
 import com.parafield.storming.ui.widgets.ToolWindow;
+import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import java.awt.*;
 
@@ -119,9 +120,9 @@ public class MainWindow extends JFrame {
     private void toggleLeftPanel() {
         if (isLeftOpen) {
             leftSplitLastLoc = mainHorizontalSplit.getDividerLocation();
-            mainHorizontalSplit.setDividerLocation(0);
+            UIAnimator.animateSplit(mainHorizontalSplit, 0, 250);
         } else {
-            mainHorizontalSplit.setDividerLocation(leftSplitLastLoc);
+            UIAnimator.animateSplit(mainHorizontalSplit, leftSplitLastLoc, 250);
         }
         isLeftOpen = !isLeftOpen;
         projectBtn.setSelected(isLeftOpen);
@@ -131,12 +132,12 @@ public class MainWindow extends JFrame {
         if (!isRightOpen) {
             rightCardLayout.show(rightCardPanel, tabName);
             currentRightTab = tabName;
-            rightSplit.setDividerLocation(rightSplit.getWidth() - rightSplitLastLoc);
+            UIAnimator.animateSplit(rightSplit, rightSplit.getWidth() - rightSplitLastLoc, 250);
             isRightOpen = true;
         } else {
             if (currentRightTab.equals(tabName)) {
                 rightSplitLastLoc = rightSplit.getWidth() - rightSplit.getDividerLocation();
-                rightSplit.setDividerLocation(rightSplit.getWidth());
+                UIAnimator.animateSplit(rightSplit, rightSplit.getWidth(), 250);
                 isRightOpen = false;
             } else {
                 rightCardLayout.show(rightCardPanel, tabName);
