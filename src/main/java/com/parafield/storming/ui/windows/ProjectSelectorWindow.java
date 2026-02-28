@@ -2,11 +2,13 @@ package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class ProjectSelectorWindow extends JFrame {
+    private AnimatedPanel mainContent;
 
     public ProjectSelectorWindow() {
         setIconImage(Icons.FRAME_ICON);
@@ -42,11 +44,31 @@ public class ProjectSelectorWindow extends JFrame {
         listModel.addElement(new ProjectItem("New Adventure", "/home/user/projects/game1"));
         
         JList<ProjectItem> projectList = new JList<>(listModel);
-        projectList.setCellRenderer(new ProjectListRenderer());
+        ProjectListRenderer renderer = new ProjectListRenderer();
+        projectList.setCellRenderer(renderer);
         projectList.setOpaque(false);
         projectList.setFixedCellHeight(60);
         projectList.setBorder(new EmptyBorder(0, 5, 0, 5));
         
+        // Track hover state
+        projectList.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(java.awt.event.MouseEvent e) {
+                int index = projectList.locationToIndex(e.getPoint());
+                if (index != renderer.hoverIndex) {
+                    renderer.hoverIndex = index;
+                    projectList.repaint();
+                }
+            }
+        });
+        projectList.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                renderer.hoverIndex = -1;
+                projectList.repaint();
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(projectList);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
@@ -66,8 +88,8 @@ public class ProjectSelectorWindow extends JFrame {
         sidebar.add(sidebarFooter, BorderLayout.SOUTH);
         root.add(sidebar, BorderLayout.WEST);
 
-        // --- MAIN CONTENT (Welcome Screen) ---
-        JPanel mainContent = new JPanel(new GridBagLayout());
+        // --- MAIN CONTENT (Welcome Screen with Animation) ---
+        mainContent = new AnimatedPanel(new GridBagLayout());
         mainContent.setBackground(UIManager.getColor("Panel.background"));
         
         GridBagConstraints gbc = new GridBagConstraints();
@@ -116,6 +138,36 @@ public class ProjectSelectorWindow extends JFrame {
         mainContent.add(versionLabel, gbc);
 
         root.add(mainContent, BorderLayout.CENTER);
+        
+        // Start animation after layout is ready
+        SwingUtilities.invokeLater(() -> mainContent.startEntrance());
+    }
+
+    private static class AnimatedPanel extends JPanel {
+        private float alpha = 0.0f;
+        private int yOffset = 30; 
+
+        public AnimatedPanel(LayoutManager layout) {
+            super(layout);
+        }
+
+        public void startEntrance() {
+            UIAnimator.animate(0.0f, 1.0f, 600, a -> {
+                alpha = Math.max(0.0f, Math.min(1.0f, a));
+                yOffset = (int)(30 * (1.0f - alpha));
+                repaint();
+            }, null);
+        }
+
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2.translate(0, yOffset);
+            super.paint(g2);
+            g2.dispose();
+        }
     }
 
     private JButton createActionButton(String text, String colorHex, boolean primary) {
@@ -143,14 +195,31 @@ public class ProjectSelectorWindow extends JFrame {
     }
 
     private static class ProjectListRenderer extends DefaultListCellRenderer {
+        public int hoverIndex = -1;
+
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             ProjectItem item = (ProjectItem) value;
-            JPanel panel = new JPanel(new BorderLayout(15, 0));
+            JPanel panel = new JPanel(new BorderLayout(15, 0)) {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    if (isSelected || index == hoverIndex) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        if (isSelected) {
+                            g2.setColor(UIManager.getColor("List.selectionBackground"));
+                        } else {
+                            g2.setColor(new Color(255, 255, 255, 15));
+                        }
+                        g2.fillRoundRect(5, 2, getWidth() - 10, getHeight() - 4, 8, 8);
+                        g2.dispose();
+                    }
+                    super.paintComponent(g);
+                }
+            };
             panel.setBorder(new EmptyBorder(10, 15, 10, 15));
-            panel.setOpaque(isSelected);
-            if (isSelected) panel.setBackground(UIManager.getColor("List.selectionBackground"));
-
+            panel.setOpaque(false);
+            
             JLabel nameLabel = new JLabel(item.name);
             nameLabel.setFont(new Font("Inter", Font.BOLD, 13));
             nameLabel.setForeground(isSelected ? UIManager.getColor("List.selectionForeground") : UIManager.getColor("Label.foreground"));
