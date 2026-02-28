@@ -36,7 +36,7 @@ public class Icons {
     public static final ImageIcon FOLDER = loadIcon("folder", 20, 20);
     public static final ImageIcon FOLDER_80 = loadIcon("folder", 80, 80);
     
-    public static final ImageIcon SEARCH = loadIcon("search", 20, 20);
+    public static final ImageIcon SEARCH = loadIcon("search", 30, 30);
     public static final ImageIcon SEARCH_80 = loadIcon("search", 80, 80);
     
     public static final ImageIcon HAMBURGER = loadIcon("hamburger", 20, 20);

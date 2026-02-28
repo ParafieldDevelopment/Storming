@@ -135,13 +135,13 @@ public class StormingMenuBar extends JMenuBar {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Focused Glow: Small and short, centered around the project icon area
-        int centerX = 220; 
+        // Focused Glow: Very small and tightly centered around the project icon area
+        int centerX = 180; // Shifted left from 220
         int centerY = getHeight() / 2;
-        int radiusX = 250; // Much smaller horizontal reach
-        int radiusY = getHeight() * 2;
+        int radiusX = 120; // Reduced radius for a tighter look
+        int radiusY = 40;  // More shallow vertical spread
 
-        float[] dist = {0.0f, 0.5f, 1.0f};
+        float[] dist = {0.0f, 0.6f, 1.0f};
         Color glowColor = new Color(52, 152, 219); 
         Color[] colors = {
             new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 80),
