@@ -52,6 +52,9 @@ public class Icons {
     public static final ImageIcon CONSOLE = loadIcon("console", 20, 20);
     public static final ImageIcon CONSOLE_80 = loadIcon("console", 80, 80);
     
+    public static final ImageIcon TERMINAL = loadIcon("console", 20, 20);
+    public static final ImageIcon TERMINAL_80 = loadIcon("console", 80, 80);
+    
     public static final ImageIcon WARN = loadIcon("warn", 20, 20);
     public static final ImageIcon WARN_80 = loadIcon("warn", 80, 80);
     
@@ -62,4 +65,7 @@ public class Icons {
     public static final ImageIcon GIT = loadIcon("Git", 18, 18);
     public static final ImageIcon GRID = loadIcon("grid", 16, 16);
     public static final ImageIcon MAGNET = loadIcon("magnet", 16, 16);
+    public static final ImageIcon PLUS = loadIcon("plus", 16, 16);
+    public static final ImageIcon BRUSH = loadIcon("brush", 16, 16);
+    public static final ImageIcon CLIPBOARD = loadIcon("clipboard", 16, 16);
 }

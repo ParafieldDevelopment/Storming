@@ -8,6 +8,7 @@ import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.InspectorPanel;
 import com.parafield.storming.ui.panels.NotificationsPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
+import com.parafield.storming.ui.panels.TerminalPanel;
 import com.parafield.storming.ui.widgets.MainToolbar;
 import com.parafield.storming.ui.widgets.SideBar;
 import com.parafield.storming.ui.widgets.ToolWindow;
@@ -79,6 +80,7 @@ public class MainWindow extends JFrame {
         bottomTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
         bottomTabs.addTab("Console", Icons.CONSOLE, consolePanel);
         bottomTabs.addTab("Analyzer", Icons.WARN, new com.parafield.storming.ui.panels.AnalyzerPanel());
+        bottomTabs.addTab("Terminal", Icons.TERMINAL, new TerminalPanel());
 
         // --- 3. Construct Layout Hierarchy ---
         // Top: [ Hierarchy | [ Scene | Inspector ] ]
