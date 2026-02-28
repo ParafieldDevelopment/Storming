@@ -128,23 +128,27 @@ public class StormingMenuBar extends JMenuBar {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 
-        // The blue glow effect from the old toolbar
-        int centerX = 220; 
+        // Refined Glow: Centered more around the project info area
+        int centerX = 280; 
         int centerY = getHeight() / 2;
-        int radiusX = 350;
-        int radiusY = getHeight() * 2;
+        int radiusX = 450;
+        int radiusY = getHeight() * 3;
 
-        float[] dist = {0.0f, 0.3f, 1.0f};
+        float[] dist = {0.0f, 0.4f, 1.0f};
         Color glowColor = new Color(52, 152, 219); 
         Color[] colors = {
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 80),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 30),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 60),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 20),
             new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
         };
         
         RadialGradientPaint p = new RadialGradientPaint(centerX, centerY, radiusX, dist, colors);
         g2.setPaint(p);
         g2.fillOval(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
+
+        // Subtle bottom border for separation
+        g2.setColor(new Color(255, 255, 255, 15));
+        g2.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
 
         g2.dispose();
     }
