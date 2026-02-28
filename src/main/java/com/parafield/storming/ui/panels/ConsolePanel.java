@@ -97,12 +97,14 @@ public class ConsolePanel extends JPanel {
         // Draw subtle watermark icon in the bottom right
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.15f));
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
         
-        int size = 64;
+        int size = 80;
         int x = getWidth() - size - 25;
         int y = getHeight() - size - 25;
-        g2.drawImage(Icons.CONSOLE_64.getImage(), x, y, size, size, null);
+        if (Icons.CONSOLE_80 != null) {
+            Icons.CONSOLE_80.paintIcon(this, g2, x, y);
+        }
         g2.dispose();
     }
 

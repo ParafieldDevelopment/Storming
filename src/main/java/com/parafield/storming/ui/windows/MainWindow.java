@@ -4,6 +4,9 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.ConsolePanel;
+import com.parafield.storming.ui.panels.HierarchyPanel;
+import com.parafield.storming.ui.panels.InspectorPanel;
+import com.parafield.storming.ui.panels.NotificationsPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.widgets.MainToolbar;
 import com.parafield.storming.ui.widgets.SideBar;
@@ -63,10 +66,10 @@ public class MainWindow extends JFrame {
         // --- 1. Right Side Panels ---
         rightCardLayout = new CardLayout();
         rightCardPanel = new JPanel(rightCardLayout);
-        rightCardPanel.add(new ToolWindow("Inspector", new JTextArea("Select an object...")), "INSPECTOR");
-        rightCardPanel.add(new ToolWindow("Notifications", new JTextArea("No new notifications.")), "NOTIFICATIONS");
+        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel()), "INSPECTOR");
+        rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel()), "NOTIFICATIONS");
 
-        // --- 2. Center Panels ---
+        // --- 2. Center & Bottom Panels ---
         JTabbedPane editorTabs = new JTabbedPane();
         editorTabs.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_TYPE, FlatClientProperties.TABBED_PANE_TAB_TYPE_UNDERLINED);
         sceneViewPanel = new SceneViewPanel();
@@ -77,13 +80,16 @@ public class MainWindow extends JFrame {
         bottomTabs.addTab("Console", Icons.CONSOLE, consolePanel);
         bottomTabs.addTab("Analyzer", Icons.WARN, new com.parafield.storming.ui.panels.AnalyzerPanel());
 
-        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, editorTabs, bottomTabs, 600, 0.7);
-
-        // --- 3. Independent Splits ---
-        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, centerVerticalSplit, rightCardPanel, 1100, 1.0);
+        // --- 3. Construct Layout Hierarchy ---
+        // Top: [ Hierarchy | [ Scene | Inspector ] ]
+        rightSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, editorTabs, rightCardPanel, 800, 1.0);
         
-        ToolWindow hierarchyTW = new ToolWindow("Hierarchy", new JTree());
+        HierarchyPanel hierarchyPanel = new HierarchyPanel();
+        ToolWindow hierarchyTW = new ToolWindow("Hierarchy", hierarchyPanel);
         mainHorizontalSplit = createSplit(JSplitPane.HORIZONTAL_SPLIT, hierarchyTW, rightSplit, 280, 0.0);
+
+        // Final Vertical Split: Top Workspace / Bottom Tabs
+        centerVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, mainHorizontalSplit, bottomTabs, 600, 0.8);
 
         // --- 4. SideBars (JetBrains Style) ---
         SideBar leftBar = new SideBar(SwingConstants.VERTICAL, 40);
@@ -100,7 +106,7 @@ public class MainWindow extends JFrame {
         // --- 5. Assemble ---
         JPanel mainContent = new JPanel(new BorderLayout());
         mainContent.add(leftBar, BorderLayout.WEST);
-        mainContent.add(mainHorizontalSplit, BorderLayout.CENTER);
+        mainContent.add(centerVerticalSplit, BorderLayout.CENTER);
         mainContent.add(rightBar, BorderLayout.EAST);
 
         root.add(new MainToolbar(this::handlePlay, engineLauncher::stop), BorderLayout.NORTH);

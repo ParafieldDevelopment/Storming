@@ -1,5 +1,6 @@
 package com.parafield.storming.ui.panels;
 
+import com.parafield.storming.Icons;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Library;
