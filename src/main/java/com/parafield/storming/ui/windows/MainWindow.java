@@ -169,7 +169,6 @@ public class MainWindow extends JFrame {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
         left.setOpaque(false);
         left.add(new JLabel("  ● OpenGL 4.5 Core"));
-        left.add(new JLabel(" |  Branch: master"));
         
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 2));
         right.setOpaque(false);

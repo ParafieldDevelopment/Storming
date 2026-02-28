@@ -56,6 +56,35 @@ public class MainToolbar extends JToolBar {
         JLabel nameLabel = new JLabel(projectName);
         nameLabel.setFont(new Font("Inter", Font.BOLD, 12));
         add(nameLabel);
+
+        add(Box.createHorizontalStrut(15));
+
+        // --- Git Branch Button ---
+        JButton branchBtn = new JButton("master", Icons.GIT);
+        branchBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        branchBtn.setFont(new Font("Inter", Font.PLAIN, 11));
+        branchBtn.setForeground(UIManager.getColor("Label.disabledForeground"));
+        branchBtn.addActionListener(e -> {
+            JPopupMenu gitMenu = new JPopupMenu();
+
+            gitMenu.add(new JMenuItem("Commit..."));
+            gitMenu.add(new JMenuItem("Push"));
+            gitMenu.add(new JMenuItem("Pull"));
+            gitMenu.addSeparator();
+
+            JMenu branchesSub = new JMenu("Branches");
+            branchesSub.add(new JRadioButtonMenuItem("master", true));
+            branchesSub.add(new JRadioButtonMenuItem("develop"));
+            branchesSub.addSeparator();
+            branchesSub.add(new JMenuItem("New Branch..."));
+            gitMenu.add(branchesSub);
+
+            gitMenu.addSeparator();
+            gitMenu.add(new JMenuItem("Git Log"));
+
+            gitMenu.show(branchBtn, 0, branchBtn.getHeight());
+        });
+        add(branchBtn);
         
         add(Box.createHorizontalGlue());
         
@@ -98,5 +127,37 @@ public class MainToolbar extends JToolBar {
         
         add(controls);
         add(Box.createHorizontalStrut(10));
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Calculate center for the glow (around project icon/name)
+        int centerX = 160; 
+        int centerY = getHeight() / 2;
+        
+        // Spread it more horizontally
+        int radiusX = 350;
+        int radiusY = getHeight() * 2;
+
+        float[] dist = {0.0f, 0.3f, 1.0f};
+        // Increased alpha (100) for the core, fading out
+        Color glowColor = new Color(52, 152, 219); 
+        Color[] colors = {
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 110),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 45),
+            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
+        };
+        
+        RadialGradientPaint p = new RadialGradientPaint(centerX, centerY, radiusX, dist, colors);
+        g2.setPaint(p);
+        
+        // Use a wide oval to spread the glow along the toolbar
+        g2.fillOval(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
+
+        g2.dispose();
     }
 }
