@@ -16,10 +16,14 @@ public class SideBar extends JPanel {
 
     @Override
     public void paint(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-        super.paint(g2);
-        g2.dispose();
+        if (alpha < 1.0f) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            super.paint(g2);
+            g2.dispose();
+        } else {
+            super.paint(g);
+        }
     }
 
     public SideBar(int orientation, int width) {

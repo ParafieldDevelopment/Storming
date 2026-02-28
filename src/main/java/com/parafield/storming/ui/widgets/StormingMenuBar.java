@@ -2,6 +2,7 @@ package com.parafield.storming.ui.widgets;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import java.awt.*;
 
@@ -79,7 +80,7 @@ public class StormingMenuBar extends JMenuBar {
                 g2.setColor(new Color(52, 152, 219));
                 g2.fillRoundRect(x, y, 18, 18, 6, 6);
                 g2.setColor(Color.WHITE);
-                g2.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 11f));
+                g2.setFont(UIUtils.getFont(Font.BOLD, 11f));
                 String letter = projectName.substring(0, 1).toUpperCase();
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
@@ -123,7 +124,11 @@ public class StormingMenuBar extends JMenuBar {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        
+        // Only apply composite if we are actually transparent (to preserve subpixel AA)
+        if (alpha < 1.0f) {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        }
 
         // Refined Glow: Centered more around the project info area
         int centerX = 280; 

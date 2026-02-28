@@ -3,6 +3,7 @@ package com.parafield.storming.ui.windows;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIAnimator;
+import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -35,7 +36,7 @@ public class ProjectSelectorWindow extends JFrame {
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Component.borderColor")));
 
         JLabel titleLabel = new JLabel("Projects");
-        titleLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 16f));
+        titleLabel.setFont(UIUtils.getFont(Font.BOLD, 16f));
         titleLabel.setBorder(new EmptyBorder(30, 25, 15, 25));
         sidebar.add(titleLabel, BorderLayout.NORTH);
 
@@ -105,7 +106,7 @@ public class ProjectSelectorWindow extends JFrame {
         // Title
         gbc.gridy++;
         JLabel welcomeTitle = new JLabel("Storming Engine");
-        welcomeTitle.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 32f));
+        welcomeTitle.setFont(UIUtils.getFont(Font.BOLD, 32f));
         mainContent.add(welcomeTitle, gbc);
 
         // Subtitle
@@ -134,7 +135,7 @@ public class ProjectSelectorWindow extends JFrame {
         gbc.gridy++;
         gbc.insets = new Insets(50, 0, 0, 0);
         JLabel versionLabel = new JLabel("v2026.1 Alpha Preview");
-        versionLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
+        versionLabel.setFont(UIUtils.getFont(Font.PLAIN, 11f));
         versionLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         mainContent.add(versionLabel, gbc);
 
@@ -174,7 +175,7 @@ public class ProjectSelectorWindow extends JFrame {
     private JButton createActionButton(String text, String colorHex, boolean primary) {
         JButton btn = new JButton(text);
         btn.setPreferredSize(new Dimension(180, 45));
-        btn.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 14f));
+        btn.setFont(UIUtils.getFont(Font.BOLD, 14f));
         
         String style = "arc: 10;";
         if (primary && colorHex != null) {
@@ -240,11 +241,11 @@ public class ProjectSelectorWindow extends JFrame {
             panel.setOpaque(false);
             
             JLabel nameLabel = new JLabel(item.name);
-            nameLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.BOLD, 13f));
+            nameLabel.setFont(UIUtils.getFont(Font.BOLD, 13f));
             nameLabel.setForeground(isSelected ? UIManager.getColor("List.selectionForeground") : UIManager.getColor("Label.foreground"));
             
             JLabel pathLabel = new JLabel(item.path);
-            pathLabel.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
+            pathLabel.setFont(UIUtils.getFont(Font.PLAIN, 11f));
             pathLabel.setForeground(isSelected ? UIManager.getColor("List.selectionForeground") : UIManager.getColor("Label.disabledForeground"));
 
             JPanel textPanel = new JPanel(new GridLayout(2, 1));

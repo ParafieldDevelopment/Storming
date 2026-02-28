@@ -19,14 +19,6 @@ public class EditorApp {
         // Hide icons in title pane globally
         UIManager.put("TitlePane.showIcon", false);
 
-        // Linux 1080p Rendering Fixes
-        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-            System.setProperty("awt.useSystemAAFontSettings", "gasp"); // Better for standard DPI
-            System.setProperty("swing.aatext", "true");
-            System.setProperty("sun.java2d.xrender", "true"); // Often smoother than OpenGL on X11
-            System.setProperty("sun.java2d.uiScale", "1.0"); // Force no-scaling for 1080p
-        }
-
         JFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);
 
@@ -55,29 +47,6 @@ public class EditorApp {
 
     private static void setupGlobalTheme() {
         try {
-            // Use a clean Sans-Serif for the UI
-            String fontName = "Inter";
-            String os = System.getProperty("os.name").toLowerCase();
-            
-            if (os.contains("linux")) {
-                // DejaVu Sans is usually the best hinted font on standard Linux displays
-                String[] preferred = {"Inter", "DejaVu Sans", "Ubuntu", "Cantarell", "SansSerif"};
-                for (String f : preferred) {
-                    Font font = new Font(f, Font.PLAIN, 13);
-                    if (!font.getFamily().equals("Dialog")) {
-                        fontName = f;
-                        break;
-                    }
-                }
-            } else if (os.contains("windows")) {
-                fontName = "Segoe UI";
-            } else if (os.contains("mac")) {
-                fontName = ".AppleSystemUIFont";
-            }
-            
-            Font uiFont = new Font(fontName, Font.PLAIN, 13);
-            UIManager.put("defaultFont", uiFont);
-            
             UIManager.setLookAndFeel(new FlatMacDarkLaf());
             
             // Refine UI for "Cleanliness"
