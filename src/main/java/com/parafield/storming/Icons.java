@@ -63,6 +63,8 @@ public class Icons {
     
     public static final ImageIcon EXE_ICON = loadIcon("exe-icon", 18, 18);
     public static final ImageIcon GIT = loadIcon("Git", 18, 18);
+    public static final ImageIcon COMMIT = loadIcon("commit", 18, 18);
+    public static final ImageIcon PR = loadIcon("PR", 18, 18);
     public static final ImageIcon GRID = loadIcon("grid", 16, 16);
     public static final ImageIcon MAGNET = loadIcon("magnet", 16, 16);
     public static final ImageIcon PLUS = loadIcon("plus", 16, 16);
