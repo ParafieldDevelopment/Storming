@@ -135,23 +135,21 @@ public class StormingMenuBar extends JMenuBar {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Focused Glow: Very small and tightly centered around the project icon area
-        int centerX = 180; // Shifted left from 220
-        int centerY = getHeight() / 2;
-        int radiusX = 120; // Reduced radius for a tighter look
-        int radiusY = 40;  // More shallow vertical spread
-
-        float[] dist = {0.0f, 0.6f, 1.0f};
-        Color glowColor = new Color(52, 152, 219); 
-        Color[] colors = {
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 80),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
-        };
+        // Focused Linear Glow: Starts slightly inward but fills from absolute left
+        Color glowColor = new Color(52, 152, 219);
+        LinearGradientPaint p = new LinearGradientPaint(
+            0, 0, 500, 0,
+            new float[]{0.0f, 0.15f, 0.5f, 1.0f}, // Added step to start peak further right
+            new Color[]{
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0),  // Transparent at absolute left
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 70), // Peak starts at ~75px
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
+            }
+        );
         
-        RadialGradientPaint p = new RadialGradientPaint(centerX, centerY, radiusX, dist, colors);
         g2.setPaint(p);
-        g2.fillOval(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
+        g2.fillRect(0, 0, 500, getHeight());
 
         // Subtle bottom border
         g2.setColor(new Color(255, 255, 255, 15));
