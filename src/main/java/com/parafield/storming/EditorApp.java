@@ -16,8 +16,9 @@ public class EditorApp {
         System.setProperty("flatlaf.useWindowDecorations", "true");
         System.setProperty("flatlaf.menuBarEmbedded", "true");
         
-        // Hide icons in title pane globally
+        // Hide icons and remove gaps in title pane
         UIManager.put("TitlePane.showIcon", false);
+        UIManager.put("TitlePane.embeddedMenuBarGap", 0);
 
         JFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);

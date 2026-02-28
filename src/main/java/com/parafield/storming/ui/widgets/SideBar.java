@@ -19,11 +19,22 @@ public class SideBar extends JPanel {
         if (alpha < 1.0f) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            paintAtmosphere(g2);
             super.paint(g2);
             g2.dispose();
         } else {
+            paintAtmosphere((Graphics2D) g);
             super.paint(g);
         }
+    }
+
+    private void paintAtmosphere(Graphics2D g2) {
+        // Vertical gradient to blend with the top bar's glow
+        Color glowColor = new Color(52, 152, 219);
+        GradientPaint p = new GradientPaint(0, 0, new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 40),
+                                           0, 100, new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0));
+        g2.setPaint(p);
+        g2.fillRect(0, 0, getWidth(), 100);
     }
 
     public SideBar(int orientation, int width) {

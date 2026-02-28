@@ -15,6 +15,8 @@ public class StormingMenuBar extends JMenuBar {
         this.onPlay = onPlay;
         this.onStop = onStop;
         
+        setOpaque(false);
+        setBorder(null);
         setPreferredSize(new Dimension(0, 40));
         putClientProperty(FlatClientProperties.STYLE, "hoverBackground: #ffffff10;");
         
@@ -116,8 +118,6 @@ public class StormingMenuBar extends JMenuBar {
         settingsBtn.setToolTipText("Settings");
         settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
         add(settingsBtn);
-
-        add(Box.createHorizontalStrut(120)); // Space for window controls (min/max/close)
     }
 
     private JMenu createMenu(String title) {
@@ -131,30 +131,36 @@ public class StormingMenuBar extends JMenuBar {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Only apply composite if we are actually transparent (to preserve subpixel AA)
         if (alpha < 1.0f) {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         }
 
-        // Refined Glow: Moved further left and widened to ensure smooth fade
-        int centerX = 150; 
-        int centerY = getHeight() / 2;
-        int radiusX = 600;
-        int radiusY = getHeight() * 3;
-
-        float[] dist = {0.0f, 0.2f, 1.0f};
-        Color glowColor = new Color(52, 152, 219); 
-        Color[] colors = {
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 60),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 20),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
-        };
+        // Linear Gradient for a perfectly smooth fade from the absolute left
+        Window win = SwingUtilities.getWindowAncestor(this);
+        int w = (win != null) ? win.getWidth() : getWidth();
         
-        RadialGradientPaint p = new RadialGradientPaint(centerX, centerY, radiusX, dist, colors);
-        g2.setPaint(p);
-        g2.fillOval(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
+        // Find our offset relative to the window to ensure gradient starts at 0
+        int xOffset = 0;
+        if (win != null) {
+            Point pInWin = SwingUtilities.convertPoint(this, 0, 0, win);
+            xOffset = -pInWin.x;
+        }
 
-        // Subtle bottom border for separation
+        Color glowColor = new Color(52, 152, 219);
+        LinearGradientPaint p = new LinearGradientPaint(
+            xOffset, 0, xOffset + Math.max(1, w), 0,
+            new float[]{0.0f, 0.4f, 1.0f},
+            new Color[]{
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 70),
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 25),
+                new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), 0)
+            }
+        );
+        
+        g2.setPaint(p);
+        g2.fillRect(xOffset, 0, w, getHeight());
+
+        // Subtle bottom border
         g2.setColor(new Color(255, 255, 255, 15));
         g2.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
 
