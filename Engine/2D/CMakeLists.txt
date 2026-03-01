@@ -19,6 +19,7 @@ FetchContent_Declare(
     entt
     GIT_REPOSITORY https://github.com/skypjack/entt.git
     GIT_TAG v3.13.0
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(entt)
 
@@ -27,16 +28,16 @@ FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
     GIT_TAG v0.1.36
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glad)
-# Custom glad generation for OpenGL 4.5
-# We don't need add_library here anymore if it exists
 
 # 4. GLM (Math)
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG 0.9.9.8
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glm)
 
