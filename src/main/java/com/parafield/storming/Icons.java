@@ -12,11 +12,11 @@ import java.util.Objects;
  */
 public class Icons {
     /** The main window icon for the application. */
-    public static final Image FRAME_ICON = Toolkit.getDefaultToolkit().getImage(Icons.class.getResource("/com/parafield/storming/icons/exe-icon.png"));
+    public static final Image FRAME_ICON = Toolkit.getDefaultToolkit().getImage(Icons.class.getResource("/com/parafield/storming/icons/png/exe-icon.png"));
 
     /**
      * Loads an icon from resources by name.
-     * Attempts to find a .svg file first, falling back to .png if not found.
+     * Attempts to find a .svg file in icons/svg first, falling back to .png in icons/png if not found.
      *
      * @param name The base name of the icon file.
      * @param width The target width to scale to (set to 0 for default).
@@ -24,7 +24,7 @@ public class Icons {
      * @return An ImageIcon if found, null otherwise.
      */
     private static ImageIcon loadIcon(String name, int width, int height) {
-        String svgPath = "/com/parafield/storming/icons/" + name + ".svg";
+        String svgPath = "/com/parafield/storming/icons/svg/" + name + ".svg";
         URL svgUrl = Icons.class.getResource(svgPath);
         
         if (svgUrl != null) {
@@ -35,7 +35,7 @@ public class Icons {
             return svgIcon;
         } else {
             // Fallback to PNG
-            URL pngUrl = Icons.class.getResource("/com/parafield/storming/icons/" + name + ".png");
+            URL pngUrl = Icons.class.getResource("/com/parafield/storming/icons/png/" + name + ".png");
             if (pngUrl == null) {
                 return null;
             }

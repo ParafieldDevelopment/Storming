@@ -81,10 +81,10 @@ runtime {
             installerOptions.addAll(listOf("--icon", "packaging/icon.ico", "--type", "msi"))
         } else if (isMac) {
             val icnsIcon = file("packaging/icon.icns")
-            val iconPath = if (icnsIcon.exists()) "packaging/icon.icns" else "src/main/resources/com/parafield/storming/icons/icon.png"
+            val iconPath = if (icnsIcon.exists()) "packaging/icon.icns" else "src/main/resources/com/parafield/storming/icons/png/icon.png"
             installerOptions.addAll(listOf("--icon", iconPath, "--type", "dmg"))
         } else if (isLinux) {
-            installerOptions.addAll(listOf("--icon", "src/main/resources/com/parafield/storming/icons/icon.png", "--type", "deb"))
+            installerOptions.addAll(listOf("--icon", "src/main/resources/com/parafield/storming/icons/png/icon.png", "--type", "deb"))
         }
 
         installerOptions.addAll(
