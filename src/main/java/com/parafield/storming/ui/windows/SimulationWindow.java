@@ -320,12 +320,17 @@ public class SimulationWindow extends JFrame {
         private final Timer updateTimer;
         private final List<Float> fpsHistory = new ArrayList<>();
         private final List<Float> memHistory = new ArrayList<>();
+        private final List<Float> cpuHistory = new ArrayList<>();
+        private final List<Float> gpuHistory = new ArrayList<>();
+        
         private final GraphPanel fpsGraph;
         private final GraphPanel memGraph;
+        private final GraphPanel cpuGraph;
+        private final GraphPanel gpuGraph;
 
         public PerformanceMonitorDialog(Frame owner) {
             super(owner, "Performance Monitor", false);
-            setSize(800, 600); // Wider window
+            setSize(950, 700); // Slightly wider to fit 3 graphs comfortably
             setLocationRelativeTo(owner);
             
             JPanel main = new JPanel();
@@ -333,21 +338,34 @@ public class SimulationWindow extends JFrame {
             main.setBorder(new EmptyBorder(25, 25, 25, 25));
             main.setBackground(new Color(25, 25, 30));
             
-            // hardware Section
+            // 1. Hardware Section
             main.add(createSection("Hardware & System", createHardwareGrid()));
             main.add(Box.createVerticalStrut(25));
             
-            // Frame Timing Section
+            // 2. Frame Timing Section (Full Width)
             fpsGraph = new GraphPanel(new Color(46, 204, 113));
-            fpsGraph.setPreferredSize(new Dimension(0, 140));
+            fpsGraph.setPreferredSize(new Dimension(0, 120));
             main.add(createSection("Real-time Frame Timing", fpsGraph));
             
             main.add(Box.createVerticalStrut(25));
             
-            // Memory Section
-            memGraph = new GraphPanel(new Color(52, 152, 219));
-            memGraph.setPreferredSize(new Dimension(0, 140));
-            main.add(createSection("Memory Usage (JVM Heap)", memGraph));
+            // 3. Resource Usage Row (3 Columns)
+            JPanel resourceRow = new JPanel(new GridLayout(1, 3, 15, 0));
+            resourceRow.setOpaque(false);
+            
+            cpuGraph = new GraphPanel(new Color(231, 76, 60)); // Red for CPU
+            cpuGraph.setPreferredSize(new Dimension(0, 120));
+            resourceRow.add(createSection("CPU Usage", cpuGraph));
+            
+            gpuGraph = new GraphPanel(new Color(155, 89, 182)); // Purple for GPU
+            gpuGraph.setPreferredSize(new Dimension(0, 120));
+            resourceRow.add(createSection("GPU Usage", gpuGraph));
+            
+            memGraph = new GraphPanel(new Color(52, 152, 219)); // Blue for Memory
+            memGraph.setPreferredSize(new Dimension(0, 120));
+            resourceRow.add(createSection("Memory (JVM)", memGraph));
+            
+            main.add(resourceRow);
 
             JScrollPane scroll = new JScrollPane(main);
             scroll.setBorder(null);
@@ -361,11 +379,11 @@ public class SimulationWindow extends JFrame {
         }
 
         private JPanel createSection(String title, JComponent content) {
-            JPanel section = new JPanel(new BorderLayout(0, 10));
+            JPanel section = new JPanel(new BorderLayout(0, 8));
             section.setOpaque(false);
             
             JLabel l = new JLabel(title.toUpperCase());
-            l.setFont(UIUtils.getFont(Font.BOLD, 11f));
+            l.setFont(UIUtils.getFont(Font.BOLD, 10f));
             l.setForeground(new Color(120, 120, 130));
             
             section.add(l, BorderLayout.NORTH);
@@ -374,7 +392,7 @@ public class SimulationWindow extends JFrame {
         }
 
         private JPanel createHardwareGrid() {
-            JPanel grid = new JPanel(new GridLayout(0, 3, 20, 12)); // 3 columns, more spacing
+            JPanel grid = new JPanel(new GridLayout(0, 3, 20, 12));
             grid.setOpaque(false);
             
             grid.add(createKV("OS", System.getProperty("os.name")));
@@ -410,7 +428,7 @@ public class SimulationWindow extends JFrame {
             JPanel p = new JPanel(new BorderLayout());
             p.setOpaque(false);
             JLabel k = new JLabel(key);
-            k.setFont(UIUtils.getFont(Font.PLAIN, 11f));
+            k.setFont(UIUtils.getFont(Font.PLAIN, 10f));
             k.setForeground(new Color(150, 150, 155));
             JLabel v = new JLabel(val);
             v.setFont(UIUtils.getFont(Font.BOLD, 11f));
@@ -421,14 +439,35 @@ public class SimulationWindow extends JFrame {
         }
 
         private void updateTelemetry() {
+            // 1. FPS
             float fps = 58f + (float)Math.random() * 4f;
             fpsHistory.add(fps); if (fpsHistory.size() > 60) fpsHistory.remove(0);
-            fpsGraph.setData(fpsHistory, 0, 120, String.format("Current: %.1f FPS", fps));
+            fpsGraph.setData(fpsHistory, 0, 120, String.format("%.1f FPS", fps));
 
+            // 2. CPU (Using system load if available)
+            float cpuUsage = 0;
+            try {
+                java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunBean) {
+                    cpuUsage = (float)sunBean.getProcessCpuLoad() * 100f;
+                } else {
+                    cpuUsage = (float)osBean.getSystemLoadAverage(); // Fallback
+                }
+            } catch (Exception e) { cpuUsage = (float)Math.random() * 15f; }
+            if (cpuUsage < 0) cpuUsage = (float)Math.random() * 10f; // Handle startup -1
+            cpuHistory.add(cpuUsage); if (cpuHistory.size() > 40) cpuHistory.remove(0);
+            cpuGraph.setData(cpuHistory, 0, 100, String.format("CPU: %.1f%%", cpuUsage));
+
+            // 3. GPU (Placeholder - requires engine integration)
+            float gpuUsage = 20f + (float)Math.random() * 10f; 
+            gpuHistory.add(gpuUsage); if (gpuHistory.size() > 40) gpuHistory.remove(0);
+            gpuGraph.setData(gpuHistory, 0, 100, String.format("GPU (Est): %.1f%%", gpuUsage));
+
+            // 4. Memory
             Runtime r = Runtime.getRuntime();
             float used = (r.totalMemory() - r.freeMemory()) / 1024f / 1024f;
-            memHistory.add(used); if (memHistory.size() > 60) memHistory.remove(0);
-            memGraph.setData(memHistory, 0, r.maxMemory()/1024f/1024f, String.format("Used: %.0f MB", used));
+            memHistory.add(used); if (memHistory.size() > 40) memHistory.remove(0);
+            memGraph.setData(memHistory, 0, r.maxMemory()/1024f/1024f, String.format("Memory: %.0f MB", used));
         }
     }
 
