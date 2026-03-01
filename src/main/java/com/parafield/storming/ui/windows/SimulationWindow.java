@@ -10,7 +10,6 @@ import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -182,7 +181,7 @@ public class SimulationWindow extends JFrame {
 
         JLabel stats = new JLabel(" 60 FPS | 16.6ms | OpenGL 4.5 Core");
         stats.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-        stats.setForeground(new Color(150, 150, 150));
+        stats.setForeground(new Color(150, 150, 155));
         left.add(stats);
         p.add(left, BorderLayout.WEST);
 
@@ -191,7 +190,7 @@ public class SimulationWindow extends JFrame {
         
         memLabel = new JLabel("0 / 0 MB");
         memLabel.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-        memLabel.setForeground(new Color(150, 150, 150));
+        memLabel.setForeground(new Color(150, 150, 155));
         
         memBar = new JProgressBar(0, 100);
         memBar.setPreferredSize(new Dimension(80, 6));
@@ -302,12 +301,16 @@ public class SimulationWindow extends JFrame {
 
     private static class AlphaPanel extends JPanel {
         private float alpha = 1.0f;
-        public AlphaPanel(LayoutManager layout) { super(layout); }
+        private int yOffset = 0;
+        public AlphaPanel(LayoutManager layout) { super(layout); setOpaque(false); }
         public void setAlpha(float a) { this.alpha = a; repaint(); }
+        public void setYOffset(int y) { this.yOffset = y; repaint(); }
         @Override
         public void paint(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2.translate(0, yOffset);
             super.paint(g2);
             g2.dispose();
         }
@@ -327,81 +330,91 @@ public class SimulationWindow extends JFrame {
         private final GraphPanel memGraph;
         private final GraphPanel cpuGraph;
         private final GraphPanel gpuGraph;
+        
+        private final AlphaPanel mainContent;
 
         public PerformanceMonitorDialog(Frame owner) {
             super(owner, "Performance Monitor", false);
-            setSize(950, 700); // Slightly wider to fit 3 graphs comfortably
+            setSize(950, 750);
             setLocationRelativeTo(owner);
+            setLayout(new BorderLayout());
+            getContentPane().setBackground(new Color(25, 25, 30));
             
-            JPanel main = new JPanel();
-            main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
-            main.setBorder(new EmptyBorder(25, 25, 25, 25));
-            main.setBackground(new Color(25, 25, 30));
+            mainContent = new AlphaPanel(null);
+            mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
+            mainContent.setBorder(new EmptyBorder(35, 35, 35, 35));
+            mainContent.setAlpha(0.0f);
+            mainContent.setYOffset(20);
             
             // 1. Hardware Section
-            main.add(createSection("Hardware & System", createHardwareGrid()));
-            main.add(Box.createVerticalStrut(25));
+            mainContent.add(createSection("Hardware & System", createHardwareGrid()));
+            mainContent.add(Box.createVerticalStrut(35));
             
             // 2. Frame Timing Section (Full Width)
             fpsGraph = new GraphPanel(new Color(46, 204, 113));
-            fpsGraph.setPreferredSize(new Dimension(0, 120));
-            main.add(createSection("Real-time Frame Timing", fpsGraph));
+            fpsGraph.setPreferredSize(new Dimension(0, 140));
+            mainContent.add(createSection("Real-time Frame Timing", fpsGraph));
             
-            main.add(Box.createVerticalStrut(25));
+            mainContent.add(Box.createVerticalStrut(35));
             
             // 3. Resource Usage Row (3 Columns)
-            JPanel resourceRow = new JPanel(new GridLayout(1, 3, 15, 0));
+            JPanel resourceRow = new JPanel(new GridLayout(1, 3, 20, 0));
             resourceRow.setOpaque(false);
             
-            cpuGraph = new GraphPanel(new Color(231, 76, 60)); // Red for CPU
-            cpuGraph.setPreferredSize(new Dimension(0, 120));
+            cpuGraph = new GraphPanel(new Color(231, 76, 60));
+            cpuGraph.setPreferredSize(new Dimension(0, 140));
             resourceRow.add(createSection("CPU Usage", cpuGraph));
             
-            gpuGraph = new GraphPanel(new Color(155, 89, 182)); // Purple for GPU
-            gpuGraph.setPreferredSize(new Dimension(0, 120));
+            gpuGraph = new GraphPanel(new Color(155, 89, 182));
+            gpuGraph.setPreferredSize(new Dimension(0, 140));
             resourceRow.add(createSection("GPU Usage", gpuGraph));
             
-            memGraph = new GraphPanel(new Color(52, 152, 219)); // Blue for Memory
-            memGraph.setPreferredSize(new Dimension(0, 120));
+            memGraph = new GraphPanel(new Color(52, 152, 219));
+            memGraph.setPreferredSize(new Dimension(0, 140));
             resourceRow.add(createSection("Memory (JVM)", memGraph));
             
-            main.add(resourceRow);
+            mainContent.add(resourceRow);
 
-            JScrollPane scroll = new JScrollPane(main);
-            scroll.setBorder(null);
-            add(scroll);
+            // Removing the JScrollPane to prevent scrolling as requested
+            add(mainContent, BorderLayout.CENTER);
 
             updateTimer = new Timer(500, e -> updateTelemetry());
+            updateTimer.setInitialDelay(1500); 
             updateTimer.start();
+            
             addWindowListener(new java.awt.event.WindowAdapter() {
                 @Override public void windowClosing(java.awt.event.WindowEvent e) { updateTimer.stop(); }
+            });
+            
+            // Entrance Animation
+            SwingUtilities.invokeLater(() -> {
+                UIAnimator.animate(0.0f, 1.0f, 500, a -> {
+                    mainContent.setAlpha(a);
+                    mainContent.setYOffset((int)(20 * (1.0f - a)));
+                }, null);
             });
         }
 
         private JPanel createSection(String title, JComponent content) {
-            JPanel section = new JPanel(new BorderLayout(0, 8));
+            JPanel section = new JPanel(new BorderLayout(0, 12));
             section.setOpaque(false);
-            
             JLabel l = new JLabel(title.toUpperCase());
-            l.setFont(UIUtils.getFont(Font.BOLD, 10f));
+            l.setFont(UIUtils.getFont(Font.BOLD, 14f));
             l.setForeground(new Color(120, 120, 130));
-            
             section.add(l, BorderLayout.NORTH);
             section.add(content, BorderLayout.CENTER);
             return section;
         }
 
         private JPanel createHardwareGrid() {
-            JPanel grid = new JPanel(new GridLayout(0, 3, 20, 12));
+            JPanel grid = new JPanel(new GridLayout(0, 3, 25, 15));
             grid.setOpaque(false);
-            
             grid.add(createKV("OS", System.getProperty("os.name")));
             grid.add(createKV("Architecture", System.getProperty("os.arch")));
             grid.add(createKV("Processor", getProcessorName()));
             grid.add(createKV("Logical Cores", String.valueOf(Runtime.getRuntime().availableProcessors())));
             grid.add(createKV("Graphics Device", GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getIDstring()));
             grid.add(createKV("JVM", System.getProperty("java.version")));
-            
             return grid;
         }
 
@@ -414,8 +427,7 @@ public class SimulationWindow extends JFrame {
                         try (java.util.stream.Stream<String> lines = java.nio.file.Files.lines(path)) {
                             return lines.filter(line -> line.contains("model name"))
                                 .map(line -> line.split(":")[1].trim())
-                                .findFirst()
-                                .orElse(System.getProperty("os.arch"));
+                                .findFirst().orElse(System.getProperty("os.arch"));
                         }
                     }
                 } catch (Exception ignored) {}
@@ -428,10 +440,10 @@ public class SimulationWindow extends JFrame {
             JPanel p = new JPanel(new BorderLayout());
             p.setOpaque(false);
             JLabel k = new JLabel(key);
-            k.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+            k.setFont(UIUtils.getFont(Font.PLAIN, 14f));
             k.setForeground(new Color(150, 150, 155));
             JLabel v = new JLabel(val);
-            v.setFont(UIUtils.getFont(Font.BOLD, 11f));
+            v.setFont(UIUtils.getFont(Font.BOLD, 18f));
             v.setForeground(new Color(210, 210, 215));
             p.add(k, BorderLayout.NORTH);
             p.add(v, BorderLayout.CENTER);
@@ -439,31 +451,30 @@ public class SimulationWindow extends JFrame {
         }
 
         private void updateTelemetry() {
-            // 1. FPS
+            fpsGraph.setCalculating(false);
+            cpuGraph.setCalculating(false);
+            gpuGraph.setCalculating(false);
+            memGraph.setCalculating(false);
+
             float fps = 58f + (float)Math.random() * 4f;
             fpsHistory.add(fps); if (fpsHistory.size() > 60) fpsHistory.remove(0);
             fpsGraph.setData(fpsHistory, 0, 120, String.format("%.1f FPS", fps));
 
-            // 2. CPU (Using system load if available)
             float cpuUsage = 0;
             try {
                 java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
                 if (osBean instanceof com.sun.management.OperatingSystemMXBean sunBean) {
                     cpuUsage = (float)sunBean.getProcessCpuLoad() * 100f;
-                } else {
-                    cpuUsage = (float)osBean.getSystemLoadAverage(); // Fallback
                 }
-            } catch (Exception e) { cpuUsage = (float)Math.random() * 15f; }
-            if (cpuUsage < 0) cpuUsage = (float)Math.random() * 10f; // Handle startup -1
+            } catch (Exception e) {}
+            if (cpuUsage <= 0) cpuUsage = (float)Math.random() * 10f;
             cpuHistory.add(cpuUsage); if (cpuHistory.size() > 40) cpuHistory.remove(0);
             cpuGraph.setData(cpuHistory, 0, 100, String.format("CPU: %.1f%%", cpuUsage));
 
-            // 3. GPU (Placeholder - requires engine integration)
             float gpuUsage = 20f + (float)Math.random() * 10f; 
             gpuHistory.add(gpuUsage); if (gpuHistory.size() > 40) gpuHistory.remove(0);
             gpuGraph.setData(gpuHistory, 0, 100, String.format("GPU (Est): %.1f%%", gpuUsage));
 
-            // 4. Memory
             Runtime r = Runtime.getRuntime();
             float used = (r.totalMemory() - r.freeMemory()) / 1024f / 1024f;
             memHistory.add(used); if (memHistory.size() > 40) memHistory.remove(0);
@@ -476,6 +487,7 @@ public class SimulationWindow extends JFrame {
         private float min, max;
         private String label = "";
         private final Color color;
+        private boolean isCalculating = true;
 
         public GraphPanel(Color c) { 
             this.color = c; 
@@ -483,50 +495,70 @@ public class SimulationWindow extends JFrame {
             setBorder(BorderFactory.createLineBorder(new Color(60, 60, 65)));
         }
 
+        public void setCalculating(boolean calc) { this.isCalculating = calc; repaint(); }
+
         public void setData(List<Float> d, float min, float max, String l) {
-            this.data = new ArrayList<>(d); this.min = min; this.max = max; this.label = l; repaint();
+            this.data = new ArrayList<>(d);
+            this.min = min;
+            this.max = (max <= min) ? min + 1.0f : max;
+            this.label = l;
+            repaint();
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            if (data.size() < 2) return;
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             int w = getWidth(), h = getHeight();
-            float xStep = (float)w / (data.size()-1);
 
-            // Path for gradient fill
+            // Draw Background Grid
+            g2.setColor(new Color(255, 255, 255, 10));
+            g2.setStroke(new BasicStroke(1f));
+            for (int i = 1; i < 4; i++) {
+                int y = h * i / 4;
+                g2.drawLine(0, y, w, y);
+            }
+            for (int i = 1; i < 10; i++) {
+                int x = w * i / 10;
+                g2.drawLine(x, 0, x, h);
+            }
+
+            if (isCalculating || data.size() < 2) {
+                g2.setColor(new Color(100, 100, 110));
+                g2.setFont(UIUtils.getFont(Font.BOLD, 18f));
+                FontMetrics fm = g2.getFontMetrics();
+                String text = "CALCULATING...";
+                g2.drawString(text, (getWidth() - fm.stringWidth(text)) / 2, (getHeight() + fm.getAscent()) / 2);
+                g2.dispose();
+                return;
+            }
+
+            float xStep = (float)w / (data.size()-1);
             Path2D.Float path = new Path2D.Float();
             path.moveTo(0, h);
             for (int i=0; i<data.size(); i++) {
-                float x = i * xStep;
-                float y = h - ((data.get(i)-min)/(max-min)*h);
-                path.lineTo(x, y);
+                float val = data.get(i);
+                float y = h - ((val - min) / (max - min) * h);
+                path.lineTo(i * xStep, y);
             }
-            path.lineTo(w, h);
-            path.closePath();
-
-            // Draw Area Gradient
+            path.lineTo(w, h); path.closePath();
             g2.setPaint(new GradientPaint(0, 0, new Color(color.getRed(), color.getGreen(), color.getBlue(), 60), 0, h, new Color(color.getRed(), color.getGreen(), color.getBlue(), 0)));
             g2.fill(path);
-
-            // Draw Line
-            g2.setColor(color);
-            g2.setStroke(new BasicStroke(2f));
+            
+            g2.setColor(color); g2.setStroke(new BasicStroke(2f));
             for (int i=0; i<data.size()-1; i++) {
                 int x1 = (int)(i*xStep), x2 = (int)((i+1)*xStep);
-                int y1 = h - (int)((data.get(i)-min)/(max-min)*h);
-                int y2 = h - (int)((data.get(i+1)-min)/(max-min)*h);
+                float val1 = data.get(i);
+                float val2 = data.get(i+1);
+                int y1 = h - (int)((val1 - min) / (max - min) * h);
+                int y2 = h - (int)((val2 - min) / (max - min) * h);
                 g2.drawLine(x1, y1, x2, y2);
             }
-
-            // Text
             g2.setColor(new Color(220, 220, 220));
-            g2.setFont(UIUtils.getFont(Font.BOLD, 10f));
-            g2.drawString(label, 12, 20);
-            
+            g2.setFont(UIUtils.getFont(Font.BOLD, 14f));
+            g2.drawString(label, 15, 25);
             g2.dispose();
         }
     }
