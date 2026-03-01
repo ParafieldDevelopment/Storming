@@ -12,12 +12,12 @@
 *   **[Done]** High-performance directory structure for C++ Engine.
 *   **[Done]** HAL/RHI for multi-backend rendering (OpenGL 4.5 Initial).
 *   **[Done]** Basic Engine Launcher "Play" bridge from Editor to Engine.
-*   **[Next]** **The `.storm` Project Format:** JSON-based asset and scene tracking.
+*   **[Done]** **The `.storm` Project Format:** JSON-based asset and scene tracking. (Note: Implemented basic loading logic).
 
 ## Phase 2: The 2D World (v2026.0.2)
-*   **[In Progress]** **ECS Integration:** Deep integration of EnTT for gameplay logic and rendering.
-*   **[Next]** **Texture & Sprite Support:** Loading PNG/JPG assets and rendering them via Texture Arrays.
-*   **[Next]** **Renderer2D Batching:** Optimizing the batcher to handle thousands of unique sprites in one call.
+*   **[Done]** **ECS Integration:** Deep integration of EnTT for gameplay logic and rendering.
+*   **[Done]** **Texture & Sprite Support:** Loading PNG/JPG assets via `stb_image`.
+*   **[Done]** **Renderer2D Batching:** Optimized batcher handling up to 32 texture slots.
 *   **[Next]** **The Scene Tree:** Hierarchical entity management synced between Engine and Editor.
 *   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's Inspector.
 

@@ -25,7 +25,11 @@ namespace Storming {
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
         for (auto entity : view) {
             auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawQuad(transform.Translation, {transform.Scale.x, transform.Scale.y}, sprite.Color);
+            
+            if (sprite.Texture)
+                Renderer2D::DrawQuad(transform.Translation, {transform.Scale.x, transform.Scale.y}, sprite.Texture, sprite.Color);
+            else
+                Renderer2D::DrawQuad(transform.Translation, {transform.Scale.x, transform.Scale.y}, sprite.Color);
         }
     }
 

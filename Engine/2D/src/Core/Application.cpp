@@ -35,17 +35,23 @@ namespace Storming {
             return;
         }
 
-        // --- Window Setup ---
         SDL_PropertiesID props = SDL_CreateProperties();
         SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, m_Config.Name.c_str());
-        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_Config.Width);
-        SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_Config.Height);
-        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
         
         if (!m_Config.ShmName.empty()) {
+            // Tiling WM Fix: Use a strictly hidden window with no decorations or management hint
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1);
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
+            SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN, true);
+            SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_UTILITY_BOOLEAN, true);
+        } else {
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_Config.Width);
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_Config.Height);
+            SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
         }
+        
+        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 
         m_Window = SDL_CreateWindowWithProperties(props);
         SDL_DestroyProperties(props);
@@ -55,7 +61,6 @@ namespace Storming {
             return;
         }
 
-        // --- Graphics Context ---
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -67,31 +72,29 @@ namespace Storming {
         }
         SDL_GL_MakeCurrent(m_Window, glContext);
 
-        // Load GLAD
         if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
             std::cerr << "[Engine] GLAD Error: Failed to load OpenGL" << std::endl;
             return;
         }
 
-        // --- Renderer API ---
+        std::cout << "[Engine] OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+        std::cout << "[Engine] OpenGL Renderer: " << glGetString(GL_RENDERER) << std::endl;
+
         m_RendererAPI = RendererAPI::Create();
         m_RendererAPI->Init();
 
-        // --- Initialize FrameBuffer if using SHM ---
         if (!m_Config.ShmName.empty()) {
             m_FrameBuffer = new FrameBuffer(m_Config.Width, m_Config.Height, m_Config.ShmName);
         }
 
-        // --- Initialize High-Level Systems ---
         Renderer2D::Init();
 
-        // --- Camera Setup ---
         float aspectRatio = (float)m_Config.Width / (float)m_Config.Height;
         s_Camera = new OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
 
-        // --- Scene Setup ---
         s_ActiveScene = new Scene();
         
+        // Z-Ordering: Squares at 0.0, Logo at 0.5 (Higher Z = In Front)
         auto redSquare = s_ActiveScene->CreateEntity("Red Square");
         redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.9f, 0.2f, 0.3f, 1.0f });
         redSquare.GetComponent<TransformComponent>().Translation = { -0.5f, -0.5f, 0.0f };
@@ -101,6 +104,12 @@ namespace Storming {
         greenSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.2f, 0.8f, 0.3f, 1.0f });
         greenSquare.GetComponent<TransformComponent>().Translation = { 0.1f, 0.1f, 0.0f };
         greenSquare.GetComponent<TransformComponent>().Scale = { 0.3f, 0.5f, 1.0f };
+
+        auto logo = s_ActiveScene->CreateEntity("Logo");
+        auto texture = Texture2D::Create("src/main/resources/com/parafield/storming/icons/png/icon.png");
+        logo.AddComponent<SpriteRendererComponent>().Texture = texture;
+        logo.GetComponent<TransformComponent>().Translation = { 0.0f, 0.0f, 0.5f }; // Move to front
+        logo.GetComponent<TransformComponent>().Scale = { 0.8f, 0.8f, 1.0f };
 
         ST_INFO("Storming Engine Initialized Successfully");
     }
@@ -139,21 +148,16 @@ namespace Storming {
             }
 
             frames++;
-
-            // Send telemetry every 500ms
             if (currentTime - lastTelemetryTime >= 500) {
                 float fps = frames / ((currentTime - lastTelemetryTime) / 1000.0f);
                 auto stats = Renderer2D::GetStats();
-
                 json telemetry;
                 telemetry["type"] = "telemetry";
                 telemetry["fps"] = fps;
                 telemetry["frameTime"] = (fps > 0) ? 1000.0f / fps : 0;
                 telemetry["drawCalls"] = stats.DrawCalls;
                 telemetry["quads"] = stats.QuadCount;
-
                 std::cout << "[TELEMETRY]" << telemetry.dump() << std::endl;
-
                 frames = 0;
                 lastTelemetryTime = currentTime;
             }
@@ -167,18 +171,9 @@ namespace Storming {
     void Application::Shutdown() {
         if (s_ActiveScene) delete s_ActiveScene;
         if (s_Camera) delete s_Camera;
-        
         Renderer2D::Shutdown();
-        
-        if (m_FrameBuffer) {
-            delete m_FrameBuffer;
-            m_FrameBuffer = nullptr;
-        }
-
-        if (m_Window) {
-            SDL_DestroyWindow(m_Window);
-            m_Window = nullptr;
-        }
+        if (m_FrameBuffer) delete m_FrameBuffer;
+        if (m_Window) SDL_DestroyWindow(m_Window);
         SDL_Quit();
     }
 

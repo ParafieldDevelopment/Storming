@@ -13,6 +13,7 @@ import java.util.function.Consumer;
  * Responsible for launching and managing the Storming Engine process.
  * Handles process lifecycle, shared memory arguments, and broadcasting output.
  * Features a telemetry bridge and a command gateway.
+ * Automatically attempts to build the engine if the executable is missing.
  */
 public class EngineLauncher {
 
@@ -105,13 +106,47 @@ public class EngineLauncher {
         }
     }
 
+    private boolean buildEngine() {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            
+            // 1. Create build directory
+            java.io.File buildDir = new java.io.File("Engine/2D/build");
+            if (!buildDir.exists()) buildDir.mkdirs();
+
+            // 2. Run CMake
+            broadcast("[System] Running CMake...");
+            ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
+            cmakePb.directory(buildDir);
+            Process cmakeP = cmakePb.start();
+            if (cmakeP.waitFor() != 0) return false;
+
+            // 3. Run Build
+            broadcast("[System] Compiling Engine...");
+            List<String> cmd = new ArrayList<>();
+            if (os.contains("win")) {
+                cmd.addAll(List.of("cmake", "--build", "."));
+            } else {
+                cmd.addAll(List.of("make", "-j" + Runtime.getRuntime().availableProcessors()));
+            }
+            
+            ProcessBuilder buildPb = new ProcessBuilder(cmd);
+            buildPb.directory(buildDir);
+            Process buildP = buildPb.start();
+            
+            return buildP.waitFor() == 0;
+        } catch (Exception e) {
+            broadcast("[Error] Build exception: " + e.getMessage());
+            return false;
+        }
+    }
+
     public void launch() {
         launch("");
     }
 
     /**
      * Launches the engine process and starts monitoring its output.
-     * Extracts telemetry lines prefixed with [TELEMETRY].
      *
      * @param shmName The shared memory name to pass as an argument.
      */
@@ -120,9 +155,18 @@ public class EngineLauncher {
             return;
         }
 
-        broadcast("Launching Storming Engine...");
         new Thread(() -> {
             try {
+                java.io.File exe = new java.io.File(enginePath);
+                if (!exe.exists()) {
+                    broadcast("[System] Engine binary not found. Attempting automatic build...");
+                    if (!buildEngine()) {
+                        broadcast("[Error] Auto-build failed. Please check C++ environment.");
+                        return;
+                    }
+                }
+
+                broadcast("Launching Storming Engine...");
                 ProcessBuilder pb;
                 if (!shmName.isEmpty()) {
                     pb = new ProcessBuilder(enginePath, "--shm", shmName);

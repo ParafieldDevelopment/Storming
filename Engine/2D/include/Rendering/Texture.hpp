@@ -1,8 +1,29 @@
-//
-// Created by Batista on 9/11/2025.
-//
+#pragma once
 
-#ifndef STORMING_TEXTURE_H
-#define STORMING_TEXTURE_H
+#include <string>
+#include <memory>
 
-#endif //STORMING_TEXTURE_H
+namespace Storming {
+
+    class Texture {
+    public:
+        virtual ~Texture() = default;
+
+        virtual uint32_t GetWidth() const = 0;
+        virtual uint32_t GetHeight() const = 0;
+        virtual uint32_t GetRendererID() const = 0;
+
+        virtual void SetData(void* data, uint32_t size) = 0;
+
+        virtual void Bind(uint32_t slot = 0) const = 0;
+
+        virtual bool operator==(const Texture& other) const = 0;
+    };
+
+    class Texture2D : public Texture {
+    public:
+        static std::shared_ptr<Texture2D> Create(uint32_t width, uint32_t height);
+        static std::shared_ptr<Texture2D> Create(const std::string& path);
+    };
+
+}

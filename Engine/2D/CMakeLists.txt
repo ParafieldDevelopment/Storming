@@ -50,6 +50,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# 6. stb (Image Loading)
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(stb)
+
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"
@@ -64,6 +73,7 @@ add_executable(StormingEngine ${SOURCES})
 target_include_directories(StormingEngine PRIVATE 
     include
     src
+    ${stb_SOURCE_DIR}
 )
 
 # Link libraries

@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <string>
+#include <memory>
+#include "Rendering/Texture.hpp"
 
 namespace Storming {
 
@@ -25,6 +27,7 @@ namespace Storming {
 
     struct SpriteRendererComponent {
         glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+        std::shared_ptr<Texture2D> Texture;
 
         SpriteRendererComponent() = default;
         SpriteRendererComponent(const SpriteRendererComponent&) = default;

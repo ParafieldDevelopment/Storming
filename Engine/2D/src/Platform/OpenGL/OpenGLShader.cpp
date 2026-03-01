@@ -77,27 +77,38 @@ namespace Storming {
 
     void OpenGLShader::SetInt(const std::string& name, int value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        glUniform1i(location, value);
+        if (location != -1)
+            glUniform1i(location, value);
+    }
+
+    void OpenGLShader::SetIntArray(const std::string& name, int* values, uint32_t count) {
+        GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+        if (location != -1)
+            glUniform1iv(location, count, values);
     }
 
     void OpenGLShader::SetFloat(const std::string& name, float value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        glUniform1f(location, value);
+        if (location != -1)
+            glUniform1f(location, value);
     }
 
     void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        glUniform3f(location, value.x, value.y, value.z);
+        if (location != -1)
+            glUniform3f(location, value.x, value.y, value.z);
     }
 
     void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        glUniform4f(location, value.x, value.y, value.z, value.w);
+        if (location != -1)
+            glUniform4f(location, value.x, value.y, value.z, value.w);
     }
 
     void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+        if (location != -1)
+            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
     }
 
 }
