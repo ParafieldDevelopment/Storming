@@ -5,17 +5,22 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 ## Core Application Lifecycle
 
 *   **`EditorApp`**: The entry point for the Java application. It manages global themes (using FlatLaf), configures UI refinements, and handles the initial startup sequence (Splash Screen -> Project Selector -> Main Window).
-*   **`EngineLauncher`**: Responsible for the lifecycle of the C++ Storming Engine process. It handles launching with shared memory arguments, capturing engine logs, and graceful termination. Supports multiple log listeners for real-time broadcasting.
+*   **`EngineLauncher`**: Responsible for the lifecycle of the C++ Storming Engine process. It handles launching with shared memory arguments, capturing engine logs, and graceful termination. Supports multiple log and telemetry listeners for real-time data broadcasting.
 
 ## Window Management
 
-*   **`MainWindow`**: The central orchestrator of the editor's layout. It manages complex nested split panes, JetBrains-style sidebars, and the main workspace tabs.
-*   **`ProjectSelectorWindow`**: The initial launcher for the engine. Features a modern, animated interface for project management.
+*   **`MainWindow`**: The central orchestrator of the editor's layout. It manages complex nested split panes, JetBrains-style sidebars, and the main workspace tabs. It handles project and scene loading from disk.
+*   **`ProjectSelectorWindow`**: The initial launcher for the engine. Features a modern, animated interface for project management, including "New Project" and "Open Project" actions.
+*   **`NewProjectDialog`**: A comprehensive modal dialog for creating new Storming projects. It handles:
+    *   Template selection (Empty 2D, 2D Demo).
+    *   Directory scaffolding (`assets/`, `scenes/`).
+    *   Initial `.storm` and `main.storm_scene` file generation.
+    *   Real-time path validation and preview.
 *   **`SimulationWindow`**: A dedicated debugging window for running engine simulations. Includes:
     *   Godot-inspired UI with integrated header and footer.
     *   Pulsating "LIVE" indicator.
     *   Collapsible **Mini-Console** linked to the engine output.
-    *   **Performance Monitor** with real-time graphs (FPS, CPU, GPU, Memory) and hardware detection.
+    *   **Performance Monitor** with real-time area-graphs (FPS, CPU, GPU, Memory) and hardware detection.
     *   Utility controls for **Always-on-Top**, **Screenshots**, and **Resolution Scaling**.
 *   **`SettingsWindow`**: A centralized configuration dialog with a searchable sidebar. Supports dynamic theme switching and categorized panels for Engine and Editor preferences.
 *   **`SplashWindow`**: A simple, stylized startup window displayed during initialization.
@@ -36,14 +41,24 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 | **`TerminalPanel`** | A multi-tabbed terminal emulator using JediTerm and Pty4j. | **Implemented** |
 | **`SceneViewPanel`** | A real-time engine viewport utilizing JNA for shared memory image streaming. | **Implemented** |
 | **`ConsolePanel`** | A stylized logging interface with level-based filtering and search. | **Implemented** |
+| **`HierarchyPanel`** | Scene tree navigation and object management. Populates from `.storm_scene` files on disk and syncs live with the C++ engine during simulation. | **Implemented** |
 | **`InspectorPanel`** | Property editor for scene objects. | **WIP (Placeholder)** |
-| **`HierarchyPanel`** | Scene tree navigation and object management. | **WIP (Placeholder)** |
 | **`GitPanel`** | Integrated version control interface. | **WIP (Placeholder)** |
 | **`PRPanel`** | Pull Request management and detail tracking. | **WIP (Placeholder)** |
 | **`AnalyzerPanel`** | Script and asset health analyzer. | **WIP (Placeholder)** |
 
+## Project Management & `.storm` Format
+
+The engine uses a JSON-based project descriptor with the `.storm` extension. 
+When creating a new project via the `NewProjectDialog`, the following structure is generated:
+*   `ProjectName/`
+    *   `ProjectName.storm` (Project settings and main scene entry point)
+    *   `assets/` (Directory for textures, scripts, and other resources)
+    *   `scenes/`
+        *   `main.storm_scene` (Initial scene data containing default entities like "Main Camera")
+
 ## Development Note (WIP Features)
 
-As outlined in the [Roadmap](Roadmap.md), several high-level editor systems (Git, PR, Hierarchy, Inspector, and Analyzer) are currently in an early **Work-in-Progress (WIP)** state. These components serve as visual placeholders and utilize mock data to illustrate the final intended user experience. They will be incrementally integrated with the C++ engine and external providers in upcoming development phases.
+As outlined in the [Roadmap](Roadmap.md), several high-level editor systems (Git, PR, Inspector, and Analyzer) are currently in an early **Work-in-Progress (WIP)** state. These components serve as visual placeholders and utilize mock data to illustrate the final intended user experience. They will be incrementally integrated with the C++ engine and external providers in upcoming development phases.
 
 Telemetry data shown in the **Simulation Window** (FPS, CPU Load, etc.) is currently simulated or best-effort based on the JVM environment and will be fully linked to the engine's telemetry bridge in the future.

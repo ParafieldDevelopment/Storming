@@ -13,11 +13,12 @@
 *   **[Done]** HAL/RHI abstraction for OpenGL 4.5.
 *   **[Done]** High-performance directory structure.
 *   **[Done]** **Rendering Compatibility:** Resolved invisible assets and WM maximization issues.
+*   **[In Progress]** **The `.storm` Project Format:** Implemented basic project creation and structure.
 
 ## Phase 2: The 2D World (v2026.0.2)
 *   **[Done]** **ECS Integration:** Deep integration of EnTT.
 *   **[Done]** **Texture & Sprite Support:** PNG/JPG loading and rendering.
-*   **[In Progress]** **The Scene Tree:** Syncing entity hierarchy between C++ and Java.
+*   **[Done]** **The Scene Tree:** Syncing entity hierarchy between C++ and Java.
 *   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's UI.
 *   **[Next]** **Renderer2D Batching:** Optimizing for 32+ texture slots.
 
@@ -26,6 +27,6 @@
 *   **Hot Reload:** Instant logic updates.
 
 ## Phase 4: Advanced Graphics & 3D (v2026.0.4)
-*   **Vulkan Backend:** Peak performance RHI.
-*   **3D Foundation:** Model loading and PBR.
-*   **Plugin API:** Java-based Editor expansion.
+*   **Vulkan Backend:** Full implementation of the Vulkan RHI for peak performance.
+*   **3D Foundation:** Basic 3D math, PBR shading, and model loading.
+*   **Plugin API:** Java-based API for expanding Editor functionality.

@@ -7,6 +7,7 @@ import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.File;
 
 /**
  * The initial launcher window for the Storming Engine.
@@ -80,6 +81,16 @@ public class ProjectSelectorWindow extends JFrame {
                 renderer.hoverIndex = -1;
                 projectList.repaint();
             }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    ProjectItem selected = projectList.getSelectedValue();
+                    if (selected != null) {
+                        launchMainEditor(selected.path);
+                    }
+                }
+            }
         });
 
         JScrollPane scrollPane = new JScrollPane(projectList);
@@ -134,9 +145,25 @@ public class ProjectSelectorWindow extends JFrame {
         actions.setOpaque(false);
 
         JButton newProjectBtn = createActionButton("New Project", "#3498db", true);
-        newProjectBtn.addActionListener(e -> launchMainEditor());
+        newProjectBtn.addActionListener(e -> {
+            NewProjectDialog dialog = new NewProjectDialog(this);
+            dialog.setVisible(true);
+            if (dialog.isSuccessful()) {
+                launchMainEditor(dialog.getProjectPath());
+            }
+        });
         
         JButton openProjectBtn = createActionButton("Open Project", null, false);
+        openProjectBtn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogTitle("Select Storming Project");
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File selected = chooser.getSelectedFile();
+                String path = selected.isDirectory() ? selected.getAbsolutePath() : selected.getParent();
+                launchMainEditor(path);
+            }
+        });
         
         actions.add(newProjectBtn);
         actions.add(openProjectBtn);
@@ -211,11 +238,12 @@ public class ProjectSelectorWindow extends JFrame {
 
     /**
      * Launches the main editor window with an exit animation.
+     * @param projectPath The path to the project to open.
      */
-    private void launchMainEditor() {
+    private void launchMainEditor(String projectPath) {
         animateExit(() -> {
             dispose();
-            new MainWindow().setVisible(true);
+            new MainWindow(projectPath).setVisible(true);
         });
     }
 

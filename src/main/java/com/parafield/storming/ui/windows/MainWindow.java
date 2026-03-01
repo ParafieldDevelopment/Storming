@@ -21,6 +21,8 @@ import com.parafield.storming.ui.widgets.StormingMenuBar;
 import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,14 +73,21 @@ public class MainWindow extends JFrame {
     
     private JTabbedPane editorTabs;
     private static MainWindow instance;
+    private final File projectRoot;
 
     public static MainWindow getInstance() {
         return instance;
     }
 
-    public MainWindow() {
+    /**
+     * Constructs the MainWindow and loads the specified project.
+     * @param projectPath The path to the project to open.
+     */
+    public MainWindow(String projectPath) {
         instance = this;
-        setTitle("Storming Engine");
+        this.projectRoot = new File(projectPath);
+        
+        setTitle("Storming Engine - " + projectRoot.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 900);
         setLocationRelativeTo(null);
@@ -93,6 +102,7 @@ public class MainWindow extends JFrame {
         engineLauncher.addTelemetryListener(this::handleGlobalTelemetry);
 
         initUI();
+        loadProject();
         
         SwingUtilities.invokeLater(() -> {
             mainHorizontalSplit.setDividerLocation(0);
@@ -118,6 +128,49 @@ public class MainWindow extends JFrame {
     public void updateHierarchy(List<String> names) {
         if (hierarchyPanel != null) {
             hierarchyPanel.updateHierarchy(names);
+        }
+    }
+
+    /**
+     * Loads project metadata from the .storm file and populates the editor state.
+     */
+    private void loadProject() {
+        try {
+            File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm"));
+            if (files != null && files.length > 0) {
+                String content = Files.readString(files[0].toPath());
+                JsonObject json = JsonParser.parseString(content).getAsJsonObject();
+                
+                String mainScenePath = json.get("main_scene").getAsString();
+                File sceneFile = new File(projectRoot, mainScenePath);
+                
+                if (sceneFile.exists()) {
+                    loadScene(sceneFile);
+                }
+            }
+        } catch (Exception e) {
+            consolePanel.log("[Error] Failed to load project: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Loads a scene file and populates the hierarchy panel.
+     * @param sceneFile The .storm_scene file to load.
+     */
+    private void loadScene(File sceneFile) {
+        try {
+            String content = Files.readString(sceneFile.toPath());
+            JsonObject json = JsonParser.parseString(content).getAsJsonObject();
+            
+            List<String> entityNames = new ArrayList<>();
+            json.get("entities").getAsJsonArray().forEach(e -> {
+                entityNames.add(e.getAsJsonObject().get("name").getAsString());
+            });
+            
+            updateHierarchy(entityNames);
+            consolePanel.log("[System] Loaded scene: " + sceneFile.getName());
+        } catch (Exception e) {
+            consolePanel.log("[Error] Failed to load scene: " + e.getMessage());
         }
     }
 
@@ -162,7 +215,7 @@ public class MainWindow extends JFrame {
         leftUpperCardPanel.add(new ToolWindow("Commit", new GitPanel(), () -> handleLeftUpperClick("COMMIT")), "COMMIT");
         leftUpperCardPanel.add(new ToolWindow("Pull Requests", new PRPanel(), () -> handleLeftUpperClick("PR")), "PR");
         
-        ProjectBrowserPanel projectPanel = new ProjectBrowserPanel();
+        ProjectBrowserPanel projectPanel = new ProjectBrowserPanel(projectRoot);
         ToolWindow projectTW = new ToolWindow("Project", projectPanel, this::toggleProject);
         
         leftVerticalSplit = createSplit(JSplitPane.VERTICAL_SPLIT, leftUpperCardPanel, projectTW, 450, 0.5);
