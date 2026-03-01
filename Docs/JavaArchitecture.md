@@ -5,13 +5,19 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 ## Core Application Lifecycle
 
 *   **`EditorApp`**: The entry point for the Java application. It manages global themes (using FlatLaf), configures UI refinements, and handles the initial startup sequence (Splash Screen -> Project Selector -> Main Window).
-*   **`EngineLauncher`**: Responsible for the lifecycle of the C++ Storming Engine process. It handles launching with shared memory arguments, capturing engine logs, and graceful termination.
+*   **`EngineLauncher`**: Responsible for the lifecycle of the C++ Storming Engine process. It handles launching with shared memory arguments, capturing engine logs, and graceful termination. Supports multiple log listeners for real-time broadcasting.
 
 ## Window Management
 
 *   **`MainWindow`**: The central orchestrator of the editor's layout. It manages complex nested split panes, JetBrains-style sidebars, and the main workspace tabs.
 *   **`ProjectSelectorWindow`**: The initial launcher for the engine. Features a modern, animated interface for project management.
-*   **`SimulationWindow`**: A dedicated debugging window for running engine simulations with integrated playback controls and real-time statistics.
+*   **`SimulationWindow`**: A dedicated debugging window for running engine simulations. Includes:
+    *   Godot-inspired UI with integrated header and footer.
+    *   Pulsating "LIVE" indicator.
+    *   Collapsible **Mini-Console** linked to the engine output.
+    *   **Performance Monitor** with real-time graphs (FPS, CPU, GPU, Memory) and hardware detection.
+    *   Utility controls for **Always-on-Top**, **Screenshots**, and **Resolution Scaling**.
+*   **`SettingsWindow`**: A centralized configuration dialog with a searchable sidebar. Supports dynamic theme switching and categorized panels for Engine and Editor preferences.
 *   **`SplashWindow`**: A simple, stylized startup window displayed during initialization.
 
 ## UI Components & Utilities
@@ -20,7 +26,7 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 *   **`SideBar`**: A specialized JetBrains-style sidebar for hosting tool window toggles and action shortcuts.
 *   **`StormingMenuBar`**: A custom menu bar supporting alpha-fade animations, integrated playback controls, and a "hamburger" mode for space efficiency.
 *   **`UIAnimator`**: A comprehensive animation utility providing cubic ease-out transitions for split panes and alpha properties.
-*   **`Icons`**: A centralized resource manager for SVG and PNG icons, supporting automatic scaling and theme-aware fallback.
+*   **`Icons`**: A centralized resource manager for SVG and PNG icons. Features theme-aware SVG filtering (automatic light/dark mode tinting).
 
 ## Editor Panels & Systems
 
@@ -39,3 +45,5 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 ## Development Note (WIP Features)
 
 As outlined in the [Roadmap](Roadmap.md), several high-level editor systems (Git, PR, Hierarchy, Inspector, and Analyzer) are currently in an early **Work-in-Progress (WIP)** state. These components serve as visual placeholders and utilize mock data to illustrate the final intended user experience. They will be incrementally integrated with the C++ engine and external providers in upcoming development phases.
+
+Telemetry data shown in the **Simulation Window** (FPS, CPU Load, etc.) is currently simulated or best-effort based on the JVM environment and will be fully linked to the engine's telemetry bridge in the future.

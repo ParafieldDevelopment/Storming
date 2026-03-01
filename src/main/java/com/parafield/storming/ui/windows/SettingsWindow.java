@@ -16,7 +16,8 @@ import java.awt.*;
 /**
  * The Settings window for the Storming Engine Editor.
  * Provides a categorized interface for application and engine configuration,
- * featuring a searchable category list and dynamic content panels with smooth transitions.
+ * including Appearance (with dynamic theme switching), Engine, and Editor preferences.
+ * Features a searchable category list and animated content panels.
  */
 public class SettingsWindow extends JDialog {
 

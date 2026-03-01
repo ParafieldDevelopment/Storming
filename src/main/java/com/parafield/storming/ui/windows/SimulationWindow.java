@@ -18,6 +18,9 @@ import java.util.List;
  * An advanced simulation window with a Godot-inspired aesthetic.
  * Features a pulsating "LIVE" indicator, real-time resource tracking,
  * always-on-top toggle, resolution scaling, and an integrated mini-console.
+ * 
+ * Note: Telemetry data (FPS, CPU/GPU usage) is currently simulated using mock data
+ * and will be linked to the engine's telemetry bridge in future updates.
  */
 public class SimulationWindow extends JFrame {
 
