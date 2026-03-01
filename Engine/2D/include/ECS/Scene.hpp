@@ -19,6 +19,10 @@ namespace Storming {
         void OnViewportResize(uint32_t width, uint32_t height);
 
         void BroadcastSceneTree();
+        void BroadcastEntityComponents(uint32_t entityID);
+
+        entt::registry& GetRegistry() { return m_Registry; }
+        const entt::registry& GetRegistry() const { return m_Registry; }
 
     private:
         entt::registry m_Registry;

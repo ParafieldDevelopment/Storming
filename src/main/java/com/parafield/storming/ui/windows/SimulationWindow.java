@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.ConsolePanel;
+import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.utils.UIAnimator;
 import com.parafield.storming.ui.utils.UIUtils;
@@ -234,9 +235,12 @@ public class SimulationWindow extends JFrame {
             
             // 1. Scene Tree Sync
             if (json.has("type") && "scene_tree".equals(json.get("type").getAsString())) {
-                List<String> entityNames = new ArrayList<>();
-                json.get("entities").getAsJsonArray().forEach(e -> entityNames.add(e.getAsJsonObject().get("name").getAsString()));
-                MainWindow.getInstance().updateHierarchy(entityNames);
+                List<HierarchyPanel.EntityItem> entities = new ArrayList<>();
+                json.get("entities").getAsJsonArray().forEach(e -> {
+                    JsonObject obj = e.getAsJsonObject();
+                    entities.add(new HierarchyPanel.EntityItem(obj.get("id").getAsInt(), obj.get("name").getAsString()));
+                });
+                MainWindow.getInstance().updateHierarchy(entities);
                 return;
             }
 

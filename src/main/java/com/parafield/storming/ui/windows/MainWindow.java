@@ -37,6 +37,7 @@ public class MainWindow extends JFrame {
     private final EngineLauncher engineLauncher;
     private SceneViewPanel sceneViewPanel;
     private HierarchyPanel hierarchyPanel;
+    private InspectorPanel inspectorPanel;
     
     private JSplitPane mainHorizontalSplit; 
     private JSplitPane rightSplit;          
@@ -80,6 +81,10 @@ public class MainWindow extends JFrame {
         return instance;
     }
 
+    public EngineLauncher getEngineLauncher() {
+        return engineLauncher;
+    }
+
     /**
      * Constructs the MainWindow and loads the specified project.
      * @param projectPath The path to the project to open.
@@ -119,18 +124,38 @@ public class MainWindow extends JFrame {
     private void handleGlobalTelemetry(String jsonStr) {
         try {
             JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
-            if (json.has("type") && "scene_tree".equals(json.get("type").getAsString())) {
-                List<String> entityNames = new ArrayList<>();
-                json.get("entities").getAsJsonArray().forEach(e -> entityNames.add(e.getAsJsonObject().get("name").getAsString()));
-                updateHierarchy(entityNames);
+            if (!json.has("type")) return;
+            
+            String type = json.get("type").getAsString();
+            
+            if ("scene_tree".equals(type)) {
+                List<HierarchyPanel.EntityItem> entities = new ArrayList<>();
+                json.get("entities").getAsJsonArray().forEach(e -> {
+                    JsonObject obj = e.getAsJsonObject();
+                    entities.add(new HierarchyPanel.EntityItem(obj.get("id").getAsInt(), obj.get("name").getAsString()));
+                });
+                updateHierarchy(entities);
+            } else if ("entity_details".equals(type)) {
+                if (inspectorPanel != null) {
+                    inspectorPanel.updateDetails(json);
+                }
             }
         } catch (Exception ignored) {}
     }
 
-    public void updateHierarchy(List<String> names) {
+    public void updateHierarchy(List<HierarchyPanel.EntityItem> entities) {
         if (hierarchyPanel != null) {
-            hierarchyPanel.updateHierarchy(names);
+            hierarchyPanel.updateHierarchyFromItems(entities);
         }
+    }
+
+    /**
+     * Handles the selection of an entity from the hierarchy.
+     * Requests component data from the engine for the selected entity.
+     * @param entity The selected entity item.
+     */
+    public void onEntitySelected(HierarchyPanel.EntityItem entity) {
+        engineLauncher.sendCommand("{\"type\":\"command\",\"action\":\"select_entity\",\"id\":" + entity.id() + "}");
     }
 
     /**
@@ -164,12 +189,12 @@ public class MainWindow extends JFrame {
             String content = Files.readString(sceneFile.toPath());
             JsonObject json = JsonParser.parseString(content).getAsJsonObject();
             
-            List<String> entityNames = new ArrayList<>();
+            List<HierarchyPanel.EntityItem> entities = new ArrayList<>();
             json.get("entities").getAsJsonArray().forEach(e -> {
-                entityNames.add(e.getAsJsonObject().get("name").getAsString());
+                entities.add(new HierarchyPanel.EntityItem(-1, e.getAsJsonObject().get("name").getAsString()));
             });
             
-            updateHierarchy(entityNames);
+            updateHierarchy(entities);
             consolePanel.log("[System] Loaded scene: " + sceneFile.getName());
         } catch (Exception e) {
             consolePanel.log("[Error] Failed to load scene: " + e.getMessage());
@@ -193,7 +218,9 @@ public class MainWindow extends JFrame {
 
         rightCardLayout = new CardLayout();
         rightCardPanel = new JPanel(rightCardLayout);
-        rightCardPanel.add(new ToolWindow("Inspector", new InspectorPanel(), () -> handleRightSidebarClick("INSPECTOR")), "INSPECTOR");
+        
+        inspectorPanel = new InspectorPanel();
+        rightCardPanel.add(new ToolWindow("Inspector", inspectorPanel, () -> handleRightSidebarClick("INSPECTOR")), "INSPECTOR");
         rightCardPanel.add(new ToolWindow("Notifications", new NotificationsPanel(), () -> handleRightSidebarClick("NOTIFICATIONS")), "NOTIFICATIONS");
 
         editorTabs = new JTabbedPane();

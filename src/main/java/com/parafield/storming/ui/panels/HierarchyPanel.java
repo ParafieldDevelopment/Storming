@@ -2,6 +2,7 @@ package com.parafield.storming.ui.panels;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -44,25 +45,38 @@ public class HierarchyPanel extends JPanel {
         tree.setRowHeight(24);
         tree.setShowsRootHandles(true);
         
+        tree.addTreeSelectionListener(e -> {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+            if (selectedNode != null && selectedNode.getUserObject() instanceof EntityItem item) {
+                MainWindow.getInstance().onEntitySelected(item);
+            }
+        });
+        
         add(new JScrollPane(tree), BorderLayout.CENTER);
     }
 
     /**
      * Updates the hierarchy tree with a new list of entities.
-     * @param entities List of entity names or data objects to display.
+     * @param entities List of EntityItem objects to display.
      */
-    public void updateHierarchy(List<String> entities) {
+    public void updateHierarchyFromItems(List<EntityItem> entities) {
         SwingUtilities.invokeLater(() -> {
             rootNode.removeAllChildren();
-            for (String entityName : entities) {
-                rootNode.add(new DefaultMutableTreeNode(entityName));
+            for (EntityItem entity : entities) {
+                rootNode.add(new DefaultMutableTreeNode(entity));
             }
             treeModel.reload();
-            // Expand all by default for now
             for (int i = 0; i < tree.getRowCount(); i++) {
                 tree.expandRow(i);
             }
         });
+    }
+
+    public record EntityItem(int id, String name) {
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     @Override

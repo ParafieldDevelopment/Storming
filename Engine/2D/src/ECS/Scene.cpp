@@ -44,6 +44,38 @@ namespace Storming {
         std::cout.flush();
     }
 
+    void Scene::BroadcastEntityComponents(uint32_t entityID) {
+        entt::entity handle = (entt::entity)entityID;
+        if (!m_Registry.valid(handle)) return;
+
+        json data;
+        data["type"] = "entity_details";
+        data["id"] = entityID;
+
+        if (m_Registry.all_of<TagComponent>(handle)) {
+            data["tag"] = m_Registry.get<TagComponent>(handle).Tag;
+        }
+
+        if (m_Registry.all_of<TransformComponent>(handle)) {
+            auto& tc = m_Registry.get<TransformComponent>(handle);
+            data["components"]["Transform"] = {
+                {"translation", {tc.Translation.x, tc.Translation.y, tc.Translation.z}},
+                {"rotation", {tc.Rotation.x, tc.Rotation.y, tc.Rotation.z}},
+                {"scale", {tc.Scale.x, tc.Scale.y, tc.Scale.z}}
+            };
+        }
+
+        if (m_Registry.all_of<SpriteRendererComponent>(handle)) {
+            auto& src = m_Registry.get<SpriteRendererComponent>(handle);
+            data["components"]["SpriteRenderer"] = {
+                {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}}
+            };
+        }
+
+        std::cout << "[TELEMETRY]" << data.dump() << std::endl;
+        std::cout.flush();
+    }
+
     void Scene::OnUpdate(float ts) {
         // Render Sprites
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
