@@ -3,6 +3,7 @@ package com.parafield.storming.ui.widgets;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIUtils;
+import com.parafield.storming.ui.windows.SettingsWindow;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
@@ -184,6 +185,12 @@ public class StormingMenuBar extends JMenuBar {
         JButton settingsBtn = new JButton(Icons.SETTINGS);
         settingsBtn.setToolTipText("Settings");
         settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        settingsBtn.addActionListener(e -> {
+            Window parent = SwingUtilities.getWindowAncestor(this);
+            if (parent instanceof Frame) {
+                new SettingsWindow((Frame) parent).setVisible(true);
+            }
+        });
         add(settingsBtn);
     }
 
@@ -198,7 +205,16 @@ public class StormingMenuBar extends JMenuBar {
         menu.addSeparator();
         menu.add(new JMenuItem("Save Scene", Icons.CLIPBOARD));
         menu.addSeparator();
-        menu.add(new JMenuItem("Settings...", Icons.SETTINGS));
+        
+        JMenuItem settingsItem = new JMenuItem("Settings...", Icons.SETTINGS);
+        settingsItem.addActionListener(e -> {
+            Window parent = SwingUtilities.getWindowAncestor(this);
+            if (parent instanceof Frame) {
+                new SettingsWindow((Frame) parent).setVisible(true);
+            }
+        });
+        menu.add(settingsItem);
+        
         menu.add(new JMenuItem("Exit"));
         return menu;
     }

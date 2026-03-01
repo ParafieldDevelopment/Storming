@@ -95,7 +95,7 @@ public class ProjectSelectorWindow extends JFrame {
         
         JButton settingsBtn = new JButton(" Settings", Icons.SETTINGS);
         settingsBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
-        settingsBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Settings coming soon!"));
+        settingsBtn.addActionListener(e -> new SettingsWindow(this).setVisible(true));
         sidebarFooter.add(settingsBtn, BorderLayout.WEST);
         
         sidebar.add(sidebarFooter, BorderLayout.SOUTH);
