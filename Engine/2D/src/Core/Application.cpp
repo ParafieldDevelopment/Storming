@@ -11,6 +11,13 @@
 #include <glad/glad.h>
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <fcntl.h>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace Storming {
 
@@ -30,6 +37,12 @@ namespace Storming {
     }
 
     void Application::Init() {
+        // Set stdin to non-blocking for command protocol
+        #ifndef _WIN32
+        int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+        #endif
+
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
             std::cerr << "[Engine] SDL Init Error: " << SDL_GetError() << std::endl;
             return;
@@ -100,12 +113,15 @@ namespace Storming {
         logo.GetComponent<TransformComponent>().Translation = { 0.0f, 0.0f, 0.0f };
         logo.GetComponent<TransformComponent>().Scale = { 0.8f, 0.8f, 1.0f };
 
+        s_ActiveScene->BroadcastSceneTree();
+
         ST_INFO("Storming Engine Initialized Successfully");
     }
 
     void Application::Run() {
         uint64_t lastTime = SDL_GetTicks();
         uint64_t lastTelemetryTime = lastTime;
+        uint64_t lastHierarchySyncTime = lastTime;
         uint32_t frames = 0;
 
         while (m_Running) {
@@ -113,14 +129,32 @@ namespace Storming {
             float deltaTime = (currentTime - lastTime) / 1000.0f;
             lastTime = currentTime;
 
+            // --- 1. Handle Input & Events ---
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) m_Running = false;
             }
 
+            // --- 2. Handle Editor Commands (JSON via Stdin) ---
+            char buffer[1024];
+            #ifndef _WIN32
+            ssize_t bytes = read(STDIN_FILENO, buffer, sizeof(buffer) - 1);
+            if (bytes > 0) {
+                buffer[bytes] = '\0';
+                try {
+                    auto cmd = json::parse(buffer);
+                    if (cmd["type"] == "command") {
+                        if (cmd["action"] == "request_scene_tree") {
+                            if (s_ActiveScene) s_ActiveScene->BroadcastSceneTree();
+                        }
+                    }
+                } catch (...) {}
+            }
+            #endif
+
+            // --- 3. Render ---
             if (m_FrameBuffer) m_FrameBuffer->Bind();
 
-            // Vibrant Teal clear to distinguish build
             m_RendererAPI->SetClearColor(0.1f, 0.4f, 0.4f, 1.0f);
             m_RendererAPI->Clear();
 
@@ -137,6 +171,7 @@ namespace Storming {
             
             SDL_GL_SwapWindow(m_Window);
 
+            // --- 4. Periodic Broadcasts ---
             frames++;
             if (currentTime - lastTelemetryTime >= 500) {
                 float fps = frames / ((currentTime - lastTelemetryTime) / 1000.0f);
@@ -147,13 +182,15 @@ namespace Storming {
                 telemetry["frameTime"] = (fps > 0) ? 1000.0f / fps : 0;
                 telemetry["drawCalls"] = stats.DrawCalls;
                 telemetry["quads"] = stats.QuadCount;
-                
-                // CRITICAL: Flush stdout so Java receives it immediately
                 std::cout << "[TELEMETRY]" << telemetry.dump() << std::endl;
                 std::cout.flush();
-
                 frames = 0;
                 lastTelemetryTime = currentTime;
+            }
+
+            if (currentTime - lastHierarchySyncTime >= 2000) {
+                if (s_ActiveScene) s_ActiveScene->BroadcastSceneTree();
+                lastHierarchySyncTime = currentTime;
             }
         }
     }

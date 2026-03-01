@@ -17,8 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Advanced simulation window with Godot-inspired aesthetic.
- * Now features a robust multi-listener telemetry system.
+ * An advanced simulation window with a Godot-inspired aesthetic.
+ * Features a pulsating "LIVE" indicator, real-time resource tracking,
+ * always-on-top toggle, resolution scaling, and an integrated mini-console.
  */
 public class SimulationWindow extends JFrame {
 
@@ -220,6 +221,7 @@ public class SimulationWindow extends JFrame {
     private void showPerformanceDetails() {
         if (activeMonitor == null || !activeMonitor.isVisible()) {
             activeMonitor = new PerformanceMonitorDialog(this);
+            launcher.addTelemetryListener(activeMonitor::onTelemetryReceived);
             activeMonitor.setVisible(true);
         } else {
             activeMonitor.toFront();
@@ -229,6 +231,18 @@ public class SimulationWindow extends JFrame {
     private void onTelemetryReceived(String jsonStr) {
         try {
             JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+            
+            // 1. Scene Tree Sync
+            if (json.has("type") && "scene_tree".equals(json.get("type").getAsString())) {
+                List<String> entityNames = new ArrayList<>();
+                json.get("entities").getAsJsonArray().forEach(e -> entityNames.add(e.getAsJsonObject().get("name").getAsString()));
+                MainWindow.getInstance().updateHierarchy(entityNames);
+                return;
+            }
+
+            // 2. Real Telemetry
+            if (!json.has("fps")) return;
+            
             float fps = json.get("fps").getAsFloat();
             float frameTime = json.get("frameTime").getAsFloat();
             int drawCalls = json.get("drawCalls").getAsInt();
@@ -236,12 +250,9 @@ public class SimulationWindow extends JFrame {
 
             SwingUtilities.invokeLater(() -> {
                 statsLabel.setText(String.format(" %.1f FPS | %.2fms | DC: %d | Quads: %d", fps, frameTime, drawCalls, quads));
-                if (activeMonitor != null && activeMonitor.isVisible()) {
-                    activeMonitor.updateFromTelemetry(fps);
-                }
             });
         } catch (Exception e) {
-            // Ignore minor parse errors but don't crash
+            // Ignore parse errors
         }
     }
 
@@ -308,7 +319,11 @@ public class SimulationWindow extends JFrame {
     }
 
     private void closeAndStop() {
-        launcher.setTelemetryListener(null);
+        launcher.removeTelemetryListener(this::onTelemetryReceived);
+        if (activeMonitor != null) {
+            launcher.removeTelemetryListener(activeMonitor::onTelemetryReceived);
+            activeMonitor.dispose();
+        }
         launcher.removeLogListener(consolePanel::log);
         launcher.stop();
         dispose();
@@ -318,7 +333,7 @@ public class SimulationWindow extends JFrame {
         header.setAlpha(0.0f);
         footer.setAlpha(0.0f);
         setVisible(true);
-        launcher.setTelemetryListener(this::onTelemetryReceived);
+        launcher.addTelemetryListener(this::onTelemetryReceived);
         splitPane.setDividerLocation(getHeight());
         UIAnimator.animate(0.0f, 1.0f, 500, a -> {
             header.setAlpha(a);
@@ -327,6 +342,11 @@ public class SimulationWindow extends JFrame {
         String shm = "/storming_shm_" + System.currentTimeMillis();
         launcher.launch(shm);
         viewport.startStreaming(shm);
+        
+        // Request immediate sync
+        Timer t = new Timer(500, e -> launcher.sendCommand("{\"type\":\"command\",\"action\":\"request_scene_tree\"}"));
+        t.setRepeats(false);
+        t.start();
     }
 
     private static class AlphaPanel extends JPanel {
@@ -346,6 +366,9 @@ public class SimulationWindow extends JFrame {
         }
     }
 
+    /**
+     * Highly visual performance monitor with hardware detection and area graphs.
+     */
     private static class PerformanceMonitorDialog extends JDialog {
         private final Timer updateTimer;
         private final List<Float> fpsHistory = new ArrayList<>();
@@ -362,7 +385,7 @@ public class SimulationWindow extends JFrame {
         private float lastEngineFps = 0;
 
         public PerformanceMonitorDialog(Frame owner) {
-            super(owner, "Performance Monitor", false); // NON-MODAL
+            super(owner, "Performance Monitor", false);
             setSize(950, 750);
             setLocationRelativeTo(owner);
             setLayout(new BorderLayout());
@@ -405,14 +428,23 @@ public class SimulationWindow extends JFrame {
             updateTimer.setInitialDelay(1000); 
             updateTimer.start();
             
+            addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override public void windowClosing(java.awt.event.WindowEvent e) { updateTimer.stop(); }
+            });
+            
             UIAnimator.animate(0.0f, 1.0f, 500, a -> {
                 mainContent.setAlpha(a);
                 mainContent.setYOffset((int)(20 * (1.0f - a)));
             }, null);
         }
 
-        public void updateFromTelemetry(float fps) {
-            this.lastEngineFps = fps;
+        public void onTelemetryReceived(String jsonStr) {
+            try {
+                JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+                if (json.has("fps")) {
+                    lastEngineFps = json.get("fps").getAsFloat();
+                }
+            } catch (Exception ignored) {}
         }
 
         private JPanel createSection(String title, JComponent content) {
@@ -479,13 +511,13 @@ public class SimulationWindow extends JFrame {
             fpsHistory.add(fps); if (fpsHistory.size() > 60) fpsHistory.remove(0);
             fpsGraph.setData(fpsHistory, 0, 120, String.format("%.1f FPS", fps));
 
-            float cpuUsage = 5.0f; // Simplified for stability
+            float cpuUsage = 5.0f;
             cpuHistory.add(cpuUsage); if (cpuHistory.size() > 40) cpuHistory.remove(0);
             cpuGraph.setData(cpuHistory, 0, 100, String.format("CPU: %.1f%%", cpuUsage));
 
             float gpuUsage = 15.0f; 
             gpuHistory.add(gpuUsage); if (gpuHistory.size() > 40) gpuHistory.remove(0);
-            gpuGraph.setData(gpuHistory, 0, 100, String.format("GPU: %.1f%%", gpuUsage));
+            gpuGraph.setData(gpuHistory, 0, 100, String.format("GPU (Est): %.1f%%", gpuUsage));
 
             Runtime r = Runtime.getRuntime();
             float used = (r.totalMemory() - r.freeMemory()) / 1024f / 1024f;
@@ -522,17 +554,20 @@ public class SimulationWindow extends JFrame {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
             int w = getWidth(), h = getHeight();
+
             g2.setColor(new Color(25, 25, 30, 150));
+            g2.setStroke(new BasicStroke(1f));
             for (int i = 1; i < 4; i++) g2.drawLine(0, h * i / 4, w, h * i / 4);
             for (int i = 1; i < 10; i++) g2.drawLine(w * i / 10, 0, w * i / 10, h);
 
             if (isCalculating || data.size() < 2) {
                 g2.setColor(new Color(100, 100, 110));
                 g2.setFont(UIUtils.getFont(Font.BOLD, 18f));
-                String text = "CALCULATING...";
                 FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(text, (w - fm.stringWidth(text)) / 2, (h + fm.getAscent()) / 2);
+                String text = "CALCULATING...";
+                g2.drawString(text, (getWidth() - fm.stringWidth(text)) / 2, (getHeight() + fm.getAscent()) / 2);
                 g2.dispose();
                 return;
             }
@@ -540,13 +575,26 @@ public class SimulationWindow extends JFrame {
             float xStep = (float)w / (data.size()-1);
             Path2D.Float path = new Path2D.Float();
             path.moveTo(0, h);
-            for (int i=0; i<data.size(); i++) path.lineTo(i * xStep, h - ((data.get(i)-min)/(max-min)*h));
+            for (int i=0; i<data.size(); i++) {
+                float val = data.get(i);
+                float y = h - ((val - min) / (max - min) * h);
+                path.lineTo(i * xStep, y);
+            }
             path.lineTo(w, h); path.closePath();
             g2.setPaint(new GradientPaint(0, 0, new Color(color.getRed(), color.getGreen(), color.getBlue(), 60), 0, h, new Color(color.getRed(), color.getGreen(), color.getBlue(), 0)));
             g2.fill(path);
+            
             g2.setColor(color); g2.setStroke(new BasicStroke(2f));
-            for (int i=0; i<data.size()-1; i++) g2.drawLine((int)(i*xStep), h - (int)((data.get(i)-min)/(max-min)*h), (int)((i+1)*xStep), h - (int)((data.get(i+1)-min)/(max-min)*h));
-            g2.setColor(new Color(220, 220, 220)); g2.setFont(UIUtils.getFont(Font.BOLD, 14f));
+            for (int i=0; i<data.size()-1; i++) {
+                int x1 = (int)(i*xStep), x2 = (int)((i+1)*xStep);
+                float val1 = data.get(i);
+                float val2 = data.get(i+1);
+                int y1 = h - (int)((val1 - min) / (max - min) * h);
+                int y2 = h - (int)((val2 - min) / (max - min) * h);
+                g2.drawLine(x1, y1, x2, y2);
+            }
+            g2.setColor(new Color(220, 220, 220));
+            g2.setFont(UIUtils.getFont(Font.BOLD, 14f));
             g2.drawString(label, 15, 25);
             g2.dispose();
         }

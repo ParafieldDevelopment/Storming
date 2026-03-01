@@ -19,7 +19,7 @@ public class EngineLauncher {
 
     private final String enginePath;
     private final List<Consumer<String>> logListeners = new ArrayList<>();
-    private Consumer<String> telemetryListener;
+    private final List<Consumer<String>> telemetryListeners = new ArrayList<>();
     private Process currentProcess;
     private BufferedWriter writer;
 
@@ -33,11 +33,19 @@ public class EngineLauncher {
     }
 
     /**
-     * Sets a listener for telemetry data (JSON strings).
+     * Adds a listener for telemetry data (JSON strings).
      * @param listener The callback for telemetry.
      */
-    public void setTelemetryListener(Consumer<String> listener) {
-        this.telemetryListener = listener;
+    public void addTelemetryListener(Consumer<String> listener) {
+        telemetryListeners.add(listener);
+    }
+
+    /**
+     * Removes a telemetry listener.
+     * @param listener The callback to remove.
+     */
+    public void removeTelemetryListener(Consumer<String> listener) {
+        telemetryListeners.remove(listener);
     }
 
     /**
@@ -59,6 +67,12 @@ public class EngineLauncher {
     private void broadcast(String message) {
         for (Consumer<String> listener : new ArrayList<>(logListeners)) {
             listener.accept(message);
+        }
+    }
+
+    private void broadcastTelemetry(String data) {
+        for (Consumer<String> listener : new ArrayList<>(telemetryListeners)) {
+            listener.accept(data);
         }
     }
 
@@ -182,8 +196,8 @@ public class EngineLauncher {
                 
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("[TELEMETRY]") && telemetryListener != null) {
-                        telemetryListener.accept(line.substring(11));
+                    if (line.startsWith("[TELEMETRY]")) {
+                        broadcastTelemetry(line.substring(11));
                     } else {
                         broadcast(line);
                     }

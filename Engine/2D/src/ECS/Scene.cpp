@@ -2,8 +2,12 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Component.hpp"
 #include "Rendering/Renderer2D.hpp"
+#include <nlohmann/json.hpp>
+#include <iostream>
 
 namespace Storming {
+
+    using json = nlohmann::json;
 
     Scene::Scene() {}
 
@@ -13,11 +17,31 @@ namespace Storming {
         Entity entity = { m_Registry.create(), this };
         entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
         entity.AddComponent<TransformComponent>();
+        
+        // Broadcast change
+        BroadcastSceneTree();
+        
         return entity;
     }
 
     void Scene::DestroyEntity(Entity entity) {
         m_Registry.destroy(entity);
+        BroadcastSceneTree();
+    }
+
+    void Scene::BroadcastSceneTree() {
+        json tree;
+        tree["type"] = "scene_tree";
+        auto view = m_Registry.view<TagComponent>();
+        for (auto entity : view) {
+            auto& tag = view.get<TagComponent>(entity);
+            json entry;
+            entry["id"] = (uint32_t)entity;
+            entry["name"] = tag.Tag;
+            tree["entities"].push_back(entry);
+        }
+        std::cout << "[TELEMETRY]" << tree.dump() << std::endl;
+        std::cout.flush();
     }
 
     void Scene::OnUpdate(float ts) {

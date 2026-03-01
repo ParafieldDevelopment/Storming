@@ -3,14 +3,21 @@ package com.parafield.storming.ui.panels;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
+import java.util.List;
 
 /**
  * Displays the hierarchical structure of the current scene.
- * [WIP] This component is currently a visual placeholder and will be bound to
- * the engine's scene tree in future development phases.
+ * Dynamically updates to reflect the entities existing in the C++ engine.
  */
 public class HierarchyPanel extends JPanel {
+
+    private final JTree tree;
+    private final DefaultTreeModel treeModel;
+    private final DefaultMutableTreeNode rootNode;
+
     /**
      * Constructs a HierarchyPanel, initializing the search bar and the object tree.
      */
@@ -30,9 +37,32 @@ public class HierarchyPanel extends JPanel {
         
         add(searchBox, BorderLayout.NORTH);
 
-        JTree tree = new JTree();
+        rootNode = new DefaultMutableTreeNode("Scene (Active)");
+        treeModel = new DefaultTreeModel(rootNode);
+        tree = new JTree(treeModel);
         tree.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 1%)");
+        tree.setRowHeight(24);
+        tree.setShowsRootHandles(true);
+        
         add(new JScrollPane(tree), BorderLayout.CENTER);
+    }
+
+    /**
+     * Updates the hierarchy tree with a new list of entities.
+     * @param entities List of entity names or data objects to display.
+     */
+    public void updateHierarchy(List<String> entities) {
+        SwingUtilities.invokeLater(() -> {
+            rootNode.removeAllChildren();
+            for (String entityName : entities) {
+                rootNode.add(new DefaultMutableTreeNode(entityName));
+            }
+            treeModel.reload();
+            // Expand all by default for now
+            for (int i = 0; i < tree.getRowCount(); i++) {
+                tree.expandRow(i);
+            }
+        });
     }
 
     @Override
