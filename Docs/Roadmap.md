@@ -6,18 +6,20 @@
 *   **[Done]** **C++ Engine Rewrite:** Full transition to C++20, SDL3, and Data-Oriented Architecture.
 *   **[Done]** **JSON Command Protocol:** Stdin/stdout bridge for Editor -> Engine communication.
 *   **[Done]** **Telemetry Bridge:** Real-time reporting of FPS, Draw Calls, and Frame Timing to the Editor.
+*   **[Done]** **Auto Engine Compile:** Editor automatically builds the C++ core if binary is missing.
 
 ## Phase 1: The Core Foundation (v2026.0.1)
 *   **[Done]** Modern "IntelliJ-style" Java Editor with Dark Theme (FlatLaf).
 *   **[Done]** High-performance directory structure for C++ Engine.
 *   **[Done]** HAL/RHI for multi-backend rendering (OpenGL 4.5 Initial).
 *   **[Done]** Basic Engine Launcher "Play" bridge from Editor to Engine.
-*   **[Done]** **The `.storm` Project Format:** JSON-based asset and scene tracking. (Note: Implemented basic loading logic).
+*   **[In Progress]** **Rendering Compatibility:** Fixing invisible assets and auto-maximize issues on specific Linux/AMD environments.
+*   **[Next]** **The `.storm` Project Format:** JSON-based asset and scene tracking.
 
 ## Phase 2: The 2D World (v2026.0.2)
-*   **[Done]** **ECS Integration:** Deep integration of EnTT for gameplay logic and rendering.
+*   **[In Progress]** **ECS Integration:** Deep integration of EnTT for gameplay logic and rendering.
 *   **[Done]** **Texture & Sprite Support:** Loading PNG/JPG assets via `stb_image`.
-*   **[Done]** **Renderer2D Batching:** Optimized batcher handling up to 32 texture slots.
+*   **[Next]** **Renderer2D Batching:** Optimized batcher handling up to 32 texture slots.
 *   **[Next]** **The Scene Tree:** Hierarchical entity management synced between Engine and Editor.
 *   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's Inspector.
 
