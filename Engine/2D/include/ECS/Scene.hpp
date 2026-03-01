@@ -18,8 +18,10 @@ namespace Storming {
         void OnUpdate(float ts);
         void OnViewportResize(uint32_t width, uint32_t height);
 
+        void LoadFromFile(const std::string& path);
         void BroadcastSceneTree();
         void BroadcastEntityComponents(uint32_t entityID);
+        void PickEntity(float x, float y);
 
         entt::registry& GetRegistry() { return m_Registry; }
         const entt::registry& GetRegistry() const { return m_Registry; }

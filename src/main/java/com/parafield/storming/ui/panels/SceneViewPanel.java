@@ -2,6 +2,7 @@ package com.parafield.storming.ui.panels;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.windows.MainWindow;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Library;
@@ -68,6 +69,22 @@ public class SceneViewPanel extends JPanel {
 
         overlayToolbar.setBounds(20, 15, 320, 32);
         add(overlayToolbar);
+
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                if (!isStreaming) return;
+                
+                // Normalize screen coords to Engine space [-1, 1]
+                float normX = (float) e.getX() / getWidth() * 2.0f - 1.0f;
+                // GL Y is flipped (0 is bottom)
+                float normY = 1.0f - (float) e.getY() / getHeight() * 2.0f;
+                
+                MainWindow.getInstance().getEngineLauncher().sendCommand(
+                    String.format("{\"type\":\"command\",\"action\":\"request_picking\",\"x\":%.4f,\"y\":%.4f}", normX, normY)
+                );
+            }
+        });
 
         Timer timer = new Timer(16, e -> {
             if (isStreaming) {

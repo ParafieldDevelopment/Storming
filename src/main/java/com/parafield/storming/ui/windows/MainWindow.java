@@ -23,6 +23,7 @@ import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,8 @@ import java.util.List;
 public class MainWindow extends JFrame {
 
     private final ConsolePanel consolePanel;
-    private final EngineLauncher engineLauncher;
+    private final EngineLauncher editorLauncher;
+    private final EngineLauncher simulationLauncher;
     private SceneViewPanel sceneViewPanel;
     private HierarchyPanel hierarchyPanel;
     private InspectorPanel inspectorPanel;
@@ -82,7 +84,7 @@ public class MainWindow extends JFrame {
     }
 
     public EngineLauncher getEngineLauncher() {
-        return engineLauncher;
+        return editorLauncher;
     }
 
     /**
@@ -103,13 +105,19 @@ public class MainWindow extends JFrame {
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
         rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
+        String enginePath = "Engine/2D/build/bin/StormingEngine";
         consolePanel = new ConsolePanel();
-        engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine");
-        engineLauncher.addLogListener(consolePanel::log);
-        engineLauncher.addTelemetryListener(this::handleGlobalTelemetry);
+        
+        editorLauncher = new EngineLauncher(enginePath);
+        editorLauncher.addLogListener(consolePanel::log);
+        editorLauncher.addTelemetryListener(this::handleGlobalTelemetry);
+
+        simulationLauncher = new EngineLauncher(enginePath);
+        simulationLauncher.addLogListener(msg -> consolePanel.log("[Sim] " + msg));
 
         initUI();
         loadProject();
+        startBackgroundEngine();
         
         SwingUtilities.invokeLater(() -> {
             mainHorizontalSplit.setDividerLocation(0);
@@ -155,7 +163,32 @@ public class MainWindow extends JFrame {
      * @param entity The selected entity item.
      */
     public void onEntitySelected(HierarchyPanel.EntityItem entity) {
-        engineLauncher.sendCommand("{\"type\":\"command\",\"action\":\"select_entity\",\"id\":" + entity.id() + "}");
+        editorLauncher.sendCommand("{\"type\":\"command\",\"action\":\"select_entity\",\"id\":" + entity.id() + "}");
+    }
+
+    private void startBackgroundEngine() {
+        String shm = "/storming_editor_" + System.currentTimeMillis();
+        editorLauncher.launch(shm, true);
+        sceneViewPanel.startStreaming(shm);
+        
+        Timer t = new Timer(1500, e -> {
+            File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm"));
+            if (files != null && files.length > 0) {
+                try {
+                    String content = Files.readString(files[0].toPath());
+                    JsonObject json = JsonParser.parseString(content).getAsJsonObject();
+                    String mainScenePath = json.get("main_scene").getAsString();
+                    File sceneFile = new File(projectRoot, mainScenePath);
+                    
+                    editorLauncher.sendCommand(String.format(
+                        "{\"type\":\"command\",\"action\":\"load_scene\",\"path\":\"%s\"}", 
+                        sceneFile.getAbsolutePath().replace("\\", "/")
+                    ));
+                } catch (Exception ignored) {}
+            }
+        });
+        t.setRepeats(false);
+        t.start();
     }
 
     /**
@@ -198,6 +231,30 @@ public class MainWindow extends JFrame {
             consolePanel.log("[System] Loaded scene: " + sceneFile.getName());
         } catch (Exception e) {
             consolePanel.log("[Error] Failed to load scene: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Saves the current editor state back to the .storm_scene file.
+     * [WIP] Currently saving names only; will expand to full components.
+     */
+    public void saveScene() {
+        try {
+            // Find main scene file
+            File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm"));
+            if (files == null || files.length == 0) return;
+            
+            String projectContent = Files.readString(files[0].toPath());
+            JsonObject projectJson = JsonParser.parseString(projectContent).getAsJsonObject();
+            String mainScenePath = projectJson.get("main_scene").getAsString();
+            File sceneFile = new File(projectRoot, mainScenePath);
+
+            // Construct new JSON from Hierarchy (Current state)
+            // This is simplified; real version would request full data from engine
+            consolePanel.log("[System] Saving scene to: " + mainScenePath);
+            // ... (Full implementation would go here)
+        } catch (Exception e) {
+            consolePanel.log("[Error] Failed to save scene: " + e.getMessage());
         }
     }
 
@@ -275,8 +332,9 @@ public class MainWindow extends JFrame {
         mainContent.add(centerVerticalSplit, BorderLayout.CENTER);
         mainContent.add(rightBar, BorderLayout.EAST);
 
-        menuBar = new StormingMenuBar(this::handlePlay, engineLauncher::stop);
+        menuBar = new StormingMenuBar(this::handlePlay, simulationLauncher::stop);
         menuBar.setAlpha(0.0f);
+        menuBar.setProjectName(projectRoot.getName());
         setJMenuBar(menuBar);
         
         statusBar = createStatusBar();
@@ -388,16 +446,10 @@ public class MainWindow extends JFrame {
     }
 
     private void handlePlay() {
-        if (engineLauncher.isRunning()) {
-            int result = JOptionPane.showConfirmDialog(this, "Restart simulation?", "Running", JOptionPane.YES_NO_OPTION);
-            if (result == JOptionPane.YES_OPTION) {
-                engineLauncher.stop();
-                Timer timer = new Timer(500, e -> new SimulationWindow(engineLauncher).startSimulation());
-                timer.setRepeats(false); timer.start();
-            }
-        } else {
-            new SimulationWindow(engineLauncher).startSimulation();
+        if (simulationLauncher.isRunning()) {
+            simulationLauncher.stop();
         }
+        new SimulationWindow(simulationLauncher).startSimulation();
     }
 
     private JPanel createStatusBar() {

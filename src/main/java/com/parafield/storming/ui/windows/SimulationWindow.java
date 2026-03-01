@@ -344,7 +344,7 @@ public class SimulationWindow extends JFrame {
             footer.setAlpha(a);
         }, null);
         String shm = "/storming_shm_" + System.currentTimeMillis();
-        launcher.launch(shm);
+        launcher.launch(shm, false);
         viewport.startStreaming(shm);
         
         // Request immediate sync

@@ -15,6 +15,7 @@ namespace Storming {
         RendererBackend Backend = RendererBackend::OpenGL;
         uint64_t ParentWindowID = 0;
         std::string ShmName = "";
+        bool IsEditor = false;
     };
 
     class Application {
@@ -32,6 +33,7 @@ namespace Storming {
     private:
         ApplicationConfig m_Config;
         bool m_Running = true;
+        bool m_IsEditor = false;
         SDL_Window* m_Window = nullptr;
         std::unique_ptr<RendererAPI> m_RendererAPI;
         class FrameBuffer* m_FrameBuffer = nullptr;

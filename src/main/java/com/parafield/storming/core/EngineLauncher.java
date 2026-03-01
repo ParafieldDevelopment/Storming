@@ -159,12 +159,17 @@ public class EngineLauncher {
         launch("");
     }
 
+    public void launch(String shmName) {
+        launch(shmName, false);
+    }
+
     /**
      * Launches the engine process and starts monitoring its output.
      *
-     * @param shmName The shared memory name to pass as an argument.
+     * @param shmName  The shared memory name to pass as an argument.
+     * @param isEditor Whether to launch the engine in editor mode.
      */
-    public void launch(String shmName) {
+    public void launch(String shmName, boolean isEditor) {
         if (isRunning()) {
             return;
         }
@@ -181,13 +186,17 @@ public class EngineLauncher {
                 }
 
                 broadcast("Launching Storming Engine...");
-                ProcessBuilder pb;
+                List<String> args = new ArrayList<>();
+                args.add(enginePath);
                 if (!shmName.isEmpty()) {
-                    pb = new ProcessBuilder(enginePath, "--shm", shmName);
-                } else {
-                    pb = new ProcessBuilder(enginePath);
+                    args.add("--shm");
+                    args.add(shmName);
+                }
+                if (isEditor) {
+                    args.add("--editor");
                 }
                 
+                ProcessBuilder pb = new ProcessBuilder(args);
                 pb.redirectErrorStream(true);
                 currentProcess = pb.start();
                 

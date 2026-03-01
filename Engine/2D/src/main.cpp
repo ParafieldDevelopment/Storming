@@ -14,6 +14,8 @@ int main(int argc, char** argv) {
             config.ParentWindowID = std::stoull(argv[++i]);
         } else if (arg == "--shm" && i + 1 < argc) {
             config.ShmName = argv[++i];
+        } else if (arg == "--editor") {
+            config.IsEditor = true;
         }
     }
 

@@ -100,6 +100,31 @@ public class StormingMenuBar extends JMenuBar {
     }
 
     /**
+     * Updates the menu bar to display the current project name.
+     * @param name The name of the project.
+     */
+    public void setProjectName(String name) {
+        projectBtn.setText(name);
+        projectBtn.setIcon(new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(52, 152, 219));
+                g2.fillRoundRect(x, y, 18, 18, 6, 6);
+                g2.setColor(Color.WHITE);
+                g2.setFont(UIUtils.getFont(Font.BOLD, 11f));
+                String letter = name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase();
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return 18; }
+            @Override public int getIconHeight() { return 18; }
+        });
+    }
+
+    /**
      * Initializes the menu bar components: logo, hamburger, menus, project info, and controls.
      */
     private void initMenuBar() {
