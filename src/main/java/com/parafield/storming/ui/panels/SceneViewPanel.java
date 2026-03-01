@@ -31,6 +31,7 @@ public class SceneViewPanel extends JPanel {
 
     private BufferedImage image;
     private Pointer shmPtr;
+    private String currentShmName;
     private final int width = 1280;
     private final int height = 720;
     private boolean isStreaming = false;
@@ -41,7 +42,7 @@ public class SceneViewPanel extends JPanel {
 
     public SceneViewPanel() {
         setLayout(null);
-        setBackground(new Color(25, 25, 30));
+        setBackground(new Color(20, 20, 25));
         
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         
@@ -72,6 +73,9 @@ public class SceneViewPanel extends JPanel {
             if (isStreaming) {
                 updateImage();
                 repaint();
+            } else if (currentShmName != null) {
+                // Retry connection if we have a name but no pointer
+                attemptConnection();
             }
         });
         timer.start();
@@ -92,22 +96,32 @@ public class SceneViewPanel extends JPanel {
     }
 
     public void startStreaming(String shmName) {
+        this.currentShmName = shmName;
+        attemptConnection();
+    }
+
+    private void attemptConnection() {
+        if (currentShmName == null) return;
+        
         try {
-            int fd = LibRT.INSTANCE.shm_open(shmName, 0, 0); // O_RDONLY = 0
-            if (fd < 0) {
-                System.err.println("[Java] Failed to open SHM: " + shmName);
-                return;
+            // O_RDONLY = 0
+            int fd = LibRT.INSTANCE.shm_open(currentShmName, 0, 0);
+            if (fd >= 0) {
+                // prot=1 (READ), flags=1 (SHARED)
+                shmPtr = LibC.INSTANCE.mmap(null, (long) width * height * 4, 1, 1, fd, 0);
+                LibC.INSTANCE.close(fd);
+                isStreaming = true;
+                System.out.println("[Java] Successfully connected to SHM: " + currentShmName);
             }
-            // prot=1 (READ), flags=1 (SHARED)
-            shmPtr = LibC.INSTANCE.mmap(null, (long) width * height * 4, 1, 1, fd, 0);
-            LibC.INSTANCE.close(fd);
-            isStreaming = true;
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception ignored) {
+            // Wait for engine to create it
+        }
     }
 
     public void stopStreaming() {
         isStreaming = false;
         shmPtr = null;
+        currentShmName = null;
     }
 
     private void updateImage() {
@@ -117,11 +131,12 @@ public class SceneViewPanel extends JPanel {
         ByteBuffer bb = shmPtr.getByteBuffer(0, (long) width * height * 4);
         IntBuffer ib = bb.asIntBuffer();
         
-        // Fast Bulk Read
+        // Fast Bulk Read from Shared Memory
         ib.get(pixels);
         
-        // Fix ABGR to ARGB if necessary. OpenGL GL_RGBA results in 0xAABBGGRR in Little Endian.
-        // TYPE_INT_ARGB expects 0xAARRGGBB.
+        // COLOR CORRECTION (GL_RGBA bytes -> Java INT_ARGB)
+        // GL gives us [R, G, B, A] bytes. On Little Endian, this is 0xAABBGGRR.
+        // Java expects 0xAARRGGBB.
         for (int i = 0; i < pixels.length; i++) {
             int abgr = pixels[i];
             int r = (abgr & 0xFF);
@@ -137,8 +152,7 @@ public class SceneViewPanel extends JPanel {
         super.paintComponent(g);
         if (image != null) {
             Graphics2D g2 = (Graphics2D) g.create();
-            // GL Origin is Bottom-Left. Java is Top-Left. 
-            // Scaling by -1 vertically and offsetting by height flips it.
+            // GL Origin is Bottom-Left. Java is Top-Left. Flip it.
             g2.drawImage(image, 0, getHeight(), getWidth(), -getHeight(), null);
             
             if (showGrid && overlayToolbar.isVisible()) {

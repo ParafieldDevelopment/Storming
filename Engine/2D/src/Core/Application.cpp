@@ -39,7 +39,6 @@ namespace Storming {
         SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, m_Config.Name.c_str());
         
         if (!m_Config.ShmName.empty()) {
-            // HYPRLAND FIX: Strictly hidden utility window
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN, true);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_UTILITY_BOOLEAN, true);
@@ -72,7 +71,7 @@ namespace Storming {
 
         m_RendererAPI = RendererAPI::Create();
         m_RendererAPI->Init();
-        glDisable(GL_DEPTH_TEST); // Simplify rendering for debugging
+        glDisable(GL_DEPTH_TEST); 
 
         if (!m_Config.ShmName.empty()) {
             m_FrameBuffer = new FrameBuffer(m_Config.Width, m_Config.Height, m_Config.ShmName);
@@ -85,17 +84,19 @@ namespace Storming {
 
         s_ActiveScene = new Scene();
         
-        // Demo: Background Squares
         auto redSquare = s_ActiveScene->CreateEntity("Red Square");
         redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.9f, 0.2f, 0.3f, 1.0f });
         redSquare.GetComponent<TransformComponent>().Translation = { -0.5f, -0.5f, 0.0f };
         redSquare.GetComponent<TransformComponent>().Scale = { 0.4f, 0.4f, 1.0f };
 
-        // Demo: Center Logo with Tint
+        auto greenSquare = s_ActiveScene->CreateEntity("Green Square");
+        greenSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.2f, 0.8f, 0.3f, 1.0f });
+        greenSquare.GetComponent<TransformComponent>().Translation = { 0.1f, 0.1f, 0.0f };
+        greenSquare.GetComponent<TransformComponent>().Scale = { 0.3f, 0.5f, 1.0f };
+
         auto logo = s_ActiveScene->CreateEntity("Logo");
         auto texture = Texture2D::Create("src/main/resources/com/parafield/storming/icons/png/icon.png");
-        // Yellow tint to verify coloring works
-        logo.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 1.0f, 0.5f, 1.0f }).Texture = texture;
+        logo.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f }).Texture = texture;
         logo.GetComponent<TransformComponent>().Translation = { 0.0f, 0.0f, 0.0f };
         logo.GetComponent<TransformComponent>().Scale = { 0.8f, 0.8f, 1.0f };
 
@@ -119,8 +120,8 @@ namespace Storming {
 
             if (m_FrameBuffer) m_FrameBuffer->Bind();
 
-            // VERIFY: Purple background
-            m_RendererAPI->SetClearColor(0.4f, 0.1f, 0.6f, 1.0f);
+            // Vibrant Teal clear to distinguish build
+            m_RendererAPI->SetClearColor(0.1f, 0.4f, 0.4f, 1.0f);
             m_RendererAPI->Clear();
 
             Renderer2D::ResetStats();
@@ -129,12 +130,11 @@ namespace Storming {
             Renderer2D::EndScene();
 
             if (m_FrameBuffer) {
-                glFinish(); // Ensure all GL commands are done before reading
+                glFinish(); 
                 m_FrameBuffer->CopyToSharedMemory();
                 m_FrameBuffer->Unbind();
             }
             
-            // Always poll events to stay responsive to WM
             SDL_GL_SwapWindow(m_Window);
 
             frames++;
@@ -144,9 +144,14 @@ namespace Storming {
                 json telemetry;
                 telemetry["type"] = "telemetry";
                 telemetry["fps"] = fps;
+                telemetry["frameTime"] = (fps > 0) ? 1000.0f / fps : 0;
                 telemetry["drawCalls"] = stats.DrawCalls;
                 telemetry["quads"] = stats.QuadCount;
+                
+                // CRITICAL: Flush stdout so Java receives it immediately
                 std::cout << "[TELEMETRY]" << telemetry.dump() << std::endl;
+                std::cout.flush();
+
                 frames = 0;
                 lastTelemetryTime = currentTime;
             }

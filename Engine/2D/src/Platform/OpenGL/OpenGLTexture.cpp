@@ -1,6 +1,7 @@
 #include "Platform/OpenGL/OpenGLTexture.hpp"
 #include <stb_image.h>
 #include <iostream>
+#include <filesystem>
 
 namespace Storming {
 
@@ -26,6 +27,10 @@ namespace Storming {
     {
         int width, height, channels;
         stbi_set_flip_vertically_on_load(1);
+        
+        std::string absPath = std::filesystem::absolute(path).string();
+        std::cout << "[Texture] Loading: " << path << " (Abs: " << absPath << ")" << std::endl;
+
         stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (data) {
@@ -61,8 +66,9 @@ namespace Storming {
             glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, m_Width, m_Height, 0, m_DataFormat, GL_UNSIGNED_BYTE, data);
 
             stbi_image_free(data);
+            std::cout << "[Texture] Successfully loaded: " << path << " (" << width << "x" << height << ")" << std::endl;
         } else {
-            std::cerr << "[Texture] Failed to load image: " << path << std::endl;
+            std::cerr << "[Texture] Failed to load image: " << path << " | Error: " << stbi_failure_reason() << std::endl;
         }
     }
 

@@ -1,33 +1,31 @@
 # Storming Engine: 2026 Revival Roadmap
 
 ## Pre-Phase: Engine Startup (v2026.0.0)
-*   **[Done]** **Shared Memory (SHM) Pipeline:** Established high-speed pixel transfer between C++ Engine and Java Editor.
-*   **[Done]** **Embedded Mode:** Engine runs hidden (`--shm`) while streaming output to Editor viewport.
-*   **[Done]** **C++ Engine Rewrite:** Full transition to C++20, SDL3, and Data-Oriented Architecture.
-*   **[Done]** **JSON Command Protocol:** Stdin/stdout bridge for Editor -> Engine communication.
-*   **[Done]** **Telemetry Bridge:** Real-time reporting of FPS, Draw Calls, and Frame Timing to the Editor.
-*   **[Done]** **Auto Engine Compile:** Editor automatically builds the C++ core if binary is missing.
+*   **[Done]** **Shared Memory (SHM) Pipeline:** High-speed pixel transfer proven and stable.
+*   **[Done]** **Embedded Mode:** Engine runs headless and streams to Editor viewport.
+*   **[Done]** **C++ Engine Rewrite:** C++20, SDL3, and Data-Oriented foundation.
+*   **[Done]** **JSON Command Protocol:** Stdin/stdout bridge for Editor -> Engine commands.
+*   **[Done]** **Telemetry Bridge:** Real-time reporting of FPS, DC, and Quads.
+*   **[Done]** **Auto Engine Compile:** Editor automatically manages C++ builds.
 
 ## Phase 1: The Core Foundation (v2026.0.1)
-*   **[Done]** Modern "IntelliJ-style" Java Editor with Dark Theme (FlatLaf).
-*   **[Done]** High-performance directory structure for C++ Engine.
-*   **[Done]** HAL/RHI for multi-backend rendering (OpenGL 4.5 Initial).
-*   **[Done]** Basic Engine Launcher "Play" bridge from Editor to Engine.
-*   **[In Progress]** **Rendering Compatibility:** Fixing invisible assets and auto-maximize issues on specific Linux/AMD environments.
-*   **[Next]** **The `.storm` Project Format:** JSON-based asset and scene tracking.
+*   **[Done]** Modern "IntelliJ-style" Java Editor.
+*   **[Done]** HAL/RHI abstraction for OpenGL 4.5.
+*   **[Done]** High-performance directory structure.
+*   **[Done]** **Rendering Compatibility:** Resolved invisible assets and WM maximization issues.
 
 ## Phase 2: The 2D World (v2026.0.2)
-*   **[In Progress]** **ECS Integration:** Deep integration of EnTT for gameplay logic and rendering.
-*   **[Done]** **Texture & Sprite Support:** Loading PNG/JPG assets via `stb_image`.
-*   **[Next]** **Renderer2D Batching:** Optimized batcher handling up to 32 texture slots.
-*   **[Next]** **The Scene Tree:** Hierarchical entity management synced between Engine and Editor.
-*   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's Inspector.
+*   **[Done]** **ECS Integration:** Deep integration of EnTT.
+*   **[Done]** **Texture & Sprite Support:** PNG/JPG loading and rendering.
+*   **[In Progress]** **The Scene Tree:** Syncing entity hierarchy between C++ and Java.
+*   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's UI.
+*   **[Next]** **Renderer2D Batching:** Optimizing for 32+ texture slots.
 
 ## Phase 3: The Scripting Layer (v2026.0.3)
-*   **LUA/C# Integration:** Flexible logic layer (LUA for lightweight, C# for robust development).
-*   **Hot Reload:** Instant logic updates without restarting the engine process.
+*   **LUA/C# Integration:** Flexible gameplay logic layer.
+*   **Hot Reload:** Instant logic updates.
 
 ## Phase 4: Advanced Graphics & 3D (v2026.0.4)
-*   **Vulkan Backend:** Full implementation of the Vulkan RHI for peak performance.
-*   **3D Foundation:** Basic 3D math, PBR shading, and model loading.
-*   **Plugin API:** Java-based API for expanding Editor functionality.
+*   **Vulkan Backend:** Peak performance RHI.
+*   **3D Foundation:** Model loading and PBR.
+*   **Plugin API:** Java-based Editor expansion.
