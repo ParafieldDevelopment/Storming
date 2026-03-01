@@ -7,18 +7,19 @@ import java.awt.event.ActionListener;
 import java.util.function.Consumer;
 
 /**
- * Utility for UI animations in Swing.
+ * Utility for performing smooth UI animations in Swing.
+ * Uses a Swing Timer and cubic ease-out interpolation for professional feel.
  */
 public class UIAnimator {
 
     /**
-     * Generic property animator.
+     * Animates a generic float property over time.
      * 
-     * @param start Starting value.
-     * @param target Target value.
-     * @param durationMs Duration in ms.
-     * @param setter Consumer to apply the current value.
-     * @param onComplete Optional runnable to call when finished.
+     * @param start Starting value for the animation.
+     * @param target The final target value.
+     * @param durationMs Animation duration in milliseconds.
+     * @param setter A callback that receives the current (eased) value for each frame.
+     * @param onComplete Optional runnable to execute once the animation finishes.
      */
     public static void animate(float start, float target, int durationMs, Consumer<Float> setter, Runnable onComplete) {
         final float distance = target - start;
@@ -53,6 +54,9 @@ public class UIAnimator {
 
     /**
      * Animates a JSplitPane divider from its current position to a target position.
+     * @param splitPane The JSplitPane to animate.
+     * @param target The target divider location.
+     * @param durationMs Animation duration in milliseconds.
      */
     public static void animateSplit(JSplitPane splitPane, int target, int durationMs) {
         animate(splitPane.getDividerLocation(), target, durationMs, 
@@ -60,8 +64,11 @@ public class UIAnimator {
     }
 
     /**
-     * Animates a JSplitPane divider relative to its right/bottom edge.
-     * Useful when the split pane itself is resizing.
+     * Animates a JSplitPane divider relative to its trailing (right or bottom) edge.
+     * This is useful for "drawer" style panels that keep a fixed size regardless of window size.
+     * @param splitPane The JSplitPane to animate.
+     * @param fixedSize The target size for the trailing component.
+     * @param durationMs Animation duration in milliseconds.
      */
     public static void animateSplitTrailing(JSplitPane splitPane, int fixedSize, int durationMs) {
         animate(0.0f, 1.0f, durationMs, progress -> {

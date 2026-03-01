@@ -9,8 +9,18 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.jar.JarFile;
 
+/**
+ * Main entry point for the Storming Engine Editor application.
+ * Handles the initial setup, global theme application, and application lifecycle.
+ */
 public class EditorApp {
 
+    /**
+     * Entry point of the application.
+     * Configures global UI properties, applies the theme, and launches the initial windows.
+     *
+     * @param args Command-line arguments (not currently used).
+     */
     public static void main(String[] args) {
         // Unified window decorations for all platforms
         System.setProperty("flatlaf.useWindowDecorations", "true");
@@ -46,6 +56,10 @@ public class EditorApp {
         });
     }
 
+    /**
+     * Configures the global Look and Feel and UI refinements for a consistent, modern appearance.
+     * Uses FlatLaf for a Mac-style dark theme and customizes component arcs and tab heights.
+     */
     private static void setupGlobalTheme() {
         try {
             UIManager.setLookAndFeel(new FlatMacDarkLaf());

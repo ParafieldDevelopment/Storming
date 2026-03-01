@@ -8,10 +8,18 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * The initial launcher window for the Storming Engine.
+ * Allows users to select existing projects or create new ones.
+ * Features a modern, animated interface with a sidebar for project history.
+ */
 public class ProjectSelectorWindow extends JFrame {
     private AnimatedPanel mainContent;
     private JPanel sidebar;
 
+    /**
+     * Constructs the ProjectSelectorWindow and sets up its UI properties.
+     */
     public ProjectSelectorWindow() {
         setTitle("Storming Engine Launcher");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -25,6 +33,9 @@ public class ProjectSelectorWindow extends JFrame {
         initUI();
     }
 
+    /**
+     * Initializes the UI components, including the project list sidebar and the welcome/action area.
+     */
     private void initUI() {
         JPanel root = new JPanel(new BorderLayout());
         setContentPane(root);
@@ -145,6 +156,9 @@ public class ProjectSelectorWindow extends JFrame {
         SwingUtilities.invokeLater(() -> mainContent.startEntrance());
     }
 
+    /**
+     * Internal panel that supports alpha-fade and slide-up entrance animations.
+     */
     private static class AnimatedPanel extends JPanel {
         float alpha = 0.0f;
         int yOffset = 30; 
@@ -153,6 +167,9 @@ public class ProjectSelectorWindow extends JFrame {
             super(layout);
         }
 
+        /**
+         * Starts the entrance animation.
+         */
         public void startEntrance() {
             UIAnimator.animate(0.0f, 1.0f, 600, a -> {
                 alpha = Math.max(0.0f, Math.min(1.0f, a));
@@ -172,6 +189,13 @@ public class ProjectSelectorWindow extends JFrame {
         }
     }
 
+    /**
+     * Utility method to create a stylized action button.
+     * @param text The button text.
+     * @param colorHex Optional background color in hex.
+     * @param primary Whether this is a primary (highlighted) action.
+     * @return A configured JButton.
+     */
     private JButton createActionButton(String text, String colorHex, boolean primary) {
         JButton btn = new JButton(text);
         btn.setPreferredSize(new Dimension(180, 45));
@@ -185,6 +209,9 @@ public class ProjectSelectorWindow extends JFrame {
         return btn;
     }
 
+    /**
+     * Launches the main editor window with an exit animation.
+     */
     private void launchMainEditor() {
         animateExit(() -> {
             dispose();
@@ -192,6 +219,10 @@ public class ProjectSelectorWindow extends JFrame {
         });
     }
 
+    /**
+     * Performs an exit animation for both the sidebar and the main content area.
+     * @param onComplete Callback to execute once the animation finishes.
+     */
     private void animateExit(Runnable onComplete) {
         // Slide sidebar left and fade
         UIAnimator.animate(0, -350, 350, x -> {
@@ -208,12 +239,13 @@ public class ProjectSelectorWindow extends JFrame {
         }, onComplete);
     }
 
-    // Inner classes for the list
+    /** Represents a project entry in the sidebar list. */
     private static class ProjectItem {
         String name, path;
         ProjectItem(String name, String path) { this.name = name; this.path = path; }
     }
 
+    /** Custom renderer for the project list to handle hover effects and styling. */
     private static class ProjectListRenderer extends DefaultListCellRenderer {
         public int hoverIndex = -1;
 

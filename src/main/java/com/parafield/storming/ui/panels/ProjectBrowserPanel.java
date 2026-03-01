@@ -9,11 +9,18 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.File;
 
+/**
+ * Provides a file system explorer for the current project.
+ * Displays a hierarchical tree of files and directories with custom icons and refreshing capabilities.
+ */
 public class ProjectBrowserPanel extends JPanel {
 
     private final JTree fileTree;
     private final File rootDir;
 
+    /**
+     * Constructs a ProjectBrowserPanel, initializing the file tree with the current user directory.
+     */
     public ProjectBrowserPanel() {
         setLayout(new BorderLayout());
         
@@ -54,11 +61,19 @@ public class ProjectBrowserPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Refreshes the file tree by re-scanning the root directory.
+     */
     private void refreshTree() {
         DefaultMutableTreeNode rootNode = createTreeNodes(rootDir);
         fileTree.setModel(new DefaultTreeModel(rootNode));
     }
 
+    /**
+     * Recursively creates tree nodes for a given file or directory.
+     * @param file The root file or directory to scan.
+     * @return A DefaultMutableTreeNode representing the file/directory and its children.
+     */
     private DefaultMutableTreeNode createTreeNodes(File file) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(file.getName().isEmpty() ? file.getPath() : file.getName());
         if (file.isDirectory()) {
@@ -79,6 +94,7 @@ public class ProjectBrowserPanel extends JPanel {
         return node;
     }
 
+    /** Custom tree cell renderer to provide distinct icons for files and folders. */
     private static class FileTreeCellRenderer extends DefaultTreeCellRenderer {
         @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean exp, boolean leaf, int row, boolean hasFocus) {

@@ -4,10 +4,19 @@ import com.formdev.flatlaf.FlatClientProperties;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A JetBrains-style sidebar used to host tool window buttons and shortcuts.
+ * Supports both vertical and horizontal orientations and alpha-fade animations.
+ * Features specialized toggle buttons with selection indicators.
+ */
 public class SideBar extends JPanel {
     private final int barWidth;
     private float alpha = 1.0f;
 
+    /**
+     * Sets the alpha transparency of the sidebar for animation purposes.
+     * @param alpha The alpha value (0.0 to 1.0).
+     */
     public void setAlpha(float alpha) {
         this.alpha = alpha;
         repaint();
@@ -25,6 +34,11 @@ public class SideBar extends JPanel {
         }
     }
 
+    /**
+     * Constructs a SideBar.
+     * @param orientation The orientation of the sidebar (SwingConstants.VERTICAL or SwingConstants.HORIZONTAL).
+     * @param width The width (for vertical) or height (for horizontal) of the sidebar.
+     */
     public SideBar(int orientation, int width) {
         this.barWidth = width;
         setLayout(new BoxLayout(this, orientation == SwingConstants.VERTICAL ? BoxLayout.Y_AXIS : BoxLayout.X_AXIS));
@@ -34,6 +48,14 @@ public class SideBar extends JPanel {
         add(Box.createVerticalStrut(5));
     }
 
+    /**
+     * Adds a new tab/button to the sidebar.
+     * @param name The name of the tab (used as a tooltip).
+     * @param icon The icon to display on the button.
+     * @param isToggle true if the button should behave as a toggle button (persistent selection).
+     * @param onSelect Callback to execute when the button is clicked.
+     * @return The created AbstractButton.
+     */
     public AbstractButton addTab(String name, Icon icon, boolean isToggle, Runnable onSelect) {
         AbstractButton btn;
         if (isToggle) {
@@ -78,6 +100,9 @@ public class SideBar extends JPanel {
         return btn;
     }
 
+    /**
+     * Adds a visual separator line to the sidebar.
+     */
     public void addSeparator() {
         JPanel sep = new JPanel();
         sep.setMaximumSize(new Dimension(barWidth - 14, 1));
@@ -90,6 +115,9 @@ public class SideBar extends JPanel {
         add(Box.createVerticalStrut(6));
     }
 
+    /**
+     * Adds flexible space (glue) to the sidebar, pushing subsequent components to the end.
+     */
     public void addGlue() {
         add(Box.createVerticalGlue());
     }

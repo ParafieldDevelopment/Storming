@@ -6,11 +6,21 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * Displays specific information about a Pull Request, such as changed files and check statuses.
+ * [WIP] This component is currently a visual placeholder and uses mock data.
+ * Future versions will show live data from integrated PR providers.
+ */
 public class PRDetailsSidePanel extends JPanel {
 
     private final Runnable onBack;
     private final JPanel content;
 
+    /**
+     * Constructs a PRDetailsSidePanel.
+     * @param title The title of the Pull Request being displayed.
+     * @param onBack A callback to execute when the 'Back' button is clicked.
+     */
     public PRDetailsSidePanel(String title, Runnable onBack) {
         this.onBack = onBack;
         setLayout(new BorderLayout());
@@ -61,6 +71,11 @@ public class PRDetailsSidePanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Adds a file item to the details list.
+     * @param name The name of the changed file.
+     * @param diff A string representing the additions and deletions (e.g., "+42 -12").
+     */
     private void addFileItem(String name, String diff) {
         JPanel item = new JPanel(new BorderLayout());
         item.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
@@ -80,6 +95,11 @@ public class PRDetailsSidePanel extends JPanel {
         content.add(item);
     }
 
+    /**
+     * Adds a check status item to the details list.
+     * @param name The name of the check (e.g., "Build").
+     * @param success Whether the check passed.
+     */
     private void addCheckItem(String name, boolean success) {
         JLabel lbl = new JLabel("  ✓ " + name);
         lbl.setFont(new Font("SansSerif", Font.PLAIN, 12));

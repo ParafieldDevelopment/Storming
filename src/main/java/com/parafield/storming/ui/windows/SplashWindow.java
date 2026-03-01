@@ -3,8 +3,16 @@ package com.parafield.storming.ui.windows;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A simple splash screen window displayed during application startup.
+ * Loads an image from resources and scales it to a standard size.
+ */
 public class SplashWindow extends JWindow {
 
+    /**
+     * Constructs a SplashWindow with the specified image resource.
+     * @param resourcePath The path to the splash screen image resource.
+     */
     public SplashWindow(String resourcePath) {
         try {
             java.net.URL imgUrl = getClass().getResource(resourcePath);
@@ -28,10 +36,16 @@ public class SplashWindow extends JWindow {
         }
     }
 
+    /**
+     * Displays the splash screen.
+     */
     public void showSplash() {
         setVisible(true);
     }
 
+    /**
+     * Closes and disposes of the splash screen window.
+     */
     public void close() {
         dispose();
     }

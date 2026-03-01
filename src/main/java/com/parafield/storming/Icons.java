@@ -6,9 +6,23 @@ import java.awt.*;
 import java.net.URL;
 import java.util.Objects;
 
+/**
+ * Provides access to SVG and PNG icon resources used throughout the Storming Engine Editor.
+ * Automatically handles SVG loading (using FlatLaf) and PNG fallbacks.
+ */
 public class Icons {
+    /** The main window icon for the application. */
     public static final Image FRAME_ICON = Toolkit.getDefaultToolkit().getImage(Icons.class.getResource("/com/parafield/storming/icons/exe-icon.png"));
 
+    /**
+     * Loads an icon from resources by name.
+     * Attempts to find a .svg file first, falling back to .png if not found.
+     *
+     * @param name The base name of the icon file.
+     * @param width The target width to scale to (set to 0 for default).
+     * @param height The target height to scale to (set to 0 for default).
+     * @return An ImageIcon if found, null otherwise.
+     */
     private static ImageIcon loadIcon(String name, int width, int height) {
         String svgPath = "/com/parafield/storming/icons/" + name + ".svg";
         URL svgUrl = Icons.class.getResource(svgPath);

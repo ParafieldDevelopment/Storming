@@ -6,12 +6,22 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * A standardized container for tool panels within the editor (e.g., Inspector, Hierarchy).
+ * Includes a stylized header with a title and action buttons (Options, Hide).
+ */
 public class ToolWindow extends JPanel {
     private final String title;
     private final JComponent content;
     private final JPanel header;
     private final Runnable onHide;
 
+    /**
+     * Constructs a ToolWindow.
+     * @param title The display title for the tool window.
+     * @param content The main content component to be displayed.
+     * @param onHide A callback to execute when the 'Hide' button is clicked.
+     */
     public ToolWindow(String title, JComponent content, Runnable onHide) {
         this.title = title;
         this.content = content;

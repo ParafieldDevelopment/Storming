@@ -21,6 +21,11 @@ import com.parafield.storming.ui.utils.UIAnimator;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * The primary window for the Storming Engine Editor.
+ * Orchestrates the main layout, including sidebars, split panes, and integrated tool windows.
+ * Handles the application's main lifecycle events and UI animations.
+ */
 public class MainWindow extends JFrame {
 
     private final ConsolePanel consolePanel;
@@ -64,10 +69,18 @@ public class MainWindow extends JFrame {
     private JTabbedPane editorTabs;
     private static MainWindow instance;
 
+    /**
+     * Returns the singleton instance of the MainWindow.
+     * @return The current MainWindow instance.
+     */
     public static MainWindow getInstance() {
         return instance;
     }
 
+    /**
+     * Constructs the MainWindow, initializes UI components, and sets up the engine launcher.
+     * Configures window properties and triggers the entrance animation.
+     */
     public MainWindow() {
         instance = this;
         setTitle("Storming Engine");
@@ -98,6 +111,10 @@ public class MainWindow extends JFrame {
         });
     }
 
+    /**
+     * Performs the initial unfolding animation for the main editor layout.
+     * Animates split panes and fades in sidebars and the menu bar.
+     */
     private void animateEntrance() {
         // Unfolding Animation (Drawer style)
         UIAnimator.animateSplit(mainHorizontalSplit, leftSplitLastLoc, 600);
@@ -116,6 +133,10 @@ public class MainWindow extends JFrame {
         }, null);
     }
 
+    /**
+     * Initializes the complex nested layout of the editor.
+     * Sets up split panes, tool windows, sidebars, and the menu bar.
+     */
     private void initUI() {
         JPanel root = new JPanel(new BorderLayout());
         setContentPane(root);
@@ -192,12 +213,22 @@ public class MainWindow extends JFrame {
         root.add(statusBar, BorderLayout.SOUTH);
     }
 
+    /**
+     * Opens a new tab in the editor view displaying details for a specific Pull Request.
+     * @param title The title of the Pull Request.
+     * @param author The author of the Pull Request.
+     */
     public void openPRDetails(String title, String author) {
         PRDetailsCenterPanel centerPanel = new PRDetailsCenterPanel(title, author);
         editorTabs.addTab("PR: " + title.split(":")[0], Icons.PR, centerPanel);
         editorTabs.setSelectedComponent(centerPanel);
     }
 
+    /**
+     * Handles clicks on the left sidebar for upper-section tools (Hierarchy, Commit, PR).
+     * Manages panel switching and drawer visibility animations.
+     * @param tabName The name of the tab to activate.
+     */
     private void handleLeftUpperClick(String tabName) {
         if (!isLeftUpperOpen) {
             leftUpperCardLayout.show(leftUpperCardPanel, tabName);
@@ -222,6 +253,9 @@ public class MainWindow extends JFrame {
         updateLeftBar();
     }
 
+    /**
+     * Toggles the visibility of the Project Browser panel with animation.
+     */
     private void toggleProject() {
         if (isProjectOpen) {
             if (isLeftUpperOpen) {
@@ -241,6 +275,9 @@ public class MainWindow extends JFrame {
         updateLeftBar();
     }
 
+    /**
+     * Toggles the entire left side drawer (containing Hierarchy and Project Browser).
+     */
     private void toggleLeftDrawer() {
         if (isLeftOpen) {
             leftSplitLastLoc = mainHorizontalSplit.getDividerLocation();
@@ -251,6 +288,9 @@ public class MainWindow extends JFrame {
         isLeftOpen = !isLeftOpen;
     }
 
+    /**
+     * Syncs the selection state of the left sidebar buttons with the current drawer state.
+     */
     private void updateLeftBar() {
         hierarchyBtn.setSelected(isLeftUpperOpen && isLeftOpen && currentLeftUpperTab.equals("HIERARCHY"));
         commitBtn.setSelected(isLeftUpperOpen && isLeftOpen && currentLeftUpperTab.equals("COMMIT"));
@@ -267,6 +307,10 @@ public class MainWindow extends JFrame {
         }
     }
 
+    /**
+     * Handles clicks on the right sidebar for tools (Inspector, Notifications).
+     * @param tabName The name of the tab to activate.
+     */
     private void handleRightSidebarClick(String tabName) {
         if (!isRightOpen) {
             rightCardLayout.show(rightCardPanel, tabName);
@@ -287,6 +331,15 @@ public class MainWindow extends JFrame {
         notificationsBtn.setSelected(isRightOpen && currentRightTab.equals("NOTIFICATIONS"));
     }
 
+    /**
+     * Utility method to create a stylized JSplitPane.
+     * @param orient Orientation (HORIZONTAL_SPLIT or VERTICAL_SPLIT).
+     * @param left The left/top component.
+     * @param right The right/bottom component.
+     * @param loc Initial divider location.
+     * @param weight Resize weight.
+     * @return A configured JSplitPane.
+     */
     private JSplitPane createSplit(int orient, JComponent left, JComponent right, int loc, double weight) {
         JSplitPane split = new JSplitPane(orient, left, right);
         split.setDividerLocation(loc);
@@ -296,6 +349,9 @@ public class MainWindow extends JFrame {
         return split;
     }
 
+    /**
+     * Launches the engine simulation. Prompts for restart if already running.
+     */
     private void handlePlay() {
         if (engineLauncher.isRunning()) {
             int result = JOptionPane.showConfirmDialog(this, "Restart simulation?", "Running", JOptionPane.YES_NO_OPTION);
@@ -309,6 +365,10 @@ public class MainWindow extends JFrame {
         }
     }
 
+    /**
+     * Creates the editor's status bar, displaying engine stats, Git branch, and system resources.
+     * @return A JPanel configured as a status bar.
+     */
     private JPanel createStatusBar() {
         JPanel p = new JPanel(new BorderLayout());
         p.setPreferredSize(new Dimension(0, 26));

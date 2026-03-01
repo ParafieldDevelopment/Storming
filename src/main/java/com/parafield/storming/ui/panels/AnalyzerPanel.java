@@ -4,7 +4,15 @@ import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Analyzes project scripts and assets for errors, performance bottlenecks, and best practices.
+ * [WIP] This component is currently a visual placeholder. 
+ * Future versions will provide actionable insights for developers.
+ */
 public class AnalyzerPanel extends JPanel {
+    /**
+     * Constructs an AnalyzerPanel with a placeholder header.
+     */
     public AnalyzerPanel() {
         setLayout(new BorderLayout());
         JLabel label = new JLabel("Script & Asset Analyzer", SwingConstants.CENTER);

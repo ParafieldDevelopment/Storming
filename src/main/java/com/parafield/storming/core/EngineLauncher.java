@@ -4,21 +4,39 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.function.Consumer;
 
+/**
+ * Responsible for launching and managing the Storming Engine process.
+ * Handles process lifecycle, shared memory arguments, and output logging.
+ */
 public class EngineLauncher {
 
     private final String enginePath;
     private final Consumer<String> logConsumer;
     private Process currentProcess;
 
+    /**
+     * Constructs a new EngineLauncher.
+     *
+     * @param enginePath The file path to the engine executable.
+     * @param logConsumer A callback for handling engine log messages.
+     */
     public EngineLauncher(String enginePath, Consumer<String> logConsumer) {
         this.enginePath = enginePath;
         this.logConsumer = logConsumer;
     }
 
+    /**
+     * Checks if the engine process is currently running.
+     *
+     * @return true if the engine process exists and is alive, false otherwise.
+     */
     public boolean isRunning() {
         return currentProcess != null && currentProcess.isAlive();
     }
 
+    /**
+     * Stops the running engine process gracefully, then forcibly if it fails to exit.
+     */
     public void stop() {
         if (isRunning()) {
             logConsumer.accept("[System] Stopping Engine...");
@@ -35,10 +53,19 @@ public class EngineLauncher {
         }
     }
 
+    /**
+     * Launches the engine process without additional arguments.
+     */
     public void launch() {
         launch("");
     }
 
+    /**
+     * Launches the engine process with an optional shared memory name.
+     * Starts the engine in a separate thread and captures its output.
+     *
+     * @param shmName The shared memory name to pass as an argument.
+     */
     public void launch(String shmName) {
         if (isRunning()) {
             return;

@@ -11,17 +11,26 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 
+/**
+ * Provides a real-time viewport for the game engine's output.
+ * Utilizes POSIX shared memory (via JNA) for high-performance image streaming from the engine process.
+ * Includes a floating toolbar for scene overlays like grids, snapping, and collision indicators.
+ */
 public class SceneViewPanel extends JPanel {
 
-    // Define POSIX interface for Shared Memory
+    /** POSIX interface for Shared Memory operations. */
     public interface LibRT extends Library {
         LibRT INSTANCE = Native.load("rt", LibRT.class);
+        /** Opens a shared memory object. */
         int shm_open(String name, int oflag, int mode);
     }
 
+    /** POSIX interface for standard C library operations. */
     public interface LibC extends Library {
         LibC INSTANCE = Native.load("c", LibC.class);
+        /** Maps files or devices into memory. */
         Pointer mmap(Pointer addr, long length, int prot, int flags, int fd, long offset);
+        /** Closes a file descriptor. */
         int close(int fd);
     }
 
@@ -36,6 +45,10 @@ public class SceneViewPanel extends JPanel {
     private boolean showGrid = true;
     private boolean showCollisions = false;
 
+    /**
+     * Constructs a SceneViewPanel, initializing the image buffer and floating toolbar.
+     * Starts a refresh timer to handle frame updates at ~60fps.
+     */
     public SceneViewPanel() {
         setLayout(null); // Absolute positioning for overlays
         setBackground(new Color(25, 25, 30));
@@ -76,6 +89,14 @@ public class SceneViewPanel extends JPanel {
         timer.start();
     }
 
+    /**
+     * Utility method to create a stylized toggle button for scene overlays.
+     * @param tip The tooltip text.
+     * @param icon The icon to display.
+     * @param selected Initial selection state.
+     * @param onToggle Callback to execute when the toggle state changes.
+     * @return A configured JToggleButton.
+     */
     private JToggleButton createOverlayToggle(String tip, Icon icon, boolean selected, java.util.function.Consumer<Boolean> onToggle) {
         JToggleButton btn = new JToggleButton(icon);
         btn.setSelected(selected);
@@ -86,6 +107,10 @@ public class SceneViewPanel extends JPanel {
         return btn;
     }
 
+    /**
+     * Initiates image streaming from the specified shared memory segment.
+     * @param shmName The name of the shared memory object.
+     */
     public void startStreaming(String shmName) {
         this.shmName = shmName;
         try {
@@ -97,11 +122,17 @@ public class SceneViewPanel extends JPanel {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
+    /**
+     * Stops the image streaming process.
+     */
     public void stopStreaming() {
         isStreaming = false;
         shmPtr = null;
     }
 
+    /**
+     * Reads pixel data from shared memory and updates the internal image buffer.
+     */
     private void updateImage() {
         if (shmPtr == null) return;
         int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
@@ -131,6 +162,10 @@ public class SceneViewPanel extends JPanel {
         }
     }
 
+    /**
+     * Draws a debug grid overlay on the scene viewport.
+     * @param g The Graphics context to draw on.
+     */
     private void drawGrid(Graphics g) {
         g.setColor(new Color(200, 200, 200, 20));
         int step = 32;
@@ -138,5 +173,9 @@ public class SceneViewPanel extends JPanel {
         for (int y = 0; y < getHeight(); y += step) g.drawLine(0, y, getWidth(), y);
     }
 
+    /**
+     * Returns a native window ID for engine integration (if applicable).
+     * @return The native window handle, or 0 if not supported.
+     */
     public long getNativeWindowID() { return 0; }
 }

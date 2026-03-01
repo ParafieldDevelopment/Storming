@@ -10,6 +10,11 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A customized, modern menu bar for the Storming Engine Editor.
+ * Supports alpha-fade animations, a "hamburger" menu mode to save space,
+ * and integrated playback controls for the engine.
+ */
 public class StormingMenuBar extends JMenuBar {
     private float alpha = 1.0f;
     private final Runnable onPlay;
@@ -22,6 +27,11 @@ public class StormingMenuBar extends JMenuBar {
     private Component projectStrut;
     private Component branchStrut;
 
+    /**
+     * Constructs a StormingMenuBar.
+     * @param onPlay Callback to execute when the 'Play' button is clicked.
+     * @param onStop Callback to execute when the 'Stop' button is clicked.
+     */
     public StormingMenuBar(Runnable onPlay, Runnable onStop) {
         this.onPlay = onPlay;
         this.onStop = onStop;
@@ -35,6 +45,10 @@ public class StormingMenuBar extends JMenuBar {
         setupClickOutDetection();
     }
 
+    /**
+     * Sets up a global listener to detect clicks outside the menu bar,
+     * allowing the expanded menu to collapse automatically.
+     */
     private void setupClickOutDetection() {
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
             @Override
@@ -58,6 +72,10 @@ public class StormingMenuBar extends JMenuBar {
         }, AWTEvent.MOUSE_EVENT_MASK);
     }
 
+    /**
+     * Toggles between the expanded (showing all menus) and collapsed (showing project info) states.
+     * @param expanded true to expand, false to collapse.
+     */
     private void setMenuExpanded(boolean expanded) {
         this.expanded = expanded;
         for (JMenu m : menus) {
@@ -71,11 +89,18 @@ public class StormingMenuBar extends JMenuBar {
         repaint();
     }
 
+    /**
+     * Sets the alpha transparency of the menu bar for animation purposes.
+     * @param alpha The alpha value (0.0 to 1.0).
+     */
     public void setAlpha(float alpha) {
         this.alpha = alpha;
         repaint();
     }
 
+    /**
+     * Initializes the menu bar components: logo, hamburger, menus, project info, and controls.
+     */
     private void initMenuBar() {
         add(Box.createHorizontalStrut(10));
         
@@ -162,6 +187,10 @@ public class StormingMenuBar extends JMenuBar {
         add(settingsBtn);
     }
 
+    /**
+     * Creates and populates the 'File' menu.
+     * @return A configured JMenu for File operations.
+     */
     private JMenu createFileMenu() {
         JMenu menu = new JMenu("File");
         menu.add(new JMenuItem("New Project...", Icons.PLUS));
@@ -174,6 +203,10 @@ public class StormingMenuBar extends JMenuBar {
         return menu;
     }
 
+    /**
+     * Creates and populates the 'Edit' menu.
+     * @return A configured JMenu for Edit operations.
+     */
     private JMenu createEditMenu() {
         JMenu menu = new JMenu("Edit");
         menu.add(new JMenuItem("Undo"));
@@ -185,6 +218,11 @@ public class StormingMenuBar extends JMenuBar {
         return menu;
     }
 
+    /**
+     * Creates a generic menu with a placeholder action.
+     * @param title The menu title.
+     * @return A JMenu with a placeholder entry.
+     */
     private JMenu createMenu(String title) {
         JMenu menu = new JMenu(title);
         menu.add(new JMenuItem("Placeholder Action"));

@@ -20,11 +20,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Provides an integrated, multi-tabbed terminal emulator within the editor.
+ * Utilizes {@code JediTerm} for the terminal UI and {@code Pty4j} for process management.
+ * Supports multiple sessions, tab renaming, and custom color themes.
+ */
 public class TerminalPanel extends JPanel {
 
     private final JTabbedPane tabbedPane;
     private int sessionCounter = 1;
 
+    /**
+     * Constructs a TerminalPanel, initializing the tabbed interface and adding the first session.
+     */
     public TerminalPanel() {
         setLayout(new BorderLayout());
         setBackground(new Color(15, 15, 20));
@@ -69,6 +77,12 @@ public class TerminalPanel extends JPanel {
         addNewSession();
     }
 
+    /**
+     * Creates a stylized toolbar button for terminal operations.
+     * @param tip The tooltip text.
+     * @param icon The icon to display.
+     * @return A configured JButton.
+     */
     private JButton createToolbarBtn(String tip, Icon icon) {
         JButton btn = new JButton(icon);
         btn.setToolTipText(tip);
@@ -77,17 +91,31 @@ public class TerminalPanel extends JPanel {
         return btn;
     }
 
+    /**
+     * Adds a new terminal session tab.
+     */
     private void addNewSession() {
         TerminalSession session = new TerminalSession();
         tabbedPane.addTab("Session " + (sessionCounter++), session);
         tabbedPane.setSelectedComponent(session);
     }
 
+    /**
+     * Retrieves the currently active terminal session.
+     * @return The active TerminalSession, or null if none is selected.
+     */
     private TerminalSession getCurrentSession() {
         Component selected = tabbedPane.getSelectedComponent();
         return (selected instanceof TerminalSession) ? (TerminalSession) selected : null;
     }
 
+    /**
+     * Displays a context menu for the specified tab index.
+     * @param invoker The component that triggered the menu.
+     * @param x The x-coordinate for the menu.
+     * @param y The y-coordinate for the menu.
+     * @param index The index of the tab.
+     */
     private void showTabContextMenu(Component invoker, int x, int y, int index) {
         JPopupMenu menu = new JPopupMenu();
         JMenuItem renameItem = new JMenuItem("Rename Tab...");
@@ -105,6 +133,7 @@ public class TerminalPanel extends JPanel {
         menu.show(invoker, x, y);
     }
 
+    /** Custom settings provider for the JediTerm terminal widget. */
     private static class StormingTerminalSettings extends DefaultSettingsProvider {
         @Override
         public ColorPalette getTerminalColorPalette() {
@@ -197,6 +226,7 @@ public class TerminalPanel extends JPanel {
         }
     }
 
+    /** Represents a single terminal session, managing its own widget and shell process. */
     private static class TerminalSession extends JPanel {
         private JediTermWidget terminalWidget;
         private PtyProcess process;

@@ -10,6 +10,11 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provides a centralized logging interface for the Storming Engine Editor.
+ * Displays system messages, engine output, warnings, and errors with stylized, color-coded text.
+ * Features real-time filtering by log level and text search.
+ */
 public class ConsolePanel extends JPanel {
 
     private final JTextPane consoleOutput;
@@ -29,9 +34,14 @@ public class ConsolePanel extends JPanel {
     private static final Color COLOR_WARN   = new Color(241, 196, 15);  // Yellow
     private static final Color COLOR_INFO   = Color.LIGHT_GRAY;
 
+    /** Supported log types for categorization and filtering. */
     private enum LogType { SYSTEM, ENGINE, ERROR, WARNING, INFO }
+    /** Represents a single log entry in the history. */
     private record LogEntry(String message, LogType type) {}
 
+    /**
+     * Constructs a ConsolePanel, initializing the toolbar, filter controls, and the output area.
+     */
     public ConsolePanel() {
         setLayout(new BorderLayout());
 
@@ -117,6 +127,11 @@ public class ConsolePanel extends JPanel {
         return btn;
     }
 
+    /**
+     * Appends a new message to the console log.
+     * Automatically categorizes the message based on its prefix and updates the UI if it matches current filters.
+     * @param msg The message to log.
+     */
     public void log(String msg) {
         LogType type = LogType.INFO;
         if (msg.startsWith("[System]")) type = LogType.SYSTEM;

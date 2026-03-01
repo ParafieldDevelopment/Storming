@@ -5,7 +5,15 @@ import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Displays the hierarchical structure of the current scene.
+ * [WIP] This component is currently a visual placeholder and will be bound to
+ * the engine's scene tree in future development phases.
+ */
 public class HierarchyPanel extends JPanel {
+    /**
+     * Constructs a HierarchyPanel, initializing the search bar and the object tree.
+     */
     public HierarchyPanel() {
         setLayout(new BorderLayout());
         

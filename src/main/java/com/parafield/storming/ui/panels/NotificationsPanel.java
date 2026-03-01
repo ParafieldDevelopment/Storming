@@ -4,7 +4,15 @@ import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Displays user notifications, system alerts, and engine messages.
+ * Features a clean interface with a fallback message when no notifications are present
+ * and a stylized background icon.
+ */
 public class NotificationsPanel extends JPanel {
+    /**
+     * Constructs a NotificationsPanel with a default empty state.
+     */
     public NotificationsPanel() {
         setLayout(new BorderLayout());
         JLabel label = new JLabel("No new notifications.", SwingConstants.CENTER);

@@ -8,12 +8,21 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provides an integrated Git interface within the editor.
+ * [WIP] This component is currently a visual placeholder and uses mock data.
+ * Future versions will implement actual Git integration for viewing changes, 
+ * managing branches, and performing commit operations.
+ */
 public class GitPanel extends JPanel {
 
     private final JPanel changesList;
     private final JTextArea commitMessage;
     private final JLabel branchLabel;
 
+    /**
+     * Constructs a GitPanel, initializing the UI and populating it with mock Git status data.
+     */
     public GitPanel() {
         setLayout(new BorderLayout());
         
@@ -87,6 +96,11 @@ public class GitPanel extends JPanel {
         add(split, BorderLayout.CENTER);
     }
 
+    /**
+     * Adds a file change item to the list.
+     * @param file The path to the changed file.
+     * @param status The status of the change (e.g., "modified", "untracked").
+     */
     private void addChangeItem(String file, String status) {
         JPanel item = new JPanel(new BorderLayout());
         item.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));

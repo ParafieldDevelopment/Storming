@@ -9,12 +9,20 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+/**
+ * Displays a list of Pull Requests associated with the current project.
+ * [WIP] This component is currently a visual placeholder and uses mock data.
+ * Future versions will implement actual integration with version control hosting providers.
+ */
 public class PRPanel extends JPanel {
 
     private final JPanel prList;
     private final CardLayout cardLayout;
     private final JPanel mainContainer;
 
+    /**
+     * Constructs a PRPanel, initializing the PR list with mock data.
+     */
     public PRPanel() {
         setLayout(new BorderLayout());
         
@@ -63,6 +71,12 @@ public class PRPanel extends JPanel {
         add(mainContainer, BorderLayout.CENTER);
     }
 
+    /**
+     * Adds a Pull Request item to the list.
+     * @param title The PR title.
+     * @param author The PR author.
+     * @param time When the PR was created/updated.
+     */
     private void addPRItem(String title, String author, String time) {
         JPanel item = new JPanel();
         item.setLayout(new BoxLayout(item, BoxLayout.Y_AXIS));
@@ -100,6 +114,11 @@ public class PRPanel extends JPanel {
         prList.add(item);
     }
 
+    /**
+     * Switches the view to show details for a specific Pull Request.
+     * @param title The PR title.
+     * @param author The PR author.
+     */
     public void showDetails(String title, String author) {
         PRDetailsSidePanel detailView = new PRDetailsSidePanel(title, () -> cardLayout.show(mainContainer, "LIST"));
         mainContainer.add(detailView, "DETAIL");

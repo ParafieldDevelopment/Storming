@@ -8,11 +8,20 @@ import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A dedicated window for running and debugging engine simulations.
+ * Provides a clean viewport for the game/application and playback controls.
+ * Integrates with the {@link EngineLauncher} to manage the engine process.
+ */
 public class SimulationWindow extends JFrame {
 
     private final SceneViewPanel viewport;
     private final EngineLauncher launcher;
 
+    /**
+     * Constructs a SimulationWindow.
+     * @param launcher The EngineLauncher instance to use for starting/stopping the engine.
+     */
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
 
@@ -59,6 +68,9 @@ public class SimulationWindow extends JFrame {
         });
     }
 
+    /**
+     * Initializes the menu bar with simulation playback controls (Restart, Pause, Stop).
+     */
     private void initMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setPreferredSize(new Dimension(0, 40));
@@ -97,6 +109,12 @@ public class SimulationWindow extends JFrame {
         setJMenuBar(menuBar);
     }
 
+    /**
+     * Creates a stylized toolbar button for simulation control.
+     * @param icon The icon to display on the button.
+     * @param tip The tooltip text for the button.
+     * @return A configured JButton.
+     */
     private JButton createControlBtn(Icon icon, String tip) {
         JButton btn = new JButton(icon);
         btn.setToolTipText(tip);
@@ -105,17 +123,27 @@ public class SimulationWindow extends JFrame {
         return btn;
     }
 
+    /**
+     * Restarts the engine simulation by stopping the current process and launching a new one.
+     */
     private void restartSimulation() {
         launcher.stop();
         Timer t = new Timer(500, e -> startSimulation());
         t.setRepeats(false); t.start();
     }
 
+    /**
+     * Stops the simulation and closes the window.
+     */
     private void closeAndStop() {
         launcher.stop();
         dispose();
     }
 
+    /**
+     * Starts the engine simulation.
+     * Makes the window visible and initiates engine launch with shared memory.
+     */
     public void startSimulation() {
         setVisible(true);
         String shmName = "/storming_shm_" + System.currentTimeMillis();

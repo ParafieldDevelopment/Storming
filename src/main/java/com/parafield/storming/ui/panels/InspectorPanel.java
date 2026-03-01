@@ -4,7 +4,15 @@ import com.parafield.storming.Icons;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Provides a property editor for the currently selected object in the scene.
+ * [WIP] This component is currently a visual placeholder and will be bound to
+ * the engine's object properties in future development phases.
+ */
 public class InspectorPanel extends JPanel {
+    /**
+     * Constructs an InspectorPanel with a prompt to select an object.
+     */
     public InspectorPanel() {
         setLayout(new BorderLayout());
         JLabel label = new JLabel("Select an object...", SwingConstants.CENTER);

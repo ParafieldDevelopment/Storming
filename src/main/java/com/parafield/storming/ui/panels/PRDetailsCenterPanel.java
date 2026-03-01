@@ -5,8 +5,18 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * Provides a comprehensive, tabbed view of a Pull Request's details.
+ * [WIP] This component is currently a visual placeholder and uses mock data.
+ * Future versions will integrate live descriptions, comments, and CI/CD logs.
+ */
 public class PRDetailsCenterPanel extends JPanel {
 
+    /**
+     * Constructs a PRDetailsCenterPanel.
+     * @param title The title of the Pull Request.
+     * @param author The author of the Pull Request.
+     */
     public PRDetailsCenterPanel(String title, String author) {
         setLayout(new BorderLayout());
         setBackground(UIManager.getColor("Panel.background"));
