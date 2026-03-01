@@ -6,11 +6,12 @@ This document provides an overview of the Java-based Editor for the Storming Eng
 
 *   **`EditorApp`**: The entry point for the Java application. It manages global themes (using FlatLaf), configures UI refinements, and handles the initial startup sequence (Splash Screen -> Project Selector -> Main Window).
 *   **`EngineLauncher`**: Responsible for the lifecycle of the C++ Storming Engine process. It handles launching with shared memory arguments, capturing engine logs, and graceful termination. Supports multiple log and telemetry listeners for real-time data broadcasting.
+*   **`ProjectManager`**: Manages project history and discovery. It maintains a persistent "recent projects" list and automatically scans default directories (like `~/StormingProjects`) to find Storming projects created by the user.
 
 ## Window Management
 
 *   **`MainWindow`**: The central orchestrator of the editor's layout. It manages complex nested split panes, JetBrains-style sidebars, and the main workspace tabs. It handles project and scene loading from disk.
-*   **`ProjectSelectorWindow`**: The initial launcher for the engine. Features a modern, animated interface for project management, including "New Project" and "Open Project" actions.
+*   **`ProjectSelectorWindow`**: The initial launcher for the engine. Features a modern, animated interface for project management, including "New Project" and "Open Project" actions. It displays a list of recent and discovered projects.
 *   **`NewProjectDialog`**: A comprehensive modal dialog for creating new Storming projects. It handles:
     *   Template selection (Empty 2D, 2D Demo).
     *   Directory scaffolding (`assets/`, `scenes/`).

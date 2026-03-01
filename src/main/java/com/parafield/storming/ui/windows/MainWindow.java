@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
+import com.parafield.storming.core.ProjectManager;
 import com.parafield.storming.ui.panels.ConsolePanel;
 import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.InspectorPanel;
@@ -86,6 +87,7 @@ public class MainWindow extends JFrame {
     public MainWindow(String projectPath) {
         instance = this;
         this.projectRoot = new File(projectPath);
+        ProjectManager.addRecentProject(projectPath);
         
         setTitle("Storming Engine - " + projectRoot.getName());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

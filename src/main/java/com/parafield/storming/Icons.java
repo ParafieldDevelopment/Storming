@@ -112,4 +112,5 @@ public class Icons {
     public static final ImageIcon FULLSCREEN = loadIcon("fullscreen", 18, 18);
     public static final ImageIcon STRUCTURE = loadIcon("Structure", 18, 18);
     public static final ImageIcon PERFORMANCE = loadIcon("performance", 18, 18);
+    public static final ImageIcon NOT_FOUND = loadIcon("404", 128, 128);
 }
