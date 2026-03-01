@@ -41,6 +41,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# 5. nlohmann_json (Command Protocol)
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(json)
+
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"
@@ -63,6 +72,7 @@ target_link_libraries(StormingEngine PRIVATE
     EnTT::EnTT
     glad
     glm::glm
+    nlohmann_json::nlohmann_json
     rt
 )
 

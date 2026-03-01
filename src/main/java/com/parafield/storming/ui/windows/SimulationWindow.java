@@ -1,6 +1,8 @@
 package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.ConsolePanel;
@@ -18,9 +20,6 @@ import java.util.List;
  * An advanced simulation window with a Godot-inspired aesthetic.
  * Features a pulsating "LIVE" indicator, real-time resource tracking,
  * always-on-top toggle, resolution scaling, and an integrated mini-console.
- * 
- * Note: Telemetry data (FPS, CPU/GPU usage) is currently simulated using mock data
- * and will be linked to the engine's telemetry bridge in future updates.
  */
 public class SimulationWindow extends JFrame {
 
@@ -32,6 +31,7 @@ public class SimulationWindow extends JFrame {
     private AlphaPanel footer;
     private JLabel liveIndicator;
     private JLabel memLabel;
+    private JLabel statsLabel;
     private JProgressBar memBar;
     private JSplitPane splitPane;
     
@@ -182,10 +182,10 @@ public class SimulationWindow extends JFrame {
         sep.setPreferredSize(new Dimension(2, 14));
         left.add(sep);
 
-        JLabel stats = new JLabel(" 60 FPS | 16.6ms | OpenGL 4.5 Core");
-        stats.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-        stats.setForeground(new Color(150, 150, 155));
-        left.add(stats);
+        statsLabel = new JLabel(" Waiting for engine...");
+        statsLabel.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        statsLabel.setForeground(new Color(150, 150, 155));
+        left.add(statsLabel);
         p.add(left, BorderLayout.WEST);
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
@@ -218,7 +218,26 @@ public class SimulationWindow extends JFrame {
     }
 
     private void showPerformanceDetails() {
-        new PerformanceMonitorDialog(this).setVisible(true);
+        PerformanceMonitorDialog dialog = new PerformanceMonitorDialog(this);
+        launcher.setTelemetryListener(dialog::onTelemetryReceived);
+        dialog.setVisible(true);
+        launcher.setTelemetryListener(this::onTelemetryReceived);
+    }
+
+    private void onTelemetryReceived(String jsonStr) {
+        try {
+            JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+            float fps = json.get("fps").getAsFloat();
+            float frameTime = json.get("frameTime").getAsFloat();
+            int drawCalls = json.get("drawCalls").getAsInt();
+            int quads = json.get("quads").getAsInt();
+
+            SwingUtilities.invokeLater(() -> {
+                statsLabel.setText(String.format(" %.1f FPS | %.2fms | DC: %d | Quads: %d", fps, frameTime, drawCalls, quads));
+            });
+        } catch (Exception e) {
+            System.err.println("Telemetry Error: " + e.getMessage());
+        }
     }
 
     private void toggleConsole() {
@@ -235,6 +254,7 @@ public class SimulationWindow extends JFrame {
         isPaused = !isPaused;
         liveIndicator.setText(isPaused ? "● PAUSED" : "●");
         liveIndicator.setForeground(isPaused ? new Color(241, 196, 15) : new Color(46, 204, 113));
+        launcher.sendCommand("{\"type\":\"command\",\"action\":\"pause\",\"value\":" + isPaused + "}");
     }
 
     private void startLivePulse() {
@@ -283,6 +303,7 @@ public class SimulationWindow extends JFrame {
     }
 
     private void closeAndStop() {
+        launcher.setTelemetryListener(null);
         launcher.removeLogListener(consolePanel::log);
         launcher.stop();
         dispose();
@@ -292,6 +313,7 @@ public class SimulationWindow extends JFrame {
         header.setAlpha(0.0f);
         footer.setAlpha(0.0f);
         setVisible(true);
+        launcher.setTelemetryListener(this::onTelemetryReceived);
         splitPane.setDividerLocation(getHeight());
         UIAnimator.animate(0.0f, 1.0f, 500, a -> {
             header.setAlpha(a);
@@ -335,6 +357,8 @@ public class SimulationWindow extends JFrame {
         private final GraphPanel gpuGraph;
         
         private final AlphaPanel mainContent;
+        
+        private float lastFps = 0;
 
         public PerformanceMonitorDialog(Frame owner) {
             super(owner, "Performance Monitor", false);
@@ -378,7 +402,6 @@ public class SimulationWindow extends JFrame {
             
             mainContent.add(resourceRow);
 
-            // Removing the JScrollPane to prevent scrolling as requested
             add(mainContent, BorderLayout.CENTER);
 
             updateTimer = new Timer(500, e -> updateTelemetry());
@@ -396,6 +419,13 @@ public class SimulationWindow extends JFrame {
                     mainContent.setYOffset((int)(20 * (1.0f - a)));
                 }, null);
             });
+        }
+
+        public void onTelemetryReceived(String jsonStr) {
+            try {
+                JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+                lastFps = json.get("fps").getAsFloat();
+            } catch (Exception ignored) {}
         }
 
         private JPanel createSection(String title, JComponent content) {
@@ -459,7 +489,7 @@ public class SimulationWindow extends JFrame {
             gpuGraph.setCalculating(false);
             memGraph.setCalculating(false);
 
-            float fps = 58f + (float)Math.random() * 4f;
+            float fps = lastFps;
             fpsHistory.add(fps); if (fpsHistory.size() > 60) fpsHistory.remove(0);
             fpsGraph.setData(fpsHistory, 0, 120, String.format("%.1f FPS", fps));
 
@@ -517,7 +547,7 @@ public class SimulationWindow extends JFrame {
             int w = getWidth(), h = getHeight();
 
             // Draw Background Grid
-            g2.setColor(new Color(255, 255, 255, 10));
+            g2.setColor(new Color(25, 25, 30, 150));
             g2.setStroke(new BasicStroke(1f));
             for (int i = 1; i < 4; i++) {
                 int y = h * i / 4;

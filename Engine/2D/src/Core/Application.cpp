@@ -9,9 +9,12 @@
 #include "Platform/OpenGL/OpenGLRendererAPI.hpp"
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
+#include <nlohmann/json.hpp>
 #include <iostream>
 
 namespace Storming {
+
+    using json = nlohmann::json;
 
     static Scene* s_ActiveScene = nullptr;
     static OrthographicCamera* s_Camera = nullptr;
@@ -103,7 +106,15 @@ namespace Storming {
     }
 
     void Application::Run() {
+        uint64_t lastTime = SDL_GetTicks();
+        uint64_t lastTelemetryTime = lastTime;
+        uint32_t frames = 0;
+
         while (m_Running) {
+            uint64_t currentTime = SDL_GetTicks();
+            float deltaTime = (currentTime - lastTime) / 1000.0f;
+            lastTime = currentTime;
+
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) m_Running = false;
@@ -115,8 +126,9 @@ namespace Storming {
             m_RendererAPI->SetClearColor(0.1f, 0.1f, 0.12f, 1.0f);
             m_RendererAPI->Clear();
 
+            Renderer2D::ResetStats();
             Renderer2D::BeginScene(*s_Camera);
-            if (s_ActiveScene) s_ActiveScene->OnUpdate(0.016f); // Dummy ts for now
+            if (s_ActiveScene) s_ActiveScene->OnUpdate(deltaTime);
             Renderer2D::EndScene();
 
             if (m_FrameBuffer) {
@@ -124,6 +136,26 @@ namespace Storming {
                 m_FrameBuffer->Unbind();
             } else {
                 SDL_GL_SwapWindow(m_Window);
+            }
+
+            frames++;
+
+            // Send telemetry every 500ms
+            if (currentTime - lastTelemetryTime >= 500) {
+                float fps = frames / ((currentTime - lastTelemetryTime) / 1000.0f);
+                auto stats = Renderer2D::GetStats();
+
+                json telemetry;
+                telemetry["type"] = "telemetry";
+                telemetry["fps"] = fps;
+                telemetry["frameTime"] = (fps > 0) ? 1000.0f / fps : 0;
+                telemetry["drawCalls"] = stats.DrawCalls;
+                telemetry["quads"] = stats.QuadCount;
+
+                std::cout << "[TELEMETRY]" << telemetry.dump() << std::endl;
+
+                frames = 0;
+                lastTelemetryTime = currentTime;
             }
         }
     }
