@@ -105,6 +105,6 @@ public class Icons {
     public static final ImageIcon PLUS = loadIcon("plus", 16, 16);
     public static final ImageIcon BRUSH = loadIcon("brush", 16, 16);
     public static final ImageIcon CLIPBOARD = loadIcon("clipboard", 16, 16);
-    public static final ImageIcon RESTART = loadIcon("restart", 18, 18);
-    public static final ImageIcon PAUSE = loadIcon("pause", 18, 18);
+    public static final ImageIcon RESTART = loadIcon("restart", 23, 23);
+    public static final ImageIcon PAUSE = loadIcon("pause", 23, 23);
 }
