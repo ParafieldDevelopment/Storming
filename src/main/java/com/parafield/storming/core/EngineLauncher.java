@@ -2,27 +2,49 @@ package com.parafield.storming.core;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
  * Responsible for launching and managing the Storming Engine process.
- * Handles process lifecycle, shared memory arguments, and output logging.
+ * Handles process lifecycle, shared memory arguments, and broadcasting output to multiple listeners.
  */
 public class EngineLauncher {
 
     private final String enginePath;
-    private final Consumer<String> logConsumer;
+    private final List<Consumer<String>> logListeners = new ArrayList<>();
     private Process currentProcess;
 
     /**
      * Constructs a new EngineLauncher.
      *
      * @param enginePath The file path to the engine executable.
-     * @param logConsumer A callback for handling engine log messages.
      */
-    public EngineLauncher(String enginePath, Consumer<String> logConsumer) {
+    public EngineLauncher(String enginePath) {
         this.enginePath = enginePath;
-        this.logConsumer = logConsumer;
+    }
+
+    /**
+     * Adds a listener to receive engine log messages.
+     * @param listener The callback to add.
+     */
+    public void addLogListener(Consumer<String> listener) {
+        logListeners.add(listener);
+    }
+
+    /**
+     * Removes a log listener.
+     * @param listener The callback to remove.
+     */
+    public void removeLogListener(Consumer<String> listener) {
+        logListeners.remove(listener);
+    }
+
+    private void broadcast(String message) {
+        for (Consumer<String> listener : new ArrayList<>(logListeners)) {
+            listener.accept(message);
+        }
     }
 
     /**
@@ -39,17 +61,16 @@ public class EngineLauncher {
      */
     public void stop() {
         if (isRunning()) {
-            logConsumer.accept("[System] Stopping Engine...");
+            broadcast("[System] Stopping Engine...");
             currentProcess.destroy();
             try {
-                // Give it a moment to shut down gracefully before forcing
                 if (!currentProcess.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) {
                     currentProcess.destroyForcibly();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            logConsumer.accept("[System] Engine Stopped.");
+            broadcast("[System] Engine Stopped.");
         }
     }
 
@@ -62,7 +83,7 @@ public class EngineLauncher {
 
     /**
      * Launches the engine process with an optional shared memory name.
-     * Starts the engine in a separate thread and captures its output.
+     * Starts the engine in a separate thread and broadcasts its output.
      *
      * @param shmName The shared memory name to pass as an argument.
      */
@@ -71,7 +92,7 @@ public class EngineLauncher {
             return;
         }
 
-        logConsumer.accept("Launching Storming Engine...");
+        broadcast("Launching Storming Engine...");
         new Thread(() -> {
             try {
                 ProcessBuilder pb;
@@ -87,13 +108,13 @@ public class EngineLauncher {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    logConsumer.accept(line);
+                    broadcast(line);
                 }
                 
                 int exitCode = currentProcess.waitFor();
-                logConsumer.accept("[System] Engine exited with code: " + exitCode);
+                broadcast("[System] Engine exited with code: " + exitCode);
             } catch (Exception ex) {
-                logConsumer.accept("[Error] Failed to launch: " + ex.getMessage());
+                broadcast("[Error] Failed to launch: " + ex.getMessage());
             }
         }).start();
     }
