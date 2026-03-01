@@ -107,4 +107,9 @@ public class Icons {
     public static final ImageIcon CLIPBOARD = loadIcon("clipboard", 16, 16);
     public static final ImageIcon RESTART = loadIcon("restart", 23, 23);
     public static final ImageIcon PAUSE = loadIcon("pause", 23, 23);
+    public static final ImageIcon PIN = loadIcon("pin", 18, 18);
+    public static final ImageIcon CAMERA = loadIcon("camera", 18, 18);
+    public static final ImageIcon FULLSCREEN = loadIcon("fullscreen", 18, 18);
+    public static final ImageIcon STRUCTURE = loadIcon("Structure", 18, 18);
+    public static final ImageIcon PERFORMANCE = loadIcon("performance", 18, 18);
 }
