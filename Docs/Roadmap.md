@@ -1,22 +1,21 @@
 # Storming Engine: 2026 Revival Roadmap
 
 ## Pre-Phase: Engine Startup (v2026.0.0)
-*   **[Done]** **Shared Memory (SHM) Pipeline:** Establish a high-speed pixel transfer between C++ Engine and Java Editor.
-*   **[Semi-Done]** **Embedded Mode:** Engine runs hidden (`--shm`) while streaming output to Editor viewport.
-*   **[In Progress]** **C++ Engine Rewrite:** Move to C++20, SDL3, and Data-Oriented Architecture.
+*   **[Done]** **Shared Memory (SHM) Pipeline:** Established high-speed pixel transfer between C++ Engine and Java Editor.
+*   **[Done]** **Embedded Mode:** Engine runs hidden (`--shm`) while streaming output to Editor viewport.
+*   **[Done]** **C++ Engine Rewrite:** Full transition to C++20, SDL3, and Data-Oriented Architecture.
 *   **[Next]** **JSON Command Protocol:** Stdin/stdout bridge for Editor -> Engine communication.
-*   **[Next]** **RHI (Renderer Hardware Interface):** Strict abstraction for multi-backend support (OpenGL/Vulkan).
 *   **[Next]** **Telemetry Bridge:** Real-time reporting of FPS, Draw Calls, and Frame Timing to the Editor.
 
 ## Phase 1: The Core Foundation (v2026.0.1)
 *   **[Done]** Modern "IntelliJ-style" Java Editor with Dark Theme (FlatLaf).
-*   **[In Progress]** High-performance directory structure for C++ Engine.
-*   **[In Progress]** HAL/RHI for multi-backend rendering (OpenGL 4.5 Initial).
-*   **[In Progress]** Basic Engine Launcher "Play" bridge from Editor to Engine.
+*   **[Done]** High-performance directory structure for C++ Engine.
+*   **[Done]** HAL/RHI for multi-backend rendering (OpenGL 4.5 Initial).
+*   **[Done]** Basic Engine Launcher "Play" bridge from Editor to Engine.
 *   **[Next]** **The `.storm` Project Format:** JSON-based asset and scene tracking.
 
 ## Phase 2: The 2D World (v2026.0.2)
-*   **ECS Integration:** Implementing **EnTT** for ultra-fast, cache-friendly data management.
+*   **ECS Integration:** Utilizing **EnTT** for ultra-fast, cache-friendly data management.
 *   **Renderer2D Batching:** Automatic batching of quads and textures to minimize draw calls.
 *   **The Scene Tree:** Hierarchical entity management synced between Engine and Editor.
 *   **Inspector Binding:** Real-time property editing via the Editor's Inspector.
