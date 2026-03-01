@@ -1,5 +1,6 @@
 package com.parafield.storming;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import javax.swing.ImageIcon;
 import java.awt.*;
@@ -9,6 +10,7 @@ import java.util.Objects;
 /**
  * Provides access to SVG and PNG icon resources used throughout the Storming Engine Editor.
  * Automatically handles SVG loading (using FlatLaf) and PNG fallbacks.
+ * SVGs are automatically tinted to match the current theme (light/dark).
  */
 public class Icons {
     /** The main window icon for the application. */
@@ -17,6 +19,7 @@ public class Icons {
     /**
      * Loads an icon from resources by name.
      * Attempts to find a .svg file in icons/svg first, falling back to .png in icons/png if not found.
+     * SVGs are configured with a theme-aware color filter.
      *
      * @param name The base name of the icon file.
      * @param width The target width to scale to (set to 0 for default).
@@ -29,6 +32,19 @@ public class Icons {
         
         if (svgUrl != null) {
             FlatSVGIcon svgIcon = new FlatSVGIcon(svgUrl);
+            
+            // Apply dynamic theme-aware color filter for all icons except brand icons
+            if (!name.equalsIgnoreCase("icon") && !name.equalsIgnoreCase("exe-icon")) {
+                svgIcon.setColorFilter(new FlatSVGIcon.ColorFilter(color -> {
+                    // If the current theme is light, map white icons to dark gray
+                    if (!FlatLaf.isLafDark()) {
+                        return new Color(60, 60, 60);
+                    }
+                    // Otherwise keep original (white)
+                    return color;
+                }));
+            }
+
             if (width > 0 && height > 0) {
                 return svgIcon.derive(width, height);
             }
@@ -39,7 +55,12 @@ public class Icons {
             if (pngUrl == null) {
                 return null;
             }
+            
             ImageIcon icon = new ImageIcon(pngUrl);
+            
+            // Note: PNG inversion/tinting is more complex and usually handled via separate assets 
+            // or specific ImageFilters if needed. For now, we prioritize SVG scaling and tinting.
+            
             if (width > 0 && height > 0) {
                 icon = new ImageIcon(icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
             }
@@ -84,6 +105,6 @@ public class Icons {
     public static final ImageIcon PLUS = loadIcon("plus", 16, 16);
     public static final ImageIcon BRUSH = loadIcon("brush", 16, 16);
     public static final ImageIcon CLIPBOARD = loadIcon("clipboard", 16, 16);
-    public static final ImageIcon RESTART = loadIcon("restart", 18, 18);
-    public static final ImageIcon PAUSE = loadIcon("pause", 18, 18);
+    public static final ImageIcon RESTART = loadIcon("restart", 23, 23);
+    public static final ImageIcon PAUSE = loadIcon("pause", 23, 23);
 }

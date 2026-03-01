@@ -44,6 +44,7 @@ public class SceneViewPanel extends JPanel {
     // 2D Overlays
     private boolean showGrid = true;
     private boolean showCollisions = false;
+    private final JPanel overlayToolbar;
 
     /**
      * Constructs a SceneViewPanel, initializing the image buffer and floating toolbar.
@@ -56,7 +57,7 @@ public class SceneViewPanel extends JPanel {
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         
         // --- Floating Scene Toolbar ---
-        JPanel overlayToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        overlayToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         overlayToolbar.setOpaque(true);
         overlayToolbar.setBackground(new Color(40, 40, 45, 180));
         overlayToolbar.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100, 50)));
@@ -87,6 +88,14 @@ public class SceneViewPanel extends JPanel {
             }
         });
         timer.start();
+    }
+
+    /**
+     * Toggles the visibility of the floating scene toolbar.
+     * @param visible true to show the toolbar, false to hide it.
+     */
+    public void setToolbarVisible(boolean visible) {
+        overlayToolbar.setVisible(visible);
     }
 
     /**
@@ -155,8 +164,8 @@ public class SceneViewPanel extends JPanel {
             // Draw image centered and scaled
             g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
             
-            // Draw custom grid if enabled
-            if (showGrid) {
+            // Draw custom grid if enabled (only if toolbar/overlays would be visible)
+            if (showGrid && overlayToolbar.isVisible()) {
                 drawGrid(g);
             }
         }
