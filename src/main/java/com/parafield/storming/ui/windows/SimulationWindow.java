@@ -325,7 +325,7 @@ public class SimulationWindow extends JFrame {
 
         public PerformanceMonitorDialog(Frame owner) {
             super(owner, "Performance Monitor", false);
-            setSize(550, 650);
+            setSize(800, 600); // Wider window
             setLocationRelativeTo(owner);
             
             JPanel main = new JPanel();
@@ -374,7 +374,7 @@ public class SimulationWindow extends JFrame {
         }
 
         private JPanel createHardwareGrid() {
-            JPanel grid = new JPanel(new GridLayout(0, 2, 15, 8));
+            JPanel grid = new JPanel(new GridLayout(0, 3, 20, 12)); // 3 columns, more spacing
             grid.setOpaque(false);
             
             grid.add(createKV("OS", System.getProperty("os.name")));
