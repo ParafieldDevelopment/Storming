@@ -93,7 +93,8 @@ public class MainWindow extends JFrame {
         rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
         consolePanel = new ConsolePanel();
-        engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine", consolePanel::log);
+        engineLauncher = new EngineLauncher("Engine/2D/build/bin/StormingEngine");
+        engineLauncher.addLogListener(consolePanel::log);
 
         initUI();
         

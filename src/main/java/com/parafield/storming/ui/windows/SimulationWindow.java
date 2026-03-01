@@ -3,6 +3,7 @@ package com.parafield.storming.ui.windows;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
+import com.parafield.storming.ui.panels.ConsolePanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.utils.UIAnimator;
 import com.parafield.storming.ui.utils.UIUtils;
@@ -13,26 +14,29 @@ import java.awt.*;
 /**
  * An advanced simulation window with a Godot-inspired aesthetic.
  * Features a pulsating "LIVE" indicator, real-time resource tracking,
- * and smooth entrance animations for a high-end feel.
+ * always-on-top toggle, resolution scaling, and an integrated mini-console.
  */
 public class SimulationWindow extends JFrame {
 
     private final SceneViewPanel viewport;
     private final EngineLauncher launcher;
+    private final ConsolePanel consolePanel;
     
     private AlphaPanel header;
     private AlphaPanel footer;
     private JLabel liveIndicator;
     private JLabel memLabel;
     private JProgressBar memBar;
+    private JSplitPane splitPane;
     
     private boolean isPaused = false;
+    private int consoleLastHeight = 180;
 
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
 
         setTitle("Storming Engine - Simulation (DEBUG)");
-        setSize(1280, 720);
+        setSize(1280, 850);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
@@ -46,9 +50,21 @@ public class SimulationWindow extends JFrame {
         header = createHeader();
         root.add(header, BorderLayout.NORTH);
 
+        // Viewport and Console Split
         viewport = new SceneViewPanel();
         viewport.setToolbarVisible(false);
-        root.add(viewport, BorderLayout.CENTER);
+        
+        consolePanel = new ConsolePanel();
+        consolePanel.setPreferredSize(new Dimension(0, 0)); // Start hidden
+        launcher.addLogListener(consolePanel::log);
+        
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, viewport, consolePanel);
+        splitPane.setDividerSize(3);
+        splitPane.setDividerLocation(850);
+        splitPane.setBorder(null);
+        splitPane.setResizeWeight(1.0);
+        
+        root.add(splitPane, BorderLayout.CENTER);
 
         footer = createFooter();
         root.add(footer, BorderLayout.SOUTH);
@@ -72,6 +88,7 @@ public class SimulationWindow extends JFrame {
         p.setBackground(new Color(30, 30, 35));
         p.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 65)));
 
+        // Left: Project Info
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 8));
         left.setOpaque(false);
         
@@ -93,6 +110,7 @@ public class SimulationWindow extends JFrame {
         left.add(badge);
         p.add(left, BorderLayout.WEST);
 
+        // Center: Controls
         JPanel center = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 4));
         center.setOpaque(false);
 
@@ -110,7 +128,30 @@ public class SimulationWindow extends JFrame {
         center.add(stopBtn);
         p.add(center, BorderLayout.CENTER);
 
-        p.add(Box.createHorizontalStrut(150), BorderLayout.EAST);
+        // Right: Utilities (Always on Top, Resolution)
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 6));
+        right.setOpaque(false);
+
+        // Resolution Selector
+        JComboBox<String> resCombo = new JComboBox<>(new String[]{"Auto", "1920x1080", "1280x720", "800x600"});
+        resCombo.putClientProperty(FlatClientProperties.STYLE, "background: #00000000; borderWidth: 0; focusWidth: 0;");
+        resCombo.setFont(UIUtils.getFont(Font.PLAIN, 11f));
+        resCombo.setPreferredSize(new Dimension(100, 26));
+        right.add(resCombo);
+
+        JSeparator sep = new JSeparator(JSeparator.VERTICAL);
+        sep.setPreferredSize(new Dimension(2, 20));
+        right.add(sep);
+
+        // Always on Top Toggle
+        JToggleButton onTopBtn = new JToggleButton(Icons.MAGNET);
+        onTopBtn.setToolTipText("Always on Top");
+        onTopBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        onTopBtn.setPreferredSize(new Dimension(30, 30));
+        onTopBtn.addActionListener(e -> setAlwaysOnTop(onTopBtn.isSelected()));
+        right.add(onTopBtn);
+
+        p.add(right, BorderLayout.EAST);
         return p;
     }
 
@@ -120,14 +161,23 @@ public class SimulationWindow extends JFrame {
         p.setBackground(new Color(25, 25, 30));
         p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(50, 50, 55)));
 
+        // Left: Engine Stats & Console Toggle
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
         left.setOpaque(false);
+        
+        JButton consoleToggle = new JButton("Console", Icons.CONSOLE);
+        consoleToggle.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        consoleToggle.setFont(UIUtils.getFont(Font.BOLD, 10f));
+        consoleToggle.addActionListener(e -> toggleConsole());
+        left.add(consoleToggle);
+        
         JLabel stats = new JLabel("60 FPS | 16.6ms | OpenGL 4.5 Core");
         stats.setFont(UIUtils.getFont(Font.PLAIN, 10f));
         stats.setForeground(new Color(150, 150, 150));
         left.add(stats);
         p.add(left, BorderLayout.WEST);
 
+        // Right: Memory Monitor
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
         right.setOpaque(false);
         
@@ -147,6 +197,16 @@ public class SimulationWindow extends JFrame {
         p.add(right, BorderLayout.EAST);
 
         return p;
+    }
+
+    private void toggleConsole() {
+        boolean isVisible = consolePanel.getHeight() > 50;
+        if (isVisible) {
+            consoleLastHeight = consolePanel.getHeight();
+            UIAnimator.animateSplitTrailing(splitPane, 0, 250);
+        } else {
+            UIAnimator.animateSplitTrailing(splitPane, consoleLastHeight, 250);
+        }
     }
 
     private void togglePause() {
@@ -201,6 +261,7 @@ public class SimulationWindow extends JFrame {
     }
 
     private void closeAndStop() {
+        launcher.removeLogListener(consolePanel::log);
         launcher.stop();
         dispose();
     }
@@ -210,12 +271,16 @@ public class SimulationWindow extends JFrame {
         footer.setAlpha(0.0f);
         setVisible(true);
         
+        // Initial console state: closed
+        splitPane.setDividerLocation(getHeight());
+
         UIAnimator.animate(0.0f, 1.0f, 500, a -> {
             header.setAlpha(a);
             footer.setAlpha(a);
         }, null);
 
         String shmName = "/storming_shm_" + System.currentTimeMillis();
+        // Route engine logs to the local console panel
         launcher.launch(shmName);
         viewport.startStreaming(shmName);
     }
