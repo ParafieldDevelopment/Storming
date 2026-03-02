@@ -30,6 +30,35 @@ namespace Storming {
         BroadcastSceneTree();
     }
 
+    std::string Scene::Serialize() {
+        json data;
+        data["entities"] = json::array();
+
+        auto view = m_Registry.view<TagComponent>();
+        for (auto entity : view) {
+            json eJson;
+            eJson["name"] = m_Registry.get<TagComponent>(entity).Tag;
+            
+            if (m_Registry.all_of<TransformComponent>(entity)) {
+                auto& tc = m_Registry.get<TransformComponent>(entity);
+                eJson["components"]["Transform"] = {
+                    {"translation", {tc.Translation.x, tc.Translation.y, tc.Translation.z}},
+                    {"rotation", {tc.Rotation.x, tc.Rotation.y, tc.Rotation.z}},
+                    {"scale", {tc.Scale.x, tc.Scale.y, tc.Scale.z}}
+                };
+            }
+
+            if (m_Registry.all_of<SpriteRendererComponent>(entity)) {
+                auto& src = m_Registry.get<SpriteRendererComponent>(entity);
+                eJson["components"]["SpriteRenderer"] = {
+                    {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}}
+                };
+            }
+            data["entities"].push_back(eJson);
+        }
+        return data.dump(4);
+    }
+
     void Scene::BroadcastSceneTree() {
         json tree;
         tree["type"] = "scene_tree";
@@ -112,9 +141,8 @@ namespace Storming {
         BroadcastSceneTree();
     }
 
-    void Scene::PickEntity(float x, float y) {
+    uint32_t Scene::PickEntity(float x, float y) {
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
-        
         entt::entity picked = entt::null;
 
         view.each([&](auto entity, auto& tc, auto& src) {
@@ -129,7 +157,9 @@ namespace Storming {
 
         if (picked != entt::null) {
             BroadcastEntityComponents((uint32_t)picked);
+            return (uint32_t)picked;
         }
+        return 0xFFFFFFFF;
     }
 
     void Scene::OnUpdate(float ts) {

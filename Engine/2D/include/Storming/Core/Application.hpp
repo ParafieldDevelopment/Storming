@@ -37,6 +37,7 @@ namespace Storming {
         SDL_Window* m_Window = nullptr;
         std::unique_ptr<RendererAPI> m_RendererAPI;
         class FrameBuffer* m_FrameBuffer = nullptr;
+        uint32_t m_SelectedEntityID = 0xFFFFFFFF; // entt::null placeholder
     };
 
 }

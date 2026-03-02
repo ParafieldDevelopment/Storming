@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fcntl.h>
+#include <vector>
 
 #ifdef _WIN32
 #include <io.h>
@@ -25,11 +26,13 @@ namespace Storming {
 
     static Scene* s_ActiveScene = nullptr;
     static OrthographicCamera* s_Camera = nullptr;
+    static std::string s_CommandBuffer = "";
 
     Application::Application(const ApplicationConfig& config)
         : m_Config(config)
     {
         m_IsEditor = config.IsEditor;
+        m_SelectedEntityID = 0xFFFFFFFF;
         Init();
     }
 
@@ -96,7 +99,6 @@ namespace Storming {
         s_Camera = new OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
 
         s_ActiveScene = new Scene();
-        
         ST_INFO("Storming Engine Initialized Successfully");
     }
 
@@ -115,66 +117,89 @@ namespace Storming {
                 if (event.type == SDL_EVENT_QUIT) m_Running = false;
             }
 
-            char buffer[1024];
+            // --- Robust Line-Buffered Command Reader ---
+            char readBuf[1024];
             #ifndef _WIN32
-            ssize_t bytes = read(STDIN_FILENO, buffer, sizeof(buffer) - 1);
+            ssize_t bytes = read(STDIN_FILENO, readBuf, sizeof(readBuf) - 1);
             if (bytes > 0) {
-                buffer[bytes] = '\0';
-                try {
-                    auto cmd = json::parse(buffer);
-                    if (cmd["type"] == "command") {
-                        if (cmd["action"] == "request_scene_tree") {
-                            if (s_ActiveScene) s_ActiveScene->BroadcastSceneTree();
-                        } else if (cmd["action"] == "load_scene") {
-                            if (s_ActiveScene) s_ActiveScene->LoadFromFile(cmd["path"]);
-                        } else if (cmd["action"] == "select_entity") {
-                            if (s_ActiveScene) s_ActiveScene->BroadcastEntityComponents(cmd["id"]);
-                        } else if (cmd["action"] == "create_entity") {
-                            std::string name = cmd.value("name", "New Entity");
-                            if (s_ActiveScene) {
-                                auto e = s_ActiveScene->CreateEntity(name);
-                                if (cmd.contains("sprite")) e.AddComponent<SpriteRendererComponent>();
-                            }
-                        } else if (cmd["action"] == "delete_entity") {
-                            uint32_t id = cmd["id"];
-                            if (s_ActiveScene) {
-                                entt::entity handle = (entt::entity)id;
-                                if (s_ActiveScene->GetRegistry().valid(handle))
+                readBuf[bytes] = '\0';
+                s_CommandBuffer += readBuf;
+                
+                size_t pos;
+                while ((pos = s_CommandBuffer.find('\n')) != std::string::npos) {
+                    std::string line = s_CommandBuffer.substr(0, pos);
+                    s_CommandBuffer.erase(0, pos + 1);
+                    
+                    try {
+                        auto cmd = json::parse(line);
+                        if (cmd["type"] == "command") {
+                            std::string action = cmd["action"];
+                            if (action == "request_scene_tree") {
+                                if (s_ActiveScene) s_ActiveScene->BroadcastSceneTree();
+                            } else if (action == "request_save") {
+                                if (s_ActiveScene) {
+                                    json dump;
+                                    dump["type"] = "scene_data_dump";
+                                    dump["data"] = s_ActiveScene->Serialize();
+                                    std::cout << "[TELEMETRY]" << dump.dump() << std::endl;
+                                    std::cout.flush();
+                                }
+                            } else if (action == "load_scene") {
+                                if (s_ActiveScene) s_ActiveScene->LoadFromFile(cmd["path"]);
+                            } else if (action == "select_entity") {
+                                m_SelectedEntityID = cmd["id"];
+                                if (s_ActiveScene) s_ActiveScene->BroadcastEntityComponents(m_SelectedEntityID);
+                            } else if (action == "translate_selected") {
+                                entt::entity handle = (entt::entity)m_SelectedEntityID;
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
+                                    tc.Translation.x += (float)cmd["dx"];
+                                    tc.Translation.y += (float)cmd["dy"];
+                                }
+                            } else if (action == "rotate_selected") {
+                                entt::entity handle = (entt::entity)m_SelectedEntityID;
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
+                                    tc.Rotation.z += (float)cmd["da"];
+                                }
+                            } else if (action == "scale_selected") {
+                                entt::entity handle = (entt::entity)m_SelectedEntityID;
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
+                                    float ds = (float)cmd["ds"];
+                                    tc.Scale.x += ds; tc.Scale.y += ds;
+                                }
+                            } else if (action == "request_picking") {
+                                if (s_ActiveScene) m_SelectedEntityID = s_ActiveScene->PickEntity(cmd["x"], cmd["y"]);
+                            } else if (action == "update_component") {
+                                entt::entity handle = (entt::entity)((uint32_t)cmd["id"]);
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                                    auto& reg = s_ActiveScene->GetRegistry();
+                                    std::string comp = cmd["component"];
+                                    std::string field = cmd["field"];
+                                    if (comp == "transform") {
+                                        auto& tc = reg.get<TransformComponent>(handle);
+                                        if (field == "translation") tc.Translation[cmd["index"]] = cmd["value"];
+                                        else if (field == "rotation") tc.Rotation[cmd["index"]] = cmd["value"];
+                                        else if (field == "scale") tc.Scale[cmd["index"]] = cmd["value"];
+                                    } else if (comp == "spriterenderer" && field == "color") {
+                                        auto& src = reg.get<SpriteRendererComponent>(handle);
+                                        src.Color = { (float)cmd["r"], (float)cmd["g"], (float)cmd["b"], (float)cmd["a"] };
+                                    }
+                                }
+                            } else if (action == "create_entity") {
+                                if (s_ActiveScene) {
+                                    auto e = s_ActiveScene->CreateEntity(cmd.value("name", "New Entity"));
+                                    if (cmd.contains("sprite")) e.AddComponent<SpriteRendererComponent>();
+                                }
+                            } else if (action == "delete_entity") {
+                                entt::entity handle = (entt::entity)((uint32_t)cmd["id"]);
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle))
                                     s_ActiveScene->DestroyEntity({handle, s_ActiveScene});
                             }
-                        } else if (cmd["action"] == "request_picking") {
-                            float x = cmd["x"];
-                            float y = cmd["y"];
-                            if (s_ActiveScene) s_ActiveScene->PickEntity(x, y);
-                        } else if (cmd["action"] == "update_component") {
-                            uint32_t id = cmd["id"];
-                            entt::entity handle = (entt::entity)id;
-                            std::string component = cmd["component"];
-                            std::string field = cmd["field"];
-
-                            if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
-                                auto& reg = s_ActiveScene->GetRegistry();
-                                
-                                if (component == "transform") {
-                                    int index = cmd["index"];
-                                    float value = cmd["value"];
-                                    auto& tc = reg.get<TransformComponent>(handle);
-                                    if (field == "translation") tc.Translation[index] = value;
-                                    else if (field == "rotation") tc.Rotation[index] = value;
-                                    else if (field == "scale") tc.Scale[index] = value;
-                                } 
-                                else if (component == "spriterenderer" && field == "color") {
-                                    float r = cmd["r"];
-                                    float g = cmd["g"];
-                                    float b = cmd["b"];
-                                    float a = cmd["a"];
-                                    auto& src = reg.get<SpriteRendererComponent>(handle);
-                                    src.Color = { r, g, b, a };
-                                }
-                            }
                         }
-                    }
-                } catch (...) {}
+                    } catch (...) {}
+                }
             }
             #endif
 
@@ -187,6 +212,7 @@ namespace Storming {
             Renderer2D::BeginScene(*s_Camera);
             
             if (m_IsEditor) {
+                // Grid
                 glm::vec4 gridColor = { 0.2f, 0.2f, 0.2f, 1.0f };
                 for (float i = -10.0f; i <= 10.0f; i += 1.0f) {
                     Renderer2D::DrawLine({i, -10.0f, 0.0f}, {i, 10.0f, 0.0f}, gridColor);
@@ -197,6 +223,22 @@ namespace Storming {
             }
 
             if (s_ActiveScene) s_ActiveScene->OnUpdate(deltaTime);
+
+            // Selection Highlighting (Yellow Box)
+            if (m_IsEditor && m_SelectedEntityID != 0xFFFFFFFF) {
+                entt::entity handle = (entt::entity)m_SelectedEntityID;
+                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
+                    glm::vec3 p = tc.Translation;
+                    glm::vec2 s = { tc.Scale.x, tc.Scale.y };
+                    glm::vec4 c = { 1.0f, 1.0f, 0.0f, 1.0f };
+                    Renderer2D::DrawLine({p.x - s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y - s.y/2, 0.1f}, c);
+                    Renderer2D::DrawLine({p.x + s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y + s.y/2, 0.1f}, c);
+                    Renderer2D::DrawLine({p.x + s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y + s.y/2, 0.1f}, c);
+                    Renderer2D::DrawLine({p.x - s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y - s.y/2, 0.1f}, c);
+                }
+            }
+
             Renderer2D::EndScene();
 
             if (m_FrameBuffer) {

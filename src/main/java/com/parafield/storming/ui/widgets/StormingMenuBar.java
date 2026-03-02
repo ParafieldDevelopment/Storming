@@ -3,6 +3,7 @@ package com.parafield.storming.ui.widgets;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIUtils;
+import com.parafield.storming.ui.windows.MainWindow;
 import com.parafield.storming.ui.windows.SettingsWindow;
 import javax.swing.*;
 import java.awt.*;
@@ -228,7 +229,12 @@ public class StormingMenuBar extends JMenuBar {
         menu.add(new JMenuItem("New Project...", Icons.PLUS));
         menu.add(new JMenuItem("Open Project...", Icons.FOLDER));
         menu.addSeparator();
-        menu.add(new JMenuItem("Save Scene", Icons.CLIPBOARD));
+        
+        JMenuItem saveItem = new JMenuItem("Save Scene", Icons.CLIPBOARD);
+        saveItem.setAccelerator(KeyStroke.getKeyStroke('S', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        saveItem.addActionListener(e -> MainWindow.getInstance().saveScene());
+        menu.add(saveItem);
+        
         menu.addSeparator();
         
         JMenuItem settingsItem = new JMenuItem("Settings...", Icons.SETTINGS);

@@ -15,12 +15,15 @@ val pty4jVersion: String by project
 val junitBomVersion: String by project
 val appVersionProperty: String by project
 val vendorName: String by project
+val discordRpcVersion: String by project
 
 group = projectGroup
 version = projectVersion
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io")
+    maven("https://m2.dv8tion.net/releases")
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
 }
 
@@ -36,6 +39,7 @@ dependencies {
 
     implementation("net.java.dev.jna:jna:5.14.0")
     implementation("net.java.dev.jna:jna-platform:5.14.0")
+    implementation("club.minnced:java-discord-rpc:$discordRpcVersion")
     implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(platform("org.junit:junit-bom:$junitBomVersion"))

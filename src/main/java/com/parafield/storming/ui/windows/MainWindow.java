@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.parafield.storming.Icons;
+import com.parafield.storming.core.DiscordRPCManager;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.core.ProjectManager;
 import com.parafield.storming.ui.panels.ConsolePanel;
@@ -101,12 +102,17 @@ public class MainWindow extends JFrame {
         setSize(1400, 900);
         setLocationRelativeTo(null);
         
+        DiscordRPCManager.updateActivity("Editing Project", projectRoot.getName());
+        
         rootPane.putClientProperty("apple.awt.fullWindowContent", true);
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
         rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
         String enginePath = "Engine/2D/build/bin/StormingEngine";
         consolePanel = new ConsolePanel();
+        
+        // Link Discord RPC to internal console
+        DiscordRPCManager.addLogListener(consolePanel::log);
         
         editorLauncher = new EngineLauncher(enginePath);
         editorLauncher.addLogListener(consolePanel::log);
@@ -147,6 +153,8 @@ public class MainWindow extends JFrame {
                 if (inspectorPanel != null) {
                     inspectorPanel.updateDetails(json);
                 }
+            } else if ("scene_data_dump".equals(type)) {
+                performDiskSave(json.get("data").getAsString());
             }
         } catch (Exception ignored) {}
     }
@@ -229,32 +237,32 @@ public class MainWindow extends JFrame {
             
             updateHierarchy(entities);
             consolePanel.log("[System] Loaded scene: " + sceneFile.getName());
+            DiscordRPCManager.updateActivity("Editing Scene: " + sceneFile.getName(), projectRoot.getName());
         } catch (Exception e) {
             consolePanel.log("[Error] Failed to load scene: " + e.getMessage());
         }
     }
 
     /**
-     * Saves the current editor state back to the .storm_scene file.
-     * [WIP] Currently saving names only; will expand to full components.
+     * Triggers a save request to the background engine.
      */
     public void saveScene() {
+        consolePanel.log("[System] Requesting scene save from engine...");
+        editorLauncher.sendCommand("{\"type\":\"command\",\"action\":\"request_save\"}");
+    }
+
+    private void performDiskSave(String jsonData) {
         try {
-            // Find main scene file
             File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm"));
             if (files == null || files.length == 0) return;
-            
             String projectContent = Files.readString(files[0].toPath());
-            JsonObject projectJson = JsonParser.parseString(projectContent).getAsJsonObject();
-            String mainScenePath = projectJson.get("main_scene").getAsString();
+            String mainScenePath = JsonParser.parseString(projectContent).getAsJsonObject().get("main_scene").getAsString();
             File sceneFile = new File(projectRoot, mainScenePath);
 
-            // Construct new JSON from Hierarchy (Current state)
-            // This is simplified; real version would request full data from engine
-            consolePanel.log("[System] Saving scene to: " + mainScenePath);
-            // ... (Full implementation would go here)
+            Files.writeString(sceneFile.toPath(), jsonData);
+            consolePanel.log("[System] Scene saved successfully: " + sceneFile.getName());
         } catch (Exception e) {
-            consolePanel.log("[Error] Failed to save scene: " + e.getMessage());
+            consolePanel.log("[Error] Disk Save failed: " + e.getMessage());
         }
     }
 

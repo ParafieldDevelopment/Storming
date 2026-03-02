@@ -8,14 +8,18 @@ import com.sun.jna.Pointer;
 import com.sun.jna.Library;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provides a real-time viewport for the game engine's output.
- * Utilizes POSIX shared memory (via JNA) for high-performance image streaming from the engine process.
+ * Features a Godot-style toolbar and interactive transform dragging.
  */
 public class SceneViewPanel extends JPanel {
 
@@ -38,68 +42,138 @@ public class SceneViewPanel extends JPanel {
     private boolean isStreaming = false;
 
     private boolean showGrid = true;
-    private boolean showCollisions = false;
     private final JPanel overlayToolbar;
+    private String activeTool = "SELECT";
+    private final Map<String, JToggleButton> toolButtons = new HashMap<>();
+
+    private int lastMouseX, lastMouseY;
 
     public SceneViewPanel() {
         setLayout(null);
         setBackground(new Color(20, 20, 25));
-        
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         
-        overlayToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        // --- PRO TOOLBAR ---
+        overlayToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 2));
         overlayToolbar.setOpaque(true);
-        overlayToolbar.setBackground(new Color(40, 40, 45, 180));
+        overlayToolbar.setBackground(new Color(40, 40, 45, 220));
         overlayToolbar.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100, 50)));
         overlayToolbar.putClientProperty(FlatClientProperties.STYLE, "arc: 12");
         
+        ButtonGroup toolGroup = new JButtonGroup();
+        toolButtons.put("SELECT", createToolButton("Select (Q)", Icons.SELECT, "SELECT", toolGroup));
+        toolButtons.put("MOVE", createToolButton("Move (W)", Icons.MOVE, "MOVE", toolGroup));
+        toolButtons.put("ROTATE", createToolButton("Rotate (E)", Icons.ROTATE, "ROTATE", toolGroup));
+        toolButtons.put("SCALE", createToolButton("Scale (R)", Icons.SCALE, "SCALE", toolGroup));
+        
+        for (String id : new String[]{"SELECT", "MOVE", "ROTATE", "SCALE"}) overlayToolbar.add(toolButtons.get(id));
+        
+        JSeparator sep1 = new JSeparator(SwingConstants.VERTICAL);
+        sep1.setPreferredSize(new Dimension(2, 20));
+        overlayToolbar.add(sep1);
+        
         overlayToolbar.add(createOverlayToggle("Grid", Icons.GRID, showGrid, b -> showGrid = b));
         overlayToolbar.add(createOverlayToggle("Snap", Icons.MAGNET, true, b -> {}));
-        overlayToolbar.add(createOverlayToggle("Collisions", Icons.WARN, showCollisions, b -> showCollisions = b));
         
-        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(2, 20));
-        overlayToolbar.add(sep);
-        
-        JComboBox<String> zoomCombo = new JComboBox<>(new String[]{"25%", "50%", "100%", "200%"});
-        zoomCombo.setSelectedIndex(2);
-        zoomCombo.putClientProperty(FlatClientProperties.STYLE, "background: #00000000; borderWidth: 0; focusWidth: 0");
-        zoomCombo.setFont(UIManager.getFont("defaultFont").deriveFont(Font.PLAIN, 11f));
-        overlayToolbar.add(zoomCombo);
-
-        overlayToolbar.setBounds(20, 15, 320, 32);
+        overlayToolbar.setBounds(20, 15, 420, 32);
         add(overlayToolbar);
 
-        addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                if (!isStreaming) return;
-                
-                // Normalize screen coords to Engine space [-1, 1]
-                float normX = (float) e.getX() / getWidth() * 2.0f - 1.0f;
-                // GL Y is flipped (0 is bottom)
-                float normY = 1.0f - (float) e.getY() / getHeight() * 2.0f;
-                
-                MainWindow.getInstance().getEngineLauncher().sendCommand(
-                    String.format("{\"type\":\"command\",\"action\":\"request_picking\",\"x\":%.4f,\"y\":%.4f}", normX, normY)
-                );
-            }
-        });
+        setupShortcuts();
+        setupMouseInteractions();
 
         Timer timer = new Timer(16, e -> {
-            if (isStreaming) {
-                updateImage();
-                repaint();
-            } else if (currentShmName != null) {
-                // Retry connection if we have a name but no pointer
-                attemptConnection();
-            }
+            if (isStreaming) { updateImage(); repaint(); }
+            else if (currentShmName != null) attemptConnection();
         });
         timer.start();
     }
 
-    public void setToolbarVisible(boolean visible) {
-        overlayToolbar.setVisible(visible);
+    private void setupMouseInteractions() {
+        MouseAdapter ma = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                requestFocusInWindow();
+                lastMouseX = e.getX();
+                lastMouseY = e.getY();
+
+                if (!isStreaming) return;
+                
+                // Only pick on press if in SELECT mode
+                if (activeTool.equals("SELECT")) {
+                    float normX = (float) e.getX() / getWidth() * 2.0f - 1.0f;
+                    float normY = 1.0f - (float) e.getY() / getHeight() * 2.0f;
+                    MainWindow.getInstance().getEngineLauncher().sendCommand(
+                        String.format("{\"type\":\"command\",\"action\":\"request_picking\",\"x\":%.4f,\"y\":%.4f}", normX, normY)
+                    );
+                }
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (!isStreaming || activeTool.equals("SELECT")) return;
+
+                int dx = e.getX() - lastMouseX;
+                int dy = e.getY() - lastMouseY;
+                lastMouseX = e.getX();
+                lastMouseY = e.getY();
+
+                float worldDX = (float) dx / getWidth() * 2.0f;
+                float worldDY = -(float) dy / getHeight() * 2.0f;
+
+                String cmd = "";
+                switch (activeTool) {
+                    case "MOVE":
+                        cmd = String.format("{\"type\":\"command\",\"action\":\"translate_selected\",\"dx\":%.4f,\"dy\":%.4f}", worldDX, worldDY);
+                        break;
+                    case "ROTATE":
+                        float da = (float) dx * 0.05f; // sensitivity
+                        cmd = String.format("{\"type\":\"command\",\"action\":\"rotate_selected\",\"da\":%.4f}", da);
+                        break;
+                    case "SCALE":
+                        float ds = (float) dx * 0.01f;
+                        cmd = String.format("{\"type\":\"command\",\"action\":\"scale_selected\",\"ds\":%.4f}", ds);
+                        break;
+                }
+
+                if (!cmd.isEmpty()) {
+                    MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+                }
+            }
+        };
+        addMouseListener(ma);
+        addMouseMotionListener(ma);
+    }
+
+    private void setupShortcuts() {
+        InputMap im = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = getActionMap();
+        im.put(KeyStroke.getKeyStroke('q'), "selectTool");
+        im.put(KeyStroke.getKeyStroke('w'), "moveTool");
+        im.put(KeyStroke.getKeyStroke('e'), "rotateTool");
+        im.put(KeyStroke.getKeyStroke('r'), "scaleTool");
+        am.put("selectTool", new AbstractAction() { @Override public void actionPerformed(java.awt.event.ActionEvent e) { selectTool("SELECT"); } });
+        am.put("moveTool", new AbstractAction() { @Override public void actionPerformed(java.awt.event.ActionEvent e) { selectTool("MOVE"); } });
+        am.put("rotateTool", new AbstractAction() { @Override public void actionPerformed(java.awt.event.ActionEvent e) { selectTool("ROTATE"); } });
+        am.put("scaleTool", new AbstractAction() { @Override public void actionPerformed(java.awt.event.ActionEvent e) { selectTool("SCALE"); } });
+    }
+
+    private void selectTool(String toolId) {
+        activeTool = toolId;
+        JToggleButton btn = toolButtons.get(toolId);
+        if (btn != null) btn.setSelected(true);
+    }
+
+    public void setToolbarVisible(boolean visible) { overlayToolbar.setVisible(visible); }
+
+    private JToggleButton createToolButton(String tip, Icon icon, String toolId, ButtonGroup group) {
+        JToggleButton btn = new JToggleButton(icon);
+        btn.setToolTipText(tip);
+        btn.setPreferredSize(new Dimension(28, 28));
+        btn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        if (toolId.equals("SELECT")) btn.setSelected(true);
+        btn.addActionListener(e -> activeTool = toolId);
+        group.add(btn);
+        return btn;
     }
 
     private JToggleButton createOverlayToggle(String tip, Icon icon, boolean selected, java.util.function.Consumer<Boolean> onToggle) {
@@ -112,54 +186,31 @@ public class SceneViewPanel extends JPanel {
         return btn;
     }
 
-    public void startStreaming(String shmName) {
-        this.currentShmName = shmName;
-        attemptConnection();
-    }
+    public void startStreaming(String shmName) { this.currentShmName = shmName; attemptConnection(); }
 
     private void attemptConnection() {
         if (currentShmName == null) return;
-        
         try {
-            // O_RDONLY = 0
             int fd = LibRT.INSTANCE.shm_open(currentShmName, 0, 0);
             if (fd >= 0) {
-                // prot=1 (READ), flags=1 (SHARED)
                 shmPtr = LibC.INSTANCE.mmap(null, (long) width * height * 4, 1, 1, fd, 0);
                 LibC.INSTANCE.close(fd);
                 isStreaming = true;
-                System.out.println("[Java] Successfully connected to SHM: " + currentShmName);
             }
-        } catch (Exception ignored) {
-            // Wait for engine to create it
-        }
+        } catch (Exception ignored) {}
     }
 
-    public void stopStreaming() {
-        isStreaming = false;
-        shmPtr = null;
-        currentShmName = null;
-    }
+    public void stopStreaming() { isStreaming = false; shmPtr = null; currentShmName = null; }
 
     private void updateImage() {
         if (shmPtr == null) return;
-        
         int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
         ByteBuffer bb = shmPtr.getByteBuffer(0, (long) width * height * 4);
         IntBuffer ib = bb.asIntBuffer();
-        
-        // Fast Bulk Read from Shared Memory
         ib.get(pixels);
-        
-        // COLOR CORRECTION (GL_RGBA bytes -> Java INT_ARGB)
-        // GL gives us [R, G, B, A] bytes. On Little Endian, this is 0xAABBGGRR.
-        // Java expects 0xAARRGGBB.
         for (int i = 0; i < pixels.length; i++) {
             int abgr = pixels[i];
-            int r = (abgr & 0xFF);
-            int g = (abgr >> 8) & 0xFF;
-            int b = (abgr >> 16) & 0xFF;
-            int a = (abgr >> 24) & 0xFF;
+            int r = (abgr & 0xFF), g = (abgr >> 8) & 0xFF, b = (abgr >> 16) & 0xFF, a = (abgr >> 24) & 0xFF;
             pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
         }
     }
@@ -169,20 +220,12 @@ public class SceneViewPanel extends JPanel {
         super.paintComponent(g);
         if (image != null) {
             Graphics2D g2 = (Graphics2D) g.create();
-            // GL Origin is Bottom-Left. Java is Top-Left. Flip it.
             g2.drawImage(image, 0, getHeight(), getWidth(), -getHeight(), null);
-            
-            if (showGrid && overlayToolbar.isVisible()) {
-                drawGrid(g2);
-            }
             g2.dispose();
         }
     }
 
-    private void drawGrid(Graphics g) {
-        g.setColor(new Color(200, 200, 200, 20));
-        int step = 32;
-        for (int x = 0; x < getWidth(); x += step) g.drawLine(x, 0, x, getHeight());
-        for (int y = 0; y < getHeight(); y += step) g.drawLine(0, y, getWidth(), y);
+    private static class JButtonGroup extends ButtonGroup {
+        @Override public void add(AbstractButton b) { super.add(b); }
     }
 }
