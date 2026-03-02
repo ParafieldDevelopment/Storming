@@ -138,16 +138,25 @@ namespace Storming {
                             entt::entity handle = (entt::entity)id;
                             std::string component = cmd["component"];
                             std::string field = cmd["field"];
-                            int index = cmd["index"];
-                            float value = cmd["value"];
 
                             if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
                                 auto& reg = s_ActiveScene->GetRegistry();
+                                
                                 if (component == "transform") {
+                                    int index = cmd["index"];
+                                    float value = cmd["value"];
                                     auto& tc = reg.get<TransformComponent>(handle);
                                     if (field == "translation") tc.Translation[index] = value;
                                     else if (field == "rotation") tc.Rotation[index] = value;
                                     else if (field == "scale") tc.Scale[index] = value;
+                                } 
+                                else if (component == "spriterenderer" && field == "color") {
+                                    float r = cmd["r"];
+                                    float g = cmd["g"];
+                                    float b = cmd["b"];
+                                    float a = cmd["a"];
+                                    auto& src = reg.get<SpriteRendererComponent>(handle);
+                                    src.Color = { r, g, b, a };
                                 }
                             }
                         }

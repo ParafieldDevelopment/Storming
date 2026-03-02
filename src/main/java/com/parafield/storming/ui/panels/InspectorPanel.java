@@ -9,184 +9,205 @@ import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
- * Provides a property editor for the currently selected object in the scene.
- * Dynamically builds the UI based on components received from the engine.
+ * A professional, block-based property inspector.
+ * Groups properties into distinct, rounded cards to prevent a "stretched" appearance.
  */
 public class InspectorPanel extends JPanel {
 
-    private final JPanel content;
+    private final JPanel scrollContent;
     private int currentEntityId = -1;
 
-    /**
-     * Constructs an InspectorPanel with a prompt to select an object.
-     */
     public InspectorPanel() {
         setLayout(new BorderLayout());
-        
-        content = new JPanel();
-        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setOpaque(false);
-        
+        setBackground(UIManager.getColor("Panel.background"));
+
+        scrollContent = new JPanel(new GridBagLayout());
+        scrollContent.setOpaque(false);
+
+        JScrollPane scroll = new JScrollPane(scrollContent);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        add(scroll, BorderLayout.CENTER);
+
         showEmptyState();
-        
-        add(new JScrollPane(content), BorderLayout.CENTER);
     }
 
     private void showEmptyState() {
-        content.removeAll();
-        content.add(Box.createVerticalGlue());
-        JLabel label = new JLabel("Select an object to inspect", SwingConstants.CENTER);
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        scrollContent.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        JLabel label = new JLabel("No object selected");
+        label.setFont(UIUtils.getFont(Font.PLAIN, 11f));
         label.setForeground(UIManager.getColor("Label.disabledForeground"));
-        content.add(label);
-        content.add(Box.createVerticalGlue());
-        content.revalidate();
-        content.repaint();
+        scrollContent.add(label, gbc);
+        scrollContent.revalidate();
+        scrollContent.repaint();
     }
 
-    /**
-     * Updates the inspector with the details of a selected entity.
-     * @param details JsonObject containing entity ID and component data.
-     */
     public void updateDetails(JsonObject details) {
         SwingUtilities.invokeLater(() -> {
-            content.removeAll();
+            scrollContent.removeAll();
             currentEntityId = details.get("id").getAsInt();
-            
-            // Header: Icon + Name
+
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.weightx = 1.0;
+            gbc.insets = new Insets(12, 12, 8, 12);
+
+            // 1. Header Block (Name & Icon)
             JPanel header = new JPanel(new BorderLayout(10, 0));
-            header.setOpaque(false);
-            header.setBorder(new EmptyBorder(10, 10, 10, 10));
+            header.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 3%); arc: 12");
+            header.setBorder(new EmptyBorder(8, 12, 8, 12));
             
             JLabel icon = new JLabel(Icons.EXE_ICON);
             JTextField nameField = new JTextField(details.get("tag").getAsString());
-            nameField.putClientProperty(FlatClientProperties.STYLE, "background: #00000000; borderWidth: 0; font: bold;");
+            nameField.setFont(UIUtils.getFont(Font.BOLD, 13f));
+            nameField.putClientProperty(FlatClientProperties.STYLE, "background: #00000000; borderWidth: 0; focusWidth: 0;");
             
             header.add(icon, BorderLayout.WEST);
             header.add(nameField, BorderLayout.CENTER);
-            content.add(header);
             
-            content.add(new JSeparator());
+            scrollContent.add(header, gbc);
+            gbc.gridy++;
+            gbc.insets = new Insets(4, 12, 4, 12); // Tighter spacing for components
 
-            // Components
+            // 2. Components
             if (details.has("components")) {
                 JsonObject components = details.getAsJsonObject("components");
                 
                 if (components.has("Transform")) {
-                    addComponentPanel("Transform", createTransformUI(components.getAsJsonObject("Transform")));
+                    scrollContent.add(createSection("Transform", createTransformUI(components.getAsJsonObject("Transform"))), gbc);
+                    gbc.gridy++;
                 }
                 
                 if (components.has("SpriteRenderer")) {
-                    addComponentPanel("Sprite Renderer", createSpriteUI(components.getAsJsonObject("SpriteRenderer")));
+                    scrollContent.add(createSection("Sprite Renderer", createSpriteUI(components.getAsJsonObject("SpriteRenderer"))), gbc);
+                    gbc.gridy++;
                 }
             }
 
-            content.add(Box.createVerticalGlue());
-            content.revalidate();
-            content.repaint();
+            // 3. The "Anti-Stretch" Spacer
+            gbc.weighty = 1.0;
+            scrollContent.add(Box.createGlue(), gbc);
+
+            scrollContent.revalidate();
+            scrollContent.repaint();
         });
     }
 
-    private void addComponentPanel(String title, JPanel componentUI) {
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setOpaque(false);
-        wrapper.setBorder(new EmptyBorder(5, 5, 5, 5));
-
-        JLabel titleLabel = new JLabel(title.toUpperCase());
-        titleLabel.setFont(UIUtils.getFont(Font.BOLD, 10f));
-        titleLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
-        titleLabel.setBorder(new EmptyBorder(5, 5, 5, 5));
+    private JPanel createSection(String title, JPanel body) {
+        JPanel section = new JPanel(new BorderLayout());
+        section.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 1.5%); arc: 10");
         
-        wrapper.add(titleLabel, BorderLayout.NORTH);
-        wrapper.add(componentUI, BorderLayout.CENTER);
+        JLabel header = new JLabel(title);
+        header.setFont(UIUtils.getFont(Font.BOLD, 10f));
+        header.setForeground(new Color(150, 150, 155));
+        header.setBorder(new EmptyBorder(8, 12, 4, 12));
         
-        content.add(wrapper);
-        content.add(new JSeparator());
+        section.add(header, BorderLayout.NORTH);
+        section.add(body, BorderLayout.CENTER);
+        return section;
     }
 
     private JPanel createTransformUI(JsonObject data) {
-        JPanel p = new JPanel(new GridLayout(0, 1, 0, 5));
+        JPanel p = new JPanel(new GridBagLayout());
         p.setOpaque(false);
-        p.setBorder(new EmptyBorder(5, 10, 5, 10));
+        p.setBorder(new EmptyBorder(4, 12, 10, 12));
 
-        p.add(createVector3Row("Position", data.getAsJsonArray("translation"), "transform", "translation"));
-        p.add(createVector3Row("Rotation", data.getAsJsonArray("rotation"), "transform", "rotation"));
-        p.add(createVector3Row("Scale", data.getAsJsonArray("scale"), "transform", "scale"));
+        addPropertyRow(p, 0, "Position", createVector3Inputs(data.getAsJsonArray("translation"), "transform", "translation"));
+        addPropertyRow(p, 1, "Rotation", createVector3Inputs(data.getAsJsonArray("rotation"), "transform", "rotation"));
+        addPropertyRow(p, 2, "Scale", createVector3Inputs(data.getAsJsonArray("scale"), "transform", "scale"));
 
         return p;
     }
 
     private JPanel createSpriteUI(JsonObject data) {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
+        JPanel p = new JPanel(new GridBagLayout());
         p.setOpaque(false);
-        p.setBorder(new EmptyBorder(5, 10, 5, 10));
+        p.setBorder(new EmptyBorder(4, 12, 10, 12));
 
-        p.add(new JLabel("Color: "));
-        JsonArray color = data.getAsJsonArray("color");
-        // Simplified color preview
+        JsonArray colorArr = data.getAsJsonArray("color");
+        Color initialColor = new Color(colorArr.get(0).getAsFloat(), colorArr.get(1).getAsFloat(), colorArr.get(2).getAsFloat());
+        
         JPanel colorBox = new JPanel();
-        colorBox.setPreferredSize(new Dimension(40, 20));
-        colorBox.setBackground(new Color(color.get(0).getAsFloat(), color.get(1).getAsFloat(), color.get(2).getAsFloat()));
-        p.add(colorBox);
+        colorBox.setPreferredSize(new Dimension(80, 18));
+        colorBox.setBackground(initialColor);
+        colorBox.setBorder(BorderFactory.createLineBorder(new Color(255,255,255,30)));
+        colorBox.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        colorBox.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                Color newColor = JColorChooser.showDialog(InspectorPanel.this, "Select Color", initialColor);
+                if (newColor != null) {
+                    colorBox.setBackground(newColor);
+                    updateColor(newColor);
+                }
+            }
+        });
 
+        addPropertyRow(p, 0, "Color", colorBox);
         return p;
     }
 
-    private JPanel createVector3Row(String label, JsonArray values, String componentName, String fieldName) {
-        JPanel p = new JPanel(new BorderLayout(10, 0));
-        p.setOpaque(false);
+    private void addPropertyRow(JPanel parent, int row, String label, JComponent input) {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = row;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(2, 0, 2, 10);
         
         JLabel l = new JLabel(label);
-        l.setPreferredSize(new Dimension(60, 20));
-        p.add(l, BorderLayout.WEST);
+        l.setFont(UIUtils.getFont(Font.PLAIN, 11f));
+        l.setPreferredSize(new Dimension(70, 22));
+        parent.add(l, gbc);
 
-        JPanel inputs = new JPanel(new GridLayout(1, 3, 5, 0));
-        inputs.setOpaque(false);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(2, 0, 2, 0);
+        parent.add(input, gbc);
+    }
+
+    private JPanel createVector3Inputs(JsonArray values, String comp, String field) {
+        JPanel p = new JPanel(new GridLayout(1, 3, 4, 0));
+        p.setOpaque(false);
+        Color[] axisColors = {new Color(231, 76, 60), new Color(46, 204, 113), new Color(52, 152, 219)};
         
-        String[] axis = {"X", "Y", "Z"};
         for (int i = 0; i < 3; i++) {
             final int index = i;
-            JTextField f = new JTextField(String.format("%.2f", values.get(i).getAsFloat()));
-            f.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, axis[i]);
-            f.setHorizontalAlignment(JTextField.CENTER);
+            JTextField f = new JTextField(String.format("%.2f", values.get(index).getAsFloat()));
+            f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+            f.setHorizontalAlignment(JTextField.LEFT);
+            f.setPreferredSize(new Dimension(0, 20));
+            f.putClientProperty(FlatClientProperties.STYLE, "padding: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+            f.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, axisColors[i]));
             
-            f.addActionListener(e -> {
-                try {
-                    float val = Float.parseFloat(f.getText());
-                    updateComponentValue(componentName, fieldName, index, val);
-                } catch (NumberFormatException ignored) {}
+            f.addActionListener(e -> applyValue(f, comp, field, index));
+            f.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override public void focusLost(java.awt.event.FocusEvent e) { applyValue(f, comp, field, index); }
             });
-            
-            inputs.add(f);
+            p.add(f);
         }
-        
-        p.add(inputs, BorderLayout.CENTER);
         return p;
     }
 
-    private void updateComponentValue(String component, String field, int index, float value) {
-        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"%s\",\"field\":\"%s\",\"index\":%d,\"value\":%.4f}",
-                currentEntityId, component, field, index, value);
-        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+    private void applyValue(JTextField f, String component, String field, int index) {
+        try {
+            float val = Float.parseFloat(f.getText());
+            String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"%s\",\"field\":\"%s\",\"index\":%d,\"value\":%.4f}",
+                    currentEntityId, component, field, index, val);
+            MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+        } catch (NumberFormatException ignored) {}
     }
-
-    @Override
-    protected void paintChildren(Graphics g) {
-        super.paintChildren(g);
-        if (content.getComponentCount() == 2) { // Just Empty state
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
-            
-            int size = 80;
-            int x = getWidth() - size - 25;
-            int y = getHeight() - size - 25;
-            if (Icons.SEARCH_80 != null) {
-                Icons.SEARCH_80.paintIcon(this, g2, x, y);
-            }
-            g2.dispose();
-        }
+    
+    private void updateColor(Color c) {
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"spriterenderer\",\"field\":\"color\",\"r\":%.3f,\"g\":%.3f,\"b\":%.3f,\"a\":1.0}",
+                currentEntityId, c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f);
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
     }
 }
