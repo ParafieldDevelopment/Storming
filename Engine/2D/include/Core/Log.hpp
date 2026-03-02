@@ -6,6 +6,11 @@
 
 namespace Storming {
 
+    /**
+     * Internal logging utility for the engine.
+     * Provides macros for various logging levels that output to STDOUT.
+     * The Java Editor listens for specific prefixes (e.g., [Error]) to colorize output.
+     */
     class Log {
     public:
         enum class Level {
@@ -14,9 +19,12 @@ namespace Storming {
 
         static void Init();
 
+        /**
+         * Generic print function used by the logging macros.
+         * Prepends appropriate prefixes for Editor log level detection.
+         */
         template<typename... Args>
         static void Print(Level level, const std::string& fmt, Args&&... args) {
-            // Simple implementation for now, could use spdlog later
             std::string prefix;
             switch (level) {
                 case Level::Trace: prefix = "[Trace] "; break;
@@ -31,6 +39,7 @@ namespace Storming {
 
 }
 
+// Core logging macros
 #define ST_TRACE(...) ::Storming::Log::Print(::Storming::Log::Level::Trace, __VA_ARGS__)
 #define ST_INFO(...)  ::Storming::Log::Print(::Storming::Log::Level::Info, __VA_ARGS__)
 #define ST_WARN(...)  ::Storming::Log::Print(::Storming::Log::Level::Warn, __VA_ARGS__)

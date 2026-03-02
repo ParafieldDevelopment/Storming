@@ -11,25 +11,39 @@ namespace Storming {
     using json = nlohmann::json;
 
     Scene::Scene() {}
-
     Scene::~Scene() {}
 
+    /**
+     * Creates a new entity in the scene with a Tag and Transform component.
+     * Automatically broadcasts the updated scene tree to the Editor.
+     * 
+     * @param name The name of the entity (e.g., "Player").
+     * @return An Entity object wrapper around the ECS handle.
+     */
     Entity Scene::CreateEntity(const std::string& name) {
         Entity entity = { m_Registry.create(), this };
         entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
         entity.AddComponent<TransformComponent>();
         
-        // Broadcast change
         BroadcastSceneTree();
-        
         return entity;
     }
 
+    /**
+     * Destroys an entity and removes it from the EnTT registry.
+     * @param entity The entity to destroy.
+     */
     void Scene::DestroyEntity(Entity entity) {
         m_Registry.destroy(entity);
         BroadcastSceneTree();
     }
 
+    /**
+     * Serializes the entire scene (all entities and components) into a JSON string.
+     * This string is intended to be saved to a .storm_scene file by the Editor.
+     * 
+     * @return A formatted JSON string representing the scene state.
+     */
     std::string Scene::Serialize() {
         json data;
         data["entities"] = json::array();
@@ -59,9 +73,15 @@ namespace Storming {
         return data.dump(4);
     }
 
+    /**
+     * Broadcasts the current hierarchy list (ID + Name) to STDOUT.
+     * The Java Editor listens for this telemetry to update the Hierarchy Panel.
+     */
     void Scene::BroadcastSceneTree() {
         json tree;
         tree["type"] = "scene_tree";
+        tree["entities"] = json::array();
+        
         auto view = m_Registry.view<TagComponent>();
         for (auto entity : view) {
             auto& tag = view.get<TagComponent>(entity);
@@ -74,6 +94,12 @@ namespace Storming {
         std::cout.flush();
     }
 
+    /**
+     * Broadcasts detailed component data for a specific entity to STDOUT.
+     * Used to populate the Inspector Panel when an entity is selected.
+     * 
+     * @param entityID The ECS handle ID of the entity.
+     */
     void Scene::BroadcastEntityComponents(uint32_t entityID) {
         entt::entity handle = (entt::entity)entityID;
         if (!m_Registry.valid(handle)) return;
@@ -106,6 +132,11 @@ namespace Storming {
         std::cout.flush();
     }
 
+    /**
+     * Replaces the current scene with entities loaded from a JSON file.
+     * 
+     * @param path The absolute file path to the .storm_scene file.
+     */
     void Scene::LoadFromFile(const std::string& path) {
         std::ifstream f(path);
         if (!f.is_open()) {
@@ -115,7 +146,6 @@ namespace Storming {
 
         json data = json::parse(f);
         if (data.contains("entities")) {
-            // Clear current scene
             m_Registry.clear();
 
             for (auto& entityData : data["entities"]) {
@@ -128,12 +158,21 @@ namespace Storming {
                     if (comps.contains("Transform")) {
                         auto& tc = entity.GetComponent<TransformComponent>();
                         auto& tData = comps["Transform"];
-                        // Future: Add position loading logic here
+                        
+                        auto trans = tData["translation"];
+                        tc.Translation = { trans[0], trans[1], trans[2] };
+                        
+                        auto rot = tData["rotation"];
+                        tc.Rotation = { rot[0], rot[1], rot[2] };
+                        
+                        auto scl = tData["scale"];
+                        tc.Scale = { scl[0], scl[1], scl[2] };
                     }
 
                     if (comps.contains("SpriteRenderer")) {
                         auto& src = entity.AddComponent<SpriteRendererComponent>();
-                        // Future: Add color/texture loading logic here
+                        auto c = comps["SpriteRenderer"]["color"];
+                        src.Color = { c[0], c[1], c[2], c[3] };
                     }
                 }
             }
@@ -141,17 +180,26 @@ namespace Storming {
         BroadcastSceneTree();
     }
 
+    /**
+     * Performs a reverse-order AABB hit test to find the entity under the given coordinates.
+     * Used for mouse picking in the Editor Viewport.
+     * 
+     * @param x Normalized X coordinate (-1.0 to 1.0).
+     * @param y Normalized Y coordinate (-1.0 to 1.0).
+     * @return The entity ID if found, or 0xFFFFFFFF if no entity was hit.
+     */
     uint32_t Scene::PickEntity(float x, float y) {
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
         entt::entity picked = entt::null;
 
+        // Iterate all sprites to check bounds
         view.each([&](auto entity, auto& tc, auto& src) {
             float halfWidth = tc.Scale.x / 2.0f;
             float halfHeight = tc.Scale.y / 2.0f;
             
             if (x >= (tc.Translation.x - halfWidth) && x <= (tc.Translation.x + halfWidth) &&
                 y >= (tc.Translation.y - halfHeight) && y <= (tc.Translation.y + halfHeight)) {
-                picked = entity;
+                picked = entity; // Last one found is "on top" in Z-order roughly
             }
         });
 
@@ -162,8 +210,13 @@ namespace Storming {
         return 0xFFFFFFFF;
     }
 
+    /**
+     * The primary update loop called every frame.
+     * Iterates over all renderable entities and submits them to the Renderer2D.
+     * 
+     * @param ts TimeStep (delta time) in seconds.
+     */
     void Scene::OnUpdate(float ts) {
-        // Render Sprites
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
         for (auto entity : view) {
             auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);

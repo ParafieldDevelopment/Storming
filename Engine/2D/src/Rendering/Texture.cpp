@@ -4,6 +4,11 @@
 
 namespace Storming {
 
+    /**
+     * Factory method to create a blank 2D texture.
+     * @param width The width in pixels.
+     * @param height The height in pixels.
+     */
     std::shared_ptr<Texture2D> Texture2D::Create(uint32_t width, uint32_t height) {
         switch (RendererAPI::GetBackend()) {
             case RendererBackend::None:    return nullptr;
@@ -13,6 +18,10 @@ namespace Storming {
         return nullptr;
     }
 
+    /**
+     * Factory method to load a 2D texture from an image file.
+     * @param path The absolute or relative path to the image file.
+     */
     std::shared_ptr<Texture2D> Texture2D::Create(const std::string& path) {
         switch (RendererAPI::GetBackend()) {
             case RendererBackend::None:    return nullptr;
