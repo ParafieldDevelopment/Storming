@@ -129,6 +129,19 @@ namespace Storming {
                             if (s_ActiveScene) s_ActiveScene->LoadFromFile(cmd["path"]);
                         } else if (cmd["action"] == "select_entity") {
                             if (s_ActiveScene) s_ActiveScene->BroadcastEntityComponents(cmd["id"]);
+                        } else if (cmd["action"] == "create_entity") {
+                            std::string name = cmd.value("name", "New Entity");
+                            if (s_ActiveScene) {
+                                auto e = s_ActiveScene->CreateEntity(name);
+                                if (cmd.contains("sprite")) e.AddComponent<SpriteRendererComponent>();
+                            }
+                        } else if (cmd["action"] == "delete_entity") {
+                            uint32_t id = cmd["id"];
+                            if (s_ActiveScene) {
+                                entt::entity handle = (entt::entity)id;
+                                if (s_ActiveScene->GetRegistry().valid(handle))
+                                    s_ActiveScene->DestroyEntity({handle, s_ActiveScene});
+                            }
                         } else if (cmd["action"] == "request_picking") {
                             float x = cmd["x"];
                             float y = cmd["y"];
