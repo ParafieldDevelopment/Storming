@@ -2,11 +2,14 @@ package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.core.ProjectManager;
 import com.parafield.storming.ui.utils.UIAnimator;
 import com.parafield.storming.ui.utils.UIUtils;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.File;
+import java.util.List;
 
 /**
  * The initial launcher window for the Storming Engine.
@@ -16,6 +19,9 @@ import java.awt.*;
 public class ProjectSelectorWindow extends JFrame {
     private AnimatedPanel mainContent;
     private JPanel sidebar;
+    private DefaultListModel<ProjectItem> listModel;
+    private CardLayout sidebarCardLayout;
+    private JPanel sidebarCardPanel;
 
     /**
      * Constructs the ProjectSelectorWindow and sets up its UI properties.
@@ -52,9 +58,7 @@ public class ProjectSelectorWindow extends JFrame {
         sidebar.add(titleLabel, BorderLayout.NORTH);
 
         // Project List
-        DefaultListModel<ProjectItem> listModel = new DefaultListModel<>();
-        listModel.addElement(new ProjectItem("Storming Demo (2D)", "/home/user/storming/demo"));
-        listModel.addElement(new ProjectItem("New Adventure", "/home/user/projects/game1"));
+        listModel = new DefaultListModel<>();
         
         JList<ProjectItem> projectList = new JList<>(listModel);
         ProjectListRenderer renderer = new ProjectListRenderer();
@@ -80,13 +84,48 @@ public class ProjectSelectorWindow extends JFrame {
                 renderer.hoverIndex = -1;
                 projectList.repaint();
             }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    ProjectItem selected = projectList.getSelectedValue();
+                    if (selected != null) {
+                        launchMainEditor(selected.path);
+                    }
+                }
+            }
         });
 
         JScrollPane scrollPane = new JScrollPane(projectList);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
-        sidebar.add(scrollPane, BorderLayout.CENTER);
+
+        // Empty State Panel
+        JPanel emptyState = new JPanel(new GridBagLayout());
+        emptyState.setOpaque(false);
+        GridBagConstraints gbcEmpty = new GridBagConstraints();
+        gbcEmpty.gridx = 0; gbcEmpty.gridy = 0;
+        
+        JLabel img404 = new JLabel(Icons.NOT_FOUND);
+        emptyState.add(img404, gbcEmpty);
+        
+        gbcEmpty.gridy++;
+        gbcEmpty.insets = new Insets(15, 0, 0, 0);
+        JLabel emptyMsg = new JLabel("<html><center>No projects found.<br>Create one to get started!</center></html>");
+        emptyMsg.setFont(UIUtils.getFont(Font.PLAIN, 12f));
+        emptyMsg.setForeground(UIManager.getColor("Label.disabledForeground"));
+        emptyState.add(emptyMsg, gbcEmpty);
+
+        sidebarCardLayout = new CardLayout();
+        sidebarCardPanel = new JPanel(sidebarCardLayout);
+        sidebarCardPanel.setOpaque(false);
+        sidebarCardPanel.add(scrollPane, "LIST");
+        sidebarCardPanel.add(emptyState, "EMPTY");
+
+        sidebar.add(sidebarCardPanel, BorderLayout.CENTER);
+
+        refreshProjectList();
 
         // Sidebar Footer
         JPanel sidebarFooter = new JPanel(new BorderLayout());
@@ -134,9 +173,25 @@ public class ProjectSelectorWindow extends JFrame {
         actions.setOpaque(false);
 
         JButton newProjectBtn = createActionButton("New Project", "#3498db", true);
-        newProjectBtn.addActionListener(e -> launchMainEditor());
+        newProjectBtn.addActionListener(e -> {
+            NewProjectDialog dialog = new NewProjectDialog(this);
+            dialog.setVisible(true);
+            if (dialog.isSuccessful()) {
+                launchMainEditor(dialog.getProjectPath());
+            }
+        });
         
         JButton openProjectBtn = createActionButton("Open Project", null, false);
+        openProjectBtn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogTitle("Select Storming Project");
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File selected = chooser.getSelectedFile();
+                String path = selected.isDirectory() ? selected.getAbsolutePath() : selected.getParent();
+                launchMainEditor(path);
+            }
+        });
         
         actions.add(newProjectBtn);
         actions.add(openProjectBtn);
@@ -209,13 +264,29 @@ public class ProjectSelectorWindow extends JFrame {
         return btn;
     }
 
+    private void refreshProjectList() {
+        listModel.clear();
+        List<ProjectManager.ProjectEntry> recents = ProjectManager.getRecentProjects();
+        for (ProjectManager.ProjectEntry entry : recents) {
+            listModel.addElement(new ProjectItem(entry.name(), entry.path()));
+        }
+
+        if (listModel.isEmpty()) {
+            sidebarCardLayout.show(sidebarCardPanel, "EMPTY");
+        } else {
+            sidebarCardLayout.show(sidebarCardPanel, "LIST");
+        }
+    }
+
     /**
      * Launches the main editor window with an exit animation.
+     * @param projectPath The path to the project to open.
      */
-    private void launchMainEditor() {
+    private void launchMainEditor(String projectPath) {
+        ProjectManager.addRecentProject(projectPath);
         animateExit(() -> {
             dispose();
-            new MainWindow().setVisible(true);
+            new MainWindow(projectPath).setVisible(true);
         });
     }
 

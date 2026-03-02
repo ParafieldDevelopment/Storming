@@ -2,18 +2,27 @@ package com.parafield.storming.ui.panels;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
+import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
 
 /**
  * Displays the hierarchical structure of the current scene.
- * [WIP] This component is currently a visual placeholder and will be bound to
- * the engine's scene tree in future development phases.
+ * Dynamically updates to reflect the entities existing in the C++ engine.
+ * Supports right-click actions for entity creation and deletion.
  */
 public class HierarchyPanel extends JPanel {
-    /**
-     * Constructs a HierarchyPanel, initializing the search bar and the object tree.
-     */
+
+    private final JTree tree;
+    private final DefaultTreeModel treeModel;
+    private final DefaultMutableTreeNode rootNode;
+
     public HierarchyPanel() {
         setLayout(new BorderLayout());
         
@@ -30,9 +39,83 @@ public class HierarchyPanel extends JPanel {
         
         add(searchBox, BorderLayout.NORTH);
 
-        JTree tree = new JTree();
+        rootNode = new DefaultMutableTreeNode("Scene (Active)");
+        treeModel = new DefaultTreeModel(rootNode);
+        tree = new JTree(treeModel);
         tree.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 1%)");
+        tree.setRowHeight(24);
+        tree.setShowsRootHandles(true);
+        
+        tree.addTreeSelectionListener(e -> {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+            if (selectedNode != null && selectedNode.getUserObject() instanceof EntityItem item) {
+                MainWindow.getInstance().onEntitySelected(item);
+            }
+        });
+
+        // Right-Click Context Menu
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int row = tree.getClosestRowForLocation(e.getX(), e.getY());
+                    tree.setSelectionRow(row);
+                    showContextMenu(e.getX(), e.getY());
+                }
+            }
+        });
+        
         add(new JScrollPane(tree), BorderLayout.CENTER);
+    }
+
+    private void showContextMenu(int x, int y) {
+        JPopupMenu menu = new JPopupMenu();
+        
+        JMenuItem createEmpty = new JMenuItem("Create Empty", Icons.PLUS);
+        createEmpty.addActionListener(e -> sendCommand("create_entity", "{\"name\":\"New Entity\"}"));
+        
+        JMenuItem createSprite = new JMenuItem("Create Sprite", Icons.GRID);
+        createSprite.addActionListener(e -> sendCommand("create_entity", "{\"name\":\"New Sprite\", \"sprite\": true}"));
+        
+        menu.add(createEmpty);
+        menu.add(createSprite);
+        menu.addSeparator();
+        
+        JMenuItem delete = new JMenuItem("Delete", Icons.STOP);
+        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+        if (selectedNode != null && selectedNode.getUserObject() instanceof EntityItem item) {
+            delete.addActionListener(e -> sendCommand("delete_entity", "{\"id\":" + item.id() + "}"));
+        } else {
+            delete.setEnabled(false);
+        }
+        menu.add(delete);
+        
+        menu.show(tree, x, y);
+    }
+
+    private void sendCommand(String action, String dataJson) {
+        String base = "{\"type\":\"command\",\"action\":\"" + action + "\",";
+        String cmd = base + dataJson.substring(1); // Merge the data
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+    }
+
+    public void updateHierarchyFromItems(List<EntityItem> entities) {
+        SwingUtilities.invokeLater(() -> {
+            // Keep track of expanded state? For now, just reload.
+            rootNode.removeAllChildren();
+            for (EntityItem entity : entities) {
+                rootNode.add(new DefaultMutableTreeNode(entity));
+            }
+            treeModel.reload();
+            for (int i = 0; i < tree.getRowCount(); i++) {
+                tree.expandRow(i);
+            }
+        });
+    }
+
+    public record EntityItem(int id, String name) {
+        @Override
+        public String toString() { return name; }
     }
 
     @Override
@@ -41,13 +124,10 @@ public class HierarchyPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
-        
         int size = 80;
         int x = getWidth() - size - 25;
         int y = getHeight() - size - 25;
-        if (Icons.FOLDER_80 != null) {
-            Icons.FOLDER_80.paintIcon(this, g2, x, y);
-        }
+        if (Icons.FOLDER_80 != null) Icons.FOLDER_80.paintIcon(this, g2, x, y);
         g2.dispose();
     }
 }

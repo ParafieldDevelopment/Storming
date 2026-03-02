@@ -1,13 +1,11 @@
 package com.parafield.storming;
 
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import com.parafield.storming.core.DiscordRPCManager;
 import com.parafield.storming.ui.windows.ProjectSelectorWindow;
 import com.parafield.storming.ui.windows.SplashWindow;
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.net.URL;
-import java.util.jar.JarFile;
 
 /**
  * Main entry point for the Storming Engine Editor application.
@@ -32,6 +30,12 @@ public class EditorApp {
 
         JFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);
+
+        // Initialize Discord Rich Presence
+        DiscordRPCManager.init();
+
+        // Shutdown hook to close Discord RPC cleanly
+        Runtime.getRuntime().addShutdownHook(new Thread(DiscordRPCManager::shutdown));
 
         SwingUtilities.invokeLater(() -> {
             // Apply theme globally

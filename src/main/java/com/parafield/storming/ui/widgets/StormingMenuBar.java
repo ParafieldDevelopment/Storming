@@ -3,6 +3,7 @@ package com.parafield.storming.ui.widgets;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIUtils;
+import com.parafield.storming.ui.windows.MainWindow;
 import com.parafield.storming.ui.windows.SettingsWindow;
 import javax.swing.*;
 import java.awt.*;
@@ -97,6 +98,31 @@ public class StormingMenuBar extends JMenuBar {
     public void setAlpha(float alpha) {
         this.alpha = alpha;
         repaint();
+    }
+
+    /**
+     * Updates the menu bar to display the current project name.
+     * @param name The name of the project.
+     */
+    public void setProjectName(String name) {
+        projectBtn.setText(name);
+        projectBtn.setIcon(new Icon() {
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(52, 152, 219));
+                g2.fillRoundRect(x, y, 18, 18, 6, 6);
+                g2.setColor(Color.WHITE);
+                g2.setFont(UIUtils.getFont(Font.BOLD, 11f));
+                String letter = name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase();
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(letter, x + (18 - fm.stringWidth(letter)) / 2, y + ((18 - fm.getHeight()) / 2) + fm.getAscent());
+                g2.dispose();
+            }
+            @Override public int getIconWidth() { return 18; }
+            @Override public int getIconHeight() { return 18; }
+        });
     }
 
     /**
@@ -203,7 +229,12 @@ public class StormingMenuBar extends JMenuBar {
         menu.add(new JMenuItem("New Project...", Icons.PLUS));
         menu.add(new JMenuItem("Open Project...", Icons.FOLDER));
         menu.addSeparator();
-        menu.add(new JMenuItem("Save Scene", Icons.CLIPBOARD));
+        
+        JMenuItem saveItem = new JMenuItem("Save Scene", Icons.CLIPBOARD);
+        saveItem.setAccelerator(KeyStroke.getKeyStroke('S', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        saveItem.addActionListener(e -> MainWindow.getInstance().saveScene());
+        menu.add(saveItem);
+        
         menu.addSeparator();
         
         JMenuItem settingsItem = new JMenuItem("Settings...", Icons.SETTINGS);

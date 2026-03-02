@@ -19,13 +19,12 @@ public class ProjectBrowserPanel extends JPanel {
     private final File rootDir;
 
     /**
-     * Constructs a ProjectBrowserPanel, initializing the file tree with the current user directory.
+     * Constructs a ProjectBrowserPanel, initializing the file tree with the specified directory.
+     * @param root The project root directory to browse.
      */
-    public ProjectBrowserPanel() {
+    public ProjectBrowserPanel(File root) {
+        this.rootDir = root;
         setLayout(new BorderLayout());
-        
-        // Use current directory as root for now
-        rootDir = new File(System.getProperty("user.dir"));
         
         // --- 1. Toolbar ---
         JToolBar toolbar = new JToolBar();

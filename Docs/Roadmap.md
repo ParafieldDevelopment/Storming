@@ -1,33 +1,32 @@
 # Storming Engine: 2026 Revival Roadmap
 
 ## Pre-Phase: Engine Startup (v2026.0.0)
-*   **[Done]** **Shared Memory (SHM) Pipeline:** Establish a high-speed pixel transfer between C++ Engine and Java Editor.
-*   **[Semi-Done]** **Embedded Mode:** Engine can run hidden (`--shm`) while streaming its output to the Editor's viewport.
-*   **[Next]** **JSON Command Protocol:** Use stdin/stdout for basic Editor -> Engine commands (e.g., Change Clear Color).
-*   **[Next]** **HAL Abstraction:** Move raw OpenGL code from `Application` into a dedicated `OpenGLRendererAPI` class.
-*   **[Next]** **Telemetry Bridge:** Engine reports FPS and Draw Call statistics back to the Editor's Console.
-
-*   **[REQUIRED]** **Auto Engine Compile:** Automatically make Storming Initalitize the Engine.
+*   **[Done]** **Shared Memory (SHM) Pipeline:** High-speed pixel transfer proven and stable.
+*   **[Done]** **Embedded Mode:** Engine runs headless and streams to Editor viewport.
+*   **[Done]** **C++ Engine Rewrite:** C++20, SDL3, and Data-Oriented foundation.
+*   **[Done]** **JSON Command Protocol:** Stdin/stdout bridge for Editor -> Engine commands.
+*   **[Done]** **Telemetry Bridge:** Real-time reporting of FPS, DC, and Quads.
+*   **[Done]** **Auto Engine Compile:** Editor automatically manages C++ builds.
 
 ## Phase 1: The Core Foundation (v2026.0.1)
-*   **[Redesigning]** Improved UI
-*   **[Semi-Done]** New high-performance directory structure for C++ Engine.
-*   **[Semi-Done]** Modern "IntelliJ-style" Java Editor with Dark Theme (FlatLaf).
-*   **[Semi-Done]** Hardware Abstraction Layer (HAL) for multi-backend rendering (OpenGL/Vulkan).
-*   **[Semi-Done]** Basic Engine Launcher "Play" bridge from Editor to Engine.
-*   **[Next]** **The `.storm` Project Format:** A JSON-based file system to track assets and scenes.
+*   **[Done]** Modern "IntelliJ-style" Java Editor.
+*   **[Done]** HAL/RHI abstraction for OpenGL 4.5.
+*   **[Done]** High-performance directory structure.
+*   **[Done]** **Rendering Compatibility:** Resolved invisible assets and WM maximization issues.
+*   **[In Progress]** **The `.storm` Project Format:** Implemented basic project creation and structure.
 
 ## Phase 2: The 2D World (v2026.0.2)
-*   **Entity Component System (ECS):** A clean C++ implementation to manage "Entities" (players, enemies, objects).
-*   **Renderer2D (OpenGL Backend):** Efficiently draw thousands of sprites using batching.
-*   **The Scene Tree:** Implement the "Hierarchy" in both the Engine (for logic) and the Editor (for editing).
-*   **Inspector Binding:** Ability to click an object in the Scene and change its position/color in the Editor's Inspector.
+*   **[Done]** **ECS Integration:** Deep integration of EnTT.
+*   **[Done]** **Texture & Sprite Support:** PNG/JPG loading and rendering.
+*   **[Done]** **The Scene Tree:** Syncing entity hierarchy between C++ and Java.
+*   **[Next]** **Inspector Binding:** Real-time property editing via the Editor's UI.
+*   **[Next]** **Renderer2D Batching:** Optimizing for 32+ texture slots.
 
 ## Phase 3: The Scripting Layer (v2026.0.3)
-*   **LUA/C# Integration:** Bringing back scripting. We'll decide between a lightweight LUA integration or a full C# (Mono/DotNet) runtime for game logic.
-*   **Hot Reload:** Change a script and see the results in the engine immediately without restarting.
+*   **LUA/C# Integration:** Flexible gameplay logic layer.
+*   **Hot Reload:** Instant logic updates.
 
 ## Phase 4: Advanced Graphics & 3D (v2026.0.4)
-*   **Vulkan Renderer implementation:** Complete the high-performance HAL backend.
-*   **3D Foundation:** Basic 3D math, Model loading (.obj/.fbx), and a simple PBR (Physically Based Rendering) shader.
-*   **Plugin API:** Allow users to write their own Editor tools in Java.
+*   **Vulkan Backend:** Full implementation of the Vulkan RHI for peak performance.
+*   **3D Foundation:** Basic 3D math, PBR shading, and model loading.
+*   **Plugin API:** Java-based API for expanding Editor functionality.

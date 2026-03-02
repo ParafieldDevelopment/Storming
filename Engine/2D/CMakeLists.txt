@@ -19,6 +19,7 @@ FetchContent_Declare(
     entt
     GIT_REPOSITORY https://github.com/skypjack/entt.git
     GIT_TAG v3.13.0
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(entt)
 
@@ -27,18 +28,36 @@ FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
     GIT_TAG v0.1.36
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glad)
-# Custom glad generation for OpenGL 4.5
-# We don't need add_library here anymore if it exists
 
 # 4. GLM (Math)
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG 0.9.9.8
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glm)
+
+# 5. nlohmann_json (Command Protocol)
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(json)
+
+# 6. stb (Image Loading)
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(stb)
 
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
@@ -54,6 +73,7 @@ add_executable(StormingEngine ${SOURCES})
 target_include_directories(StormingEngine PRIVATE 
     include
     src
+    ${stb_SOURCE_DIR}
 )
 
 # Link libraries
@@ -62,6 +82,7 @@ target_link_libraries(StormingEngine PRIVATE
     EnTT::EnTT
     glad
     glm::glm
+    nlohmann_json::nlohmann_json
     rt
 )
 

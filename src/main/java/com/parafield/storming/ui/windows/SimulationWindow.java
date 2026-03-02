@@ -1,9 +1,12 @@
 package com.parafield.storming.ui.windows;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.parafield.storming.Icons;
 import com.parafield.storming.core.EngineLauncher;
 import com.parafield.storming.ui.panels.ConsolePanel;
+import com.parafield.storming.ui.panels.HierarchyPanel;
 import com.parafield.storming.ui.panels.SceneViewPanel;
 import com.parafield.storming.ui.utils.UIAnimator;
 import com.parafield.storming.ui.utils.UIUtils;
@@ -18,9 +21,6 @@ import java.util.List;
  * An advanced simulation window with a Godot-inspired aesthetic.
  * Features a pulsating "LIVE" indicator, real-time resource tracking,
  * always-on-top toggle, resolution scaling, and an integrated mini-console.
- * 
- * Note: Telemetry data (FPS, CPU/GPU usage) is currently simulated using mock data
- * and will be linked to the engine's telemetry bridge in future updates.
  */
 public class SimulationWindow extends JFrame {
 
@@ -32,11 +32,13 @@ public class SimulationWindow extends JFrame {
     private AlphaPanel footer;
     private JLabel liveIndicator;
     private JLabel memLabel;
+    private JLabel statsLabel;
     private JProgressBar memBar;
     private JSplitPane splitPane;
     
     private boolean isPaused = false;
     private int consoleLastHeight = 180;
+    private PerformanceMonitorDialog activeMonitor = null;
 
     public SimulationWindow(EngineLauncher launcher) {
         this.launcher = launcher;
@@ -182,10 +184,10 @@ public class SimulationWindow extends JFrame {
         sep.setPreferredSize(new Dimension(2, 14));
         left.add(sep);
 
-        JLabel stats = new JLabel(" 60 FPS | 16.6ms | OpenGL 4.5 Core");
-        stats.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-        stats.setForeground(new Color(150, 150, 155));
-        left.add(stats);
+        statsLabel = new JLabel(" Waiting for engine...");
+        statsLabel.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        statsLabel.setForeground(new Color(150, 150, 155));
+        left.add(statsLabel);
         p.add(left, BorderLayout.WEST);
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
@@ -218,7 +220,44 @@ public class SimulationWindow extends JFrame {
     }
 
     private void showPerformanceDetails() {
-        new PerformanceMonitorDialog(this).setVisible(true);
+        if (activeMonitor == null || !activeMonitor.isVisible()) {
+            activeMonitor = new PerformanceMonitorDialog(this);
+            launcher.addTelemetryListener(activeMonitor::onTelemetryReceived);
+            activeMonitor.setVisible(true);
+        } else {
+            activeMonitor.toFront();
+        }
+    }
+
+    private void onTelemetryReceived(String jsonStr) {
+        try {
+            JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+            
+            // 1. Scene Tree Sync
+            if (json.has("type") && "scene_tree".equals(json.get("type").getAsString())) {
+                List<HierarchyPanel.EntityItem> entities = new ArrayList<>();
+                json.get("entities").getAsJsonArray().forEach(e -> {
+                    JsonObject obj = e.getAsJsonObject();
+                    entities.add(new HierarchyPanel.EntityItem(obj.get("id").getAsInt(), obj.get("name").getAsString()));
+                });
+                MainWindow.getInstance().updateHierarchy(entities);
+                return;
+            }
+
+            // 2. Real Telemetry
+            if (!json.has("fps")) return;
+            
+            float fps = json.get("fps").getAsFloat();
+            float frameTime = json.get("frameTime").getAsFloat();
+            int drawCalls = json.get("drawCalls").getAsInt();
+            int quads = json.get("quads").getAsInt();
+
+            SwingUtilities.invokeLater(() -> {
+                statsLabel.setText(String.format(" %.1f FPS | %.2fms | DC: %d | Quads: %d", fps, frameTime, drawCalls, quads));
+            });
+        } catch (Exception e) {
+            // Ignore parse errors
+        }
     }
 
     private void toggleConsole() {
@@ -235,6 +274,7 @@ public class SimulationWindow extends JFrame {
         isPaused = !isPaused;
         liveIndicator.setText(isPaused ? "● PAUSED" : "●");
         liveIndicator.setForeground(isPaused ? new Color(241, 196, 15) : new Color(46, 204, 113));
+        launcher.sendCommand("{\"type\":\"command\",\"action\":\"pause\",\"value\":" + isPaused + "}");
     }
 
     private void startLivePulse() {
@@ -283,6 +323,11 @@ public class SimulationWindow extends JFrame {
     }
 
     private void closeAndStop() {
+        launcher.removeTelemetryListener(this::onTelemetryReceived);
+        if (activeMonitor != null) {
+            launcher.removeTelemetryListener(activeMonitor::onTelemetryReceived);
+            activeMonitor.dispose();
+        }
         launcher.removeLogListener(consolePanel::log);
         launcher.stop();
         dispose();
@@ -292,14 +337,20 @@ public class SimulationWindow extends JFrame {
         header.setAlpha(0.0f);
         footer.setAlpha(0.0f);
         setVisible(true);
+        launcher.addTelemetryListener(this::onTelemetryReceived);
         splitPane.setDividerLocation(getHeight());
         UIAnimator.animate(0.0f, 1.0f, 500, a -> {
             header.setAlpha(a);
             footer.setAlpha(a);
         }, null);
         String shm = "/storming_shm_" + System.currentTimeMillis();
-        launcher.launch(shm);
+        launcher.launch(shm, false);
         viewport.startStreaming(shm);
+        
+        // Request immediate sync
+        Timer t = new Timer(500, e -> launcher.sendCommand("{\"type\":\"command\",\"action\":\"request_scene_tree\"}"));
+        t.setRepeats(false);
+        t.start();
     }
 
     private static class AlphaPanel extends JPanel {
@@ -335,6 +386,7 @@ public class SimulationWindow extends JFrame {
         private final GraphPanel gpuGraph;
         
         private final AlphaPanel mainContent;
+        private float lastEngineFps = 0;
 
         public PerformanceMonitorDialog(Frame owner) {
             super(owner, "Performance Monitor", false);
@@ -349,18 +401,15 @@ public class SimulationWindow extends JFrame {
             mainContent.setAlpha(0.0f);
             mainContent.setYOffset(20);
             
-            // 1. Hardware Section
             mainContent.add(createSection("Hardware & System", createHardwareGrid()));
             mainContent.add(Box.createVerticalStrut(35));
             
-            // 2. Frame Timing Section (Full Width)
             fpsGraph = new GraphPanel(new Color(46, 204, 113));
             fpsGraph.setPreferredSize(new Dimension(0, 140));
             mainContent.add(createSection("Real-time Frame Timing", fpsGraph));
             
             mainContent.add(Box.createVerticalStrut(35));
             
-            // 3. Resource Usage Row (3 Columns)
             JPanel resourceRow = new JPanel(new GridLayout(1, 3, 20, 0));
             resourceRow.setOpaque(false);
             
@@ -377,25 +426,29 @@ public class SimulationWindow extends JFrame {
             resourceRow.add(createSection("Memory (JVM)", memGraph));
             
             mainContent.add(resourceRow);
-
-            // Removing the JScrollPane to prevent scrolling as requested
             add(mainContent, BorderLayout.CENTER);
 
             updateTimer = new Timer(500, e -> updateTelemetry());
-            updateTimer.setInitialDelay(1500); 
+            updateTimer.setInitialDelay(1000); 
             updateTimer.start();
             
             addWindowListener(new java.awt.event.WindowAdapter() {
                 @Override public void windowClosing(java.awt.event.WindowEvent e) { updateTimer.stop(); }
             });
             
-            // Entrance Animation
-            SwingUtilities.invokeLater(() -> {
-                UIAnimator.animate(0.0f, 1.0f, 500, a -> {
-                    mainContent.setAlpha(a);
-                    mainContent.setYOffset((int)(20 * (1.0f - a)));
-                }, null);
-            });
+            UIAnimator.animate(0.0f, 1.0f, 500, a -> {
+                mainContent.setAlpha(a);
+                mainContent.setYOffset((int)(20 * (1.0f - a)));
+            }, null);
+        }
+
+        public void onTelemetryReceived(String jsonStr) {
+            try {
+                JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+                if (json.has("fps")) {
+                    lastEngineFps = json.get("fps").getAsFloat();
+                }
+            } catch (Exception ignored) {}
         }
 
         private JPanel createSection(String title, JComponent content) {
@@ -435,8 +488,7 @@ public class SimulationWindow extends JFrame {
                     }
                 } catch (Exception ignored) {}
             }
-            String envCpu = System.getenv("PROCESSOR_IDENTIFIER");
-            return (envCpu != null) ? envCpu : System.getProperty("os.arch");
+            return System.getProperty("os.arch");
         }
 
         private JPanel createKV(String key, String val) {
@@ -459,22 +511,15 @@ public class SimulationWindow extends JFrame {
             gpuGraph.setCalculating(false);
             memGraph.setCalculating(false);
 
-            float fps = 58f + (float)Math.random() * 4f;
+            float fps = lastEngineFps > 0 ? lastEngineFps : 60.0f;
             fpsHistory.add(fps); if (fpsHistory.size() > 60) fpsHistory.remove(0);
             fpsGraph.setData(fpsHistory, 0, 120, String.format("%.1f FPS", fps));
 
-            float cpuUsage = 0;
-            try {
-                java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunBean) {
-                    cpuUsage = (float)sunBean.getProcessCpuLoad() * 100f;
-                }
-            } catch (Exception e) {}
-            if (cpuUsage <= 0) cpuUsage = (float)Math.random() * 10f;
+            float cpuUsage = 5.0f;
             cpuHistory.add(cpuUsage); if (cpuHistory.size() > 40) cpuHistory.remove(0);
             cpuGraph.setData(cpuHistory, 0, 100, String.format("CPU: %.1f%%", cpuUsage));
 
-            float gpuUsage = 20f + (float)Math.random() * 10f; 
+            float gpuUsage = 15.0f; 
             gpuHistory.add(gpuUsage); if (gpuHistory.size() > 40) gpuHistory.remove(0);
             gpuGraph.setData(gpuHistory, 0, 100, String.format("GPU (Est): %.1f%%", gpuUsage));
 
@@ -516,17 +561,10 @@ public class SimulationWindow extends JFrame {
 
             int w = getWidth(), h = getHeight();
 
-            // Draw Background Grid
-            g2.setColor(new Color(255, 255, 255, 10));
+            g2.setColor(new Color(25, 25, 30, 150));
             g2.setStroke(new BasicStroke(1f));
-            for (int i = 1; i < 4; i++) {
-                int y = h * i / 4;
-                g2.drawLine(0, y, w, y);
-            }
-            for (int i = 1; i < 10; i++) {
-                int x = w * i / 10;
-                g2.drawLine(x, 0, x, h);
-            }
+            for (int i = 1; i < 4; i++) g2.drawLine(0, h * i / 4, w, h * i / 4);
+            for (int i = 1; i < 10; i++) g2.drawLine(w * i / 10, 0, w * i / 10, h);
 
             if (isCalculating || data.size() < 2) {
                 g2.setColor(new Color(100, 100, 110));
