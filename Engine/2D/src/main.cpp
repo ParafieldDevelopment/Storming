@@ -29,10 +29,13 @@ int main(int argc, char** argv) {
     }
 
     // Initialize and start the application loop
+    std::cout << "[Debug] Creating Application..." << std::endl;
     Storming::Application* app = new Storming::Application(config);
+    
+    std::cout << "[Debug] Calling app->Run()..." << std::endl;
     app->Run();
     
-    // Graceful cleanup
+    std::cout << "[Debug] Application loop finished." << std::endl;
     delete app;
 
     return 0;

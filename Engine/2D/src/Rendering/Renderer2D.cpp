@@ -12,15 +12,11 @@ namespace Storming {
         glm::vec4 Color;
     };
 
-    /**
-     * Internal data structure for managing batch rendering state.
-     * Holds Vertex Array Objects (VAO), Vertex Buffer Objects (VBO), Shaders, and texture slots.
-     */
     struct Renderer2DData {
         static const uint32_t MaxQuads = 10000;
         static const uint32_t MaxVertices = MaxQuads * 4;
         static const uint32_t MaxIndices = MaxQuads * 6;
-        static const uint32_t MaxTextureSlots = 16;
+        static const uint32_t MaxTextureSlots = 16; 
 
         static const uint32_t MaxLines = 10000;
         static const uint32_t MaxLineVertices = MaxLines * 2;
@@ -51,11 +47,67 @@ namespace Storming {
 
     static Renderer2DData s_Data;
 
-    /**
-     * Initializes the 2D Renderer.
-     * Sets up VAOs, VBOs, IBOs, and compiles the default shaders.
-     * Pre-allocates memory for batch buffers.
-     */
+    static const std::string QuadVertexSrc = R"(
+        #version 450 core
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec4 a_Color;
+        layout(location = 2) in vec2 a_TexCoord;
+        layout(location = 3) in float a_TexIndex;
+
+        uniform mat4 u_ViewProjection;
+
+        out vec4 v_Color;
+        out vec2 v_TexCoord;
+        out float v_TexIndex;
+
+        void main() {
+            v_Color = a_Color;
+            v_TexCoord = a_TexCoord;
+            v_TexIndex = a_TexIndex;
+            gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+        }
+    )";
+
+    static const std::string QuadFragmentSrc = R"(
+        #version 450 core
+        layout(location = 0) out vec4 color;
+
+        in vec4 v_Color;
+        in vec2 v_TexCoord;
+        in float v_TexIndex;
+
+        uniform sampler2D u_Textures[16];
+
+        void main() {
+            int index = int(v_TexIndex);
+            color = v_Color * texture(u_Textures[index], v_TexCoord);
+        }
+    )";
+
+    static const std::string LineVertexSrc = R"(
+        #version 450 core
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec4 a_Color;
+
+        uniform mat4 u_ViewProjection;
+        out vec4 v_Color;
+
+        void main() {
+            v_Color = a_Color;
+            gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+        }
+    )";
+
+    static const std::string LineFragmentSrc = R"(
+        #version 450 core
+        layout(location = 0) out vec4 color;
+        in vec4 v_Color;
+
+        void main() {
+            color = v_Color;
+        }
+    )";
+
     void Renderer2D::Init() {
         s_Data.QuadVertexBufferBase = new Vertex[s_Data.MaxVertices];
 
@@ -103,15 +155,19 @@ namespace Storming {
         uint32_t whiteTextureData = 0xffffffff;
         s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
-        // ... Shader Initialization (Omitted for brevity, logic remains same) ...
-        // (Assuming existing shader strings are here)
-        
+        s_Data.QuadShader = Shader::Create(QuadVertexSrc, QuadFragmentSrc);
+        s_Data.LineShader = Shader::Create(LineVertexSrc, LineFragmentSrc);
+
+        if (s_Data.QuadShader) {
+            int32_t samplers[s_Data.MaxTextureSlots];
+            for (uint32_t i = 0; i < s_Data.MaxTextureSlots; i++) samplers[i] = i;
+            s_Data.QuadShader->Bind();
+            s_Data.QuadShader->SetIntArray("u_Textures", samplers, s_Data.MaxTextureSlots);
+        }
+
         s_Data.TextureSlots[0] = s_Data.WhiteTexture;
     }
 
-    /**
-     * Shuts down the renderer and frees GPU resources.
-     */
     void Renderer2D::Shutdown() {
         glDeleteVertexArrays(1, &s_Data.QuadVAO);
         glDeleteBuffers(1, &s_Data.QuadVBO);
@@ -120,29 +176,22 @@ namespace Storming {
         delete[] s_Data.LineVertexBufferBase;
     }
 
-    /**
-     * Begins a new render scene.
-     * Binds shaders and uploads the View-Projection matrix from the camera.
-     * @param camera The camera to render the scene through.
-     */
     void Renderer2D::BeginScene(const OrthographicCamera& camera) {
-        s_Data.QuadShader->Bind();
-        s_Data.QuadShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        if (s_Data.QuadShader) {
+            s_Data.QuadShader->Bind();
+            s_Data.QuadShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        }
         
-        s_Data.LineShader->Bind();
-        s_Data.LineShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        if (s_Data.LineShader) {
+            s_Data.LineShader->Bind();
+            s_Data.LineShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        }
 
         StartBatch();
     }
 
-    /**
-     * Ends the scene and flushes any remaining geometry to the GPU.
-     */
     void Renderer2D::EndScene() { Flush(); }
 
-    /**
-     * Resets the batch pointers to the beginning of the buffers.
-     */
     void Renderer2D::StartBatch() {
         s_Data.QuadIndexCount = 0;
         s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
@@ -152,18 +201,16 @@ namespace Storming {
         s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
     }
 
-    /**
-     * Uploads the accumulated vertex data to the GPU and issues draw calls.
-     * Handles both Quad batches (TRIANGLES) and Line batches (LINES).
-     */
     void Renderer2D::Flush() {
-        if (s_Data.QuadIndexCount > 0) {
+        if (s_Data.QuadIndexCount > 0 && s_Data.QuadShader) {
             uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
             glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVBO);
             glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.QuadVertexBufferBase);
             
-            for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++) 
-                s_Data.TextureSlots[i]->Bind(i);
+            for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++) {
+                if (s_Data.TextureSlots[i])
+                    s_Data.TextureSlots[i]->Bind(i);
+            }
             
             s_Data.QuadShader->Bind();
             glBindVertexArray(s_Data.QuadVAO);
@@ -171,7 +218,7 @@ namespace Storming {
             s_Data.Stats.DrawCalls++;
         }
 
-        if (s_Data.LineVertexCount > 0) {
+        if (s_Data.LineVertexCount > 0 && s_Data.LineShader) {
             uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
             glBindBuffer(GL_ARRAY_BUFFER, s_Data.LineVBO);
             glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, s_Data.LineVertexBufferBase);
@@ -182,23 +229,16 @@ namespace Storming {
         }
     }
 
-    /**
-     * Submits a flat-colored quad to the render queue.
-     */
     void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color) {
         DrawQuad(position, size, s_Data.WhiteTexture, color);
     }
 
-    /**
-     * Submits a textured quad to the render queue.
-     * Automatically handles texture slot assignment and batch breaking if slots are full.
-     */
     void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor) {
         if (s_Data.QuadIndexCount >= s_Data.MaxIndices) NextBatch();
         
         float textureIndex = 0.0f;
         for (uint32_t i = 1; i < s_Data.TextureSlotIndex; i++) {
-            if (s_Data.TextureSlots[i]->GetRendererID() == texture->GetRendererID()) {
+            if (s_Data.TextureSlots[i] && s_Data.TextureSlots[i]->GetRendererID() == texture->GetRendererID()) {
                 textureIndex = (float)i;
                 break;
             }
@@ -210,7 +250,6 @@ namespace Storming {
             s_Data.TextureSlotIndex++;
         }
 
-        // Vertex layout: BL, BR, TR, TL
         s_Data.QuadVertexBufferPtr->Position = position;
         s_Data.QuadVertexBufferPtr->Color = tintColor;
         s_Data.QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
@@ -239,11 +278,12 @@ namespace Storming {
         s_Data.Stats.QuadCount++;
     }
 
-    /**
-     * Submits a line segment to the render queue.
-     * Used for debug drawing (grids, colliders, selection boxes).
-     */
     void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color) {
+        if (s_Data.LineVertexCount >= s_Data.MaxLineVertices) {
+            Flush(); 
+            s_Data.LineVertexCount = 0;
+            s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
+        }
         s_Data.LineVertexBufferPtr->Position = p0;
         s_Data.LineVertexBufferPtr->Color = color;
         s_Data.LineVertexBufferPtr++;

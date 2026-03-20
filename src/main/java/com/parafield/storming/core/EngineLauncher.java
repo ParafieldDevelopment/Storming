@@ -6,65 +6,54 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
 /**
  * Responsible for launching and managing the Storming Engine process.
- * Handles process lifecycle, shared memory arguments, and broadcasting output.
- * Features a telemetry bridge and a command gateway.
- * Automatically attempts to build the engine if the executable is missing.
  */
 public class EngineLauncher {
 
     private final String enginePath;
     private final List<Consumer<String>> logListeners = new ArrayList<>();
     private final List<Consumer<String>> telemetryListeners = new ArrayList<>();
+    private final List<String> lastLogs = new LinkedList<>();
+    private static final int MAX_SAVED_LOGS = 50;
+
     private Process currentProcess;
     private BufferedWriter writer;
+    private boolean intentionalStop = false;
 
-    /**
-     * Constructs a new EngineLauncher.
-     *
-     * @param enginePath The file path to the engine executable.
-     */
+    public interface CrashListener {
+        void onEngineCrashed(int exitCode, String logs);
+    }
+    private CrashListener crashListener;
+
+    public interface BuildListener {
+        void onStatus(String status);
+        void onProgress(int progress);
+        void onFinished(boolean success);
+    }
+
     public EngineLauncher(String enginePath) {
         this.enginePath = enginePath;
     }
 
-    /**
-     * Adds a listener for telemetry data (JSON strings).
-     * @param listener The callback for telemetry.
-     */
-    public void addTelemetryListener(Consumer<String> listener) {
-        telemetryListeners.add(listener);
+    public void setCrashListener(CrashListener listener) {
+        this.crashListener = listener;
     }
 
-    /**
-     * Removes a telemetry listener.
-     * @param listener The callback to remove.
-     */
-    public void removeTelemetryListener(Consumer<String> listener) {
-        telemetryListeners.remove(listener);
-    }
-
-    /**
-     * Adds a listener to receive engine log messages.
-     * @param listener The callback to add.
-     */
-    public void addLogListener(Consumer<String> listener) {
-        logListeners.add(listener);
-    }
-
-    /**
-     * Removes a log listener.
-     * @param listener The callback to remove.
-     */
-    public void removeLogListener(Consumer<String> listener) {
-        logListeners.remove(listener);
-    }
+    public void addTelemetryListener(Consumer<String> listener) { telemetryListeners.add(listener); }
+    public void removeTelemetryListener(Consumer<String> listener) { telemetryListeners.remove(listener); }
+    public void addLogListener(Consumer<String> listener) { logListeners.add(listener); }
+    public void removeLogListener(Consumer<String> listener) { logListeners.remove(listener); }
 
     private void broadcast(String message) {
+        synchronized (lastLogs) {
+            lastLogs.add(message);
+            if (lastLogs.size() > MAX_SAVED_LOGS) lastLogs.remove(0);
+        }
         for (Consumer<String> listener : new ArrayList<>(logListeners)) {
             listener.accept(message);
         }
@@ -76,10 +65,6 @@ public class EngineLauncher {
         }
     }
 
-    /**
-     * Sends a command string to the engine's standard input.
-     * @param command The command to send (e.g., JSON).
-     */
     public void sendCommand(String command) {
         if (writer != null) {
             try {
@@ -92,20 +77,65 @@ public class EngineLauncher {
         }
     }
 
-    /**
-     * Checks if the engine process is currently running.
-     *
-     * @return true if the engine process exists and is alive, false otherwise.
-     */
     public boolean isRunning() {
         return currentProcess != null && currentProcess.isAlive();
     }
 
-    /**
-     * Stops the running engine process gracefully.
-     */
+    public boolean binaryExists() {
+        return new java.io.File(enginePath).exists();
+    }
+
+    public void buildEngine(BuildListener listener) {
+        new Thread(() -> {
+            try {
+                String os = System.getProperty("os.name").toLowerCase();
+                java.io.File buildDir = new java.io.File("Engine/2D/build");
+                if (!buildDir.exists()) buildDir.mkdirs();
+
+                listener.onStatus("Configuring Project (CMake)...");
+                listener.onProgress(10);
+                ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
+                cmakePb.directory(buildDir);
+                if (cmakePb.start().waitFor() != 0) {
+                    listener.onFinished(false);
+                    return;
+                }
+
+                listener.onStatus("Compiling Engine Core...");
+                listener.onProgress(40);
+                List<String> cmd = new ArrayList<>();
+                if (os.contains("win")) {
+                    cmd.addAll(List.of("cmake", "--build", "."));
+                } else {
+                    cmd.addAll(List.of("make", "-j" + Runtime.getRuntime().availableProcessors()));
+                }
+                
+                ProcessBuilder buildPb = new ProcessBuilder(cmd);
+                buildPb.directory(buildDir);
+                Process p = buildPb.start();
+                
+                // Read build output to update progress slightly
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null) {
+                    count++;
+                    if (count % 5 == 0 && count < 40) listener.onProgress(40 + (count / 2));
+                }
+
+                boolean success = p.waitFor() == 0;
+                listener.onProgress(100);
+                listener.onFinished(success);
+            } catch (Exception e) {
+                e.printStackTrace();
+                listener.onFinished(false);
+            }
+        }).start();
+    }
+
     public void stop() {
         if (isRunning()) {
+            intentionalStop = true;
             broadcast("[System] Stopping Engine...");
             currentProcess.destroy();
             try {
@@ -120,81 +150,17 @@ public class EngineLauncher {
         }
     }
 
-    private boolean buildEngine() {
-        try {
-            String os = System.getProperty("os.name").toLowerCase();
-            
-            // 1. Create build directory
-            java.io.File buildDir = new java.io.File("Engine/2D/build");
-            if (!buildDir.exists()) buildDir.mkdirs();
-
-            // 2. Run CMake
-            broadcast("[System] Running CMake...");
-            ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
-            cmakePb.directory(buildDir);
-            Process cmakeP = cmakePb.start();
-            if (cmakeP.waitFor() != 0) return false;
-
-            // 3. Run Build
-            broadcast("[System] Compiling Engine...");
-            List<String> cmd = new ArrayList<>();
-            if (os.contains("win")) {
-                cmd.addAll(List.of("cmake", "--build", "."));
-            } else {
-                cmd.addAll(List.of("make", "-j" + Runtime.getRuntime().availableProcessors()));
-            }
-            
-            ProcessBuilder buildPb = new ProcessBuilder(cmd);
-            buildPb.directory(buildDir);
-            Process buildP = buildPb.start();
-            
-            return buildP.waitFor() == 0;
-        } catch (Exception e) {
-            broadcast("[Error] Build exception: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public void launch() {
-        launch("");
-    }
-
-    public void launch(String shmName) {
-        launch(shmName, false);
-    }
-
-    /**
-     * Launches the engine process and starts monitoring its output.
-     *
-     * @param shmName  The shared memory name to pass as an argument.
-     * @param isEditor Whether to launch the engine in editor mode.
-     */
     public void launch(String shmName, boolean isEditor) {
-        if (isRunning()) {
-            return;
-        }
+        if (isRunning()) return;
+        intentionalStop = false;
 
         new Thread(() -> {
             try {
-                java.io.File exe = new java.io.File(enginePath);
-                if (!exe.exists()) {
-                    broadcast("[System] Engine binary not found. Attempting automatic build...");
-                    if (!buildEngine()) {
-                        broadcast("[Error] Auto-build failed. Please check C++ environment.");
-                        return;
-                    }
-                }
-
                 broadcast("Launching Storming Engine...");
                 List<String> args = new ArrayList<>();
                 args.add(enginePath);
-                if (!shmName.isEmpty()) {
-                    args.add("--shm");
-                    args.add(shmName);
-                }
-                if (isEditor) {
-                    args.add("--editor");
-                }
+                if (!shmName.isEmpty()) { args.add("--shm"); args.add(shmName); }
+                if (isEditor) args.add("--editor");
                 
                 ProcessBuilder pb = new ProcessBuilder(args);
                 pb.redirectErrorStream(true);
@@ -205,18 +171,23 @@ public class EngineLauncher {
                 
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("[TELEMETRY]")) {
-                        broadcastTelemetry(line.substring(11));
-                    } else {
-                        broadcast(line);
-                    }
+                    if (line.startsWith("[TELEMETRY]")) broadcastTelemetry(line.substring(11));
+                    else broadcast(line);
                 }
                 
                 int exitCode = currentProcess.waitFor();
                 broadcast("[System] Engine exited with code: " + exitCode);
                 writer = null;
+
+                if (!intentionalStop && exitCode != 0) {
+                    StringBuilder sb = new StringBuilder();
+                    synchronized (lastLogs) {
+                        for (String l : lastLogs) sb.append(l).append("\n");
+                    }
+                    if (crashListener != null) crashListener.onEngineCrashed(exitCode, sb.toString());
+                }
             } catch (Exception ex) {
-                broadcast("[Error] Failed to launch: " + ex.getMessage());
+                broadcast("[Error] Process execution failed: " + ex.getMessage());
             }
         }).start();
     }

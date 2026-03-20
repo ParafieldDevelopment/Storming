@@ -55,6 +55,19 @@ public class ProjectBrowserPanel extends JPanel {
         fileTree.setRowHeight(24);
         fileTree.setShowsRootHandles(true);
         
+        fileTree.setDragEnabled(true);
+        fileTree.setTransferHandler(new TransferHandler() {
+            @Override
+            protected java.awt.datatransfer.Transferable createTransferable(JComponent c) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
+                if (node != null && node.getUserObject() instanceof File file) {
+                    return new java.awt.datatransfer.StringSelection(file.getAbsolutePath());
+                }
+                return null;
+            }
+            @Override public int getSourceActions(JComponent c) { return COPY; }
+        });
+
         JScrollPane scrollPane = new JScrollPane(fileTree);
         scrollPane.setBorder(null);
         add(scrollPane, BorderLayout.CENTER);
@@ -74,7 +87,7 @@ public class ProjectBrowserPanel extends JPanel {
      * @return A DefaultMutableTreeNode representing the file/directory and its children.
      */
     private DefaultMutableTreeNode createTreeNodes(File file) {
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(file.getName().isEmpty() ? file.getPath() : file.getName());
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(file); // Store File object directly
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
@@ -98,10 +111,14 @@ public class ProjectBrowserPanel extends JPanel {
         @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean exp, boolean leaf, int row, boolean hasFocus) {
             super.getTreeCellRendererComponent(tree, value, sel, exp, leaf, row, hasFocus);
-            if (leaf) {
-                setIcon(UIManager.getIcon("FileView.fileIcon"));
-            } else {
-                setIcon(Icons.FOLDER);
+            Object userObj = ((DefaultMutableTreeNode) value).getUserObject();
+            if (userObj instanceof File file) {
+                setText(file.getName().isEmpty() ? file.getPath() : file.getName());
+                if (file.isDirectory()) {
+                    setIcon(Icons.FOLDER);
+                } else {
+                    setIcon(UIManager.getIcon("FileView.fileIcon"));
+                }
             }
             return this;
         }

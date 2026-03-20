@@ -227,8 +227,48 @@ public class InspectorPanel extends JPanel {
             }
         });
 
+        String texPath = data.has("texture") ? data.get("texture").getAsString() : "";
+        String texName = texPath.isEmpty() ? "None (Texture2D)" : new java.io.File(texPath).getName();
+        
+        JLabel texSlot = new JLabel(texName, Icons.GRID, SwingConstants.LEFT);
+        texSlot.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        texSlot.setPreferredSize(new Dimension(120, 22));
+        texSlot.setOpaque(true);
+        texSlot.setBackground(new Color(30, 30, 35));
+        texSlot.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(100, 100, 105, 50), 1, true),
+            BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        ));
+
+        // --- Drag & Drop Support ---
+        texSlot.setTransferHandler(new TransferHandler() {
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return support.isDataFlavorSupported(java.awt.datatransfer.DataFlavor.stringFlavor);
+            }
+            @Override
+            public boolean importData(TransferSupport support) {
+                try {
+                    String path = (String) support.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor);
+                    if (path.toLowerCase().endsWith(".png") || path.toLowerCase().endsWith(".jpg")) {
+                        updateTexture(path);
+                        // Refresh will happen via engine telemetry
+                        return true;
+                    }
+                } catch (Exception ignored) {}
+                return false;
+            }
+        });
+
         addPropertyRow(p, 0, "Color", colorBox);
+        addPropertyRow(p, 1, "Texture", texSlot);
         return p;
+    }
+
+    private void updateTexture(String path) {
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"spriterenderer\",\"field\":\"texture\",\"path\":\"%s\"}",
+                currentEntityId, path.replace("\\", "/"));
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
     }
 
     private void addPropertyRow(JPanel parent, int row, String label, JComponent input) {

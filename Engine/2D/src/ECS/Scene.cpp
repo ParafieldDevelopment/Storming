@@ -65,7 +65,8 @@ namespace Storming {
             if (m_Registry.all_of<SpriteRendererComponent>(entity)) {
                 auto& src = m_Registry.get<SpriteRendererComponent>(entity);
                 eJson["components"]["SpriteRenderer"] = {
-                    {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}}
+                    {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}},
+                    {"texture", src.TexturePath}
                 };
             }
             data["entities"].push_back(eJson);
@@ -124,7 +125,8 @@ namespace Storming {
         if (m_Registry.all_of<SpriteRendererComponent>(handle)) {
             auto& src = m_Registry.get<SpriteRendererComponent>(handle);
             data["components"]["SpriteRenderer"] = {
-                {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}}
+                {"color", {src.Color.r, src.Color.g, src.Color.b, src.Color.a}},
+                {"texture", src.TexturePath}
             };
         }
 
@@ -173,6 +175,13 @@ namespace Storming {
                         auto& src = entity.AddComponent<SpriteRendererComponent>();
                         auto c = comps["SpriteRenderer"]["color"];
                         src.Color = { c[0], c[1], c[2], c[3] };
+                        if (comps["SpriteRenderer"].contains("texture")) {
+                            std::string texPath = comps["SpriteRenderer"]["texture"];
+                            if (!texPath.empty()) {
+                                src.Texture = Texture2D::Create(texPath);
+                                src.TexturePath = texPath;
+                            }
+                        }
                     }
                 }
             }

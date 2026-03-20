@@ -13,11 +13,14 @@
 #include <iostream>
 #include <fcntl.h>
 #include <vector>
+#include <csignal>
 
 #ifdef _WIN32
 #include <io.h>
+#include <windows.h>
 #else
 #include <unistd.h>
+#include <execinfo.h>
 #endif
 
 namespace Storming {
@@ -27,6 +30,18 @@ namespace Storming {
     static Scene* s_ActiveScene = nullptr;
     static OrthographicCamera* s_Camera = nullptr;
     static std::string s_CommandBuffer = "";
+
+    void SignalHandler(int signal) {
+        std::cerr << "\n[CRITICAL] Engine caught signal: " << signal << std::endl;
+        #ifndef _WIN32
+        void* array[10];
+        size_t size = backtrace(array, 10);
+        std::cerr << "[CRITICAL] Stack Trace:" << std::endl;
+        backtrace_symbols_fd(array, size, STDERR_FILENO);
+        #endif
+        std::cerr.flush();
+        exit(signal);
+    }
 
     Application::Application(const ApplicationConfig& config)
         : m_Config(config)
@@ -41,6 +56,11 @@ namespace Storming {
     }
 
     void Application::Init() {
+        std::signal(SIGSEGV, SignalHandler);
+        std::signal(SIGILL, SignalHandler);
+        std::signal(SIGFPE, SignalHandler);
+        std::signal(SIGABRT, SignalHandler);
+
         #ifndef _WIN32
         int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
         fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
@@ -52,20 +72,20 @@ namespace Storming {
         }
 
         SDL_PropertiesID props = SDL_CreateProperties();
-        SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, m_Config.Name.c_str());
-        
+        std::string title = m_Config.Name;
         if (!m_Config.ShmName.empty()) {
+            title = "StormingEngine_Background_" + m_Config.ShmName;
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, true);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN, true);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_UTILITY_BOOLEAN, true);
-            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 16);
-            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 16);
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, 1); // 1x1 is safer than 16x16
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, 1);
         } else {
             SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_Config.Width);
             SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_Config.Height);
             SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
         }
-        
+        SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title.c_str());
         SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 
         m_Window = SDL_CreateWindowWithProperties(props);
@@ -106,8 +126,14 @@ namespace Storming {
         uint64_t lastTime = SDL_GetTicks();
         uint64_t lastTelemetryTime = lastTime;
         uint32_t frames = 0;
+        uint32_t totalFrames = 0;
 
         while (m_Running) {
+            if (totalFrames < 5) {
+                std::cout << "[Debug] Frame " << totalFrames << " Start" << std::endl;
+                std::cout.flush();
+            }
+
             uint64_t currentTime = SDL_GetTicks();
             float deltaTime = (currentTime - lastTime) / 1000.0f;
             lastTime = currentTime;
@@ -117,12 +143,32 @@ namespace Storming {
                 if (event.type == SDL_EVENT_QUIT) m_Running = false;
             }
 
-            // --- Robust Line-Buffered Command Reader ---
+            // --- Cross-Platform Non-Blocking Command Reader ---
+            bool hasData = false;
             char readBuf[1024];
-            #ifndef _WIN32
+            memset(readBuf, 0, sizeof(readBuf));
+            int bytesRead = 0;
+
+            #ifdef _WIN32
+            HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+            DWORD dwAvail = 0;
+            if (PeekNamedPipe(hStdin, NULL, 0, NULL, &dwAvail, NULL) && dwAvail > 0) {
+                DWORD readBytes;
+                if (ReadFile(hStdin, readBuf, sizeof(readBuf) - 1, &readBytes, NULL)) {
+                    bytesRead = (int)readBytes;
+                    hasData = (bytesRead > 0);
+                }
+            }
+            #else
             ssize_t bytes = read(STDIN_FILENO, readBuf, sizeof(readBuf) - 1);
             if (bytes > 0) {
-                readBuf[bytes] = '\0';
+                bytesRead = (int)bytes;
+                hasData = true;
+            }
+            #endif
+
+            if (hasData && bytesRead > 0) {
+                readBuf[bytesRead] = '\0';
                 s_CommandBuffer += readBuf;
                 
                 size_t pos;
@@ -136,6 +182,20 @@ namespace Storming {
                             std::string action = cmd["action"];
                             if (action == "request_scene_tree") {
                                 if (s_ActiveScene) s_ActiveScene->BroadcastSceneTree();
+                            } else if (action == "resize") {
+                                uint32_t w = cmd["width"];
+                                uint32_t h = cmd["height"];
+                                if (w > 0 && h > 0 && (w != m_Config.Width || h != m_Config.Height)) {
+                                    m_Config.Width = w;
+                                    m_Config.Height = h;
+                                    
+                                    if (m_FrameBuffer) m_FrameBuffer->Resize(w, h);
+                                    
+                                    float aspectRatio = (float)w / (float)h;
+                                    if (s_Camera) s_Camera->SetProjection(-aspectRatio, aspectRatio, -1.0f, 1.0f);
+                                    
+                                    if (s_ActiveScene) s_ActiveScene->OnViewportResize(w, h);
+                                }
                             } else if (action == "request_save") {
                                 if (s_ActiveScene) {
                                     json dump;
@@ -149,28 +209,6 @@ namespace Storming {
                             } else if (action == "select_entity") {
                                 m_SelectedEntityID = cmd["id"];
                                 if (s_ActiveScene) s_ActiveScene->BroadcastEntityComponents(m_SelectedEntityID);
-                            } else if (action == "translate_selected") {
-                                entt::entity handle = (entt::entity)m_SelectedEntityID;
-                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
-                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
-                                    tc.Translation.x += (float)cmd["dx"];
-                                    tc.Translation.y += (float)cmd["dy"];
-                                }
-                            } else if (action == "rotate_selected") {
-                                entt::entity handle = (entt::entity)m_SelectedEntityID;
-                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
-                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
-                                    tc.Rotation.z += (float)cmd["da"];
-                                }
-                            } else if (action == "scale_selected") {
-                                entt::entity handle = (entt::entity)m_SelectedEntityID;
-                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
-                                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
-                                    float ds = (float)cmd["ds"];
-                                    tc.Scale.x += ds; tc.Scale.y += ds;
-                                }
-                            } else if (action == "request_picking") {
-                                if (s_ActiveScene) m_SelectedEntityID = s_ActiveScene->PickEntity(cmd["x"], cmd["y"]);
                             } else if (action == "update_component") {
                                 entt::entity handle = (entt::entity)((uint32_t)cmd["id"]);
                                 if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
@@ -182,9 +220,15 @@ namespace Storming {
                                         if (field == "translation") tc.Translation[cmd["index"]] = cmd["value"];
                                         else if (field == "rotation") tc.Rotation[cmd["index"]] = cmd["value"];
                                         else if (field == "scale") tc.Scale[cmd["index"]] = cmd["value"];
-                                    } else if (comp == "spriterenderer" && field == "color") {
+                                    } else if (comp == "spriterenderer") {
                                         auto& src = reg.get<SpriteRendererComponent>(handle);
-                                        src.Color = { (float)cmd["r"], (float)cmd["g"], (float)cmd["b"], (float)cmd["a"] };
+                                        if (field == "color") {
+                                            src.Color = { (float)cmd["r"], (float)cmd["g"], (float)cmd["b"], (float)cmd["a"] };
+                                        } else if (field == "texture") {
+                                            std::string path = cmd["path"];
+                                            src.Texture = Texture2D::Create(path);
+                                            src.TexturePath = path;
+                                        }
                                     }
                                 }
                             } else if (action == "create_entity") {
@@ -201,7 +245,6 @@ namespace Storming {
                     } catch (...) {}
                 }
             }
-            #endif
 
             if (m_FrameBuffer) m_FrameBuffer->Bind();
 
@@ -209,46 +252,47 @@ namespace Storming {
             m_RendererAPI->Clear();
 
             Renderer2D::ResetStats();
-            Renderer2D::BeginScene(*s_Camera);
-            
-            if (m_IsEditor) {
-                // Grid
-                glm::vec4 gridColor = { 0.2f, 0.2f, 0.2f, 1.0f };
-                for (float i = -10.0f; i <= 10.0f; i += 1.0f) {
-                    Renderer2D::DrawLine({i, -10.0f, 0.0f}, {i, 10.0f, 0.0f}, gridColor);
-                    Renderer2D::DrawLine({-10.0f, i, 0.0f}, {10.0f, i, 0.0f}, gridColor);
+            if (s_Camera) {
+                Renderer2D::BeginScene(*s_Camera);
+                if (m_IsEditor) {
+                    glm::vec4 gridColor = { 0.2f, 0.2f, 0.2f, 1.0f };
+                    for (float i = -10.0f; i <= 10.0f; i += 1.0f) {
+                        Renderer2D::DrawLine({i, -10.0f, 0.0f}, {i, 10.0f, 0.0f}, gridColor);
+                        Renderer2D::DrawLine({-10.0f, i, 0.0f}, {10.0f, i, 0.0f}, gridColor);
+                    }
+                    Renderer2D::DrawLine({-1.0f, 0.0f, 0.01f}, {1.0f, 0.0f, 0.01f}, {1.0f, 0.0f, 0.0f, 1.0f});
+                    Renderer2D::DrawLine({0.0f, -1.0f, 0.01f}, {0.0f, 1.0f, 0.01f}, {0.0f, 1.0f, 0.0f, 1.0f});
                 }
-                Renderer2D::DrawLine({-1.0f, 0.0f, 0.01f}, {1.0f, 0.0f, 0.01f}, {1.0f, 0.0f, 0.0f, 1.0f});
-                Renderer2D::DrawLine({0.0f, -1.0f, 0.01f}, {0.0f, 1.0f, 0.01f}, {0.0f, 1.0f, 0.0f, 1.0f});
-            }
-
-            if (s_ActiveScene) s_ActiveScene->OnUpdate(deltaTime);
-
-            // Selection Highlighting (Yellow Box)
-            if (m_IsEditor && m_SelectedEntityID != 0xFFFFFFFF) {
-                entt::entity handle = (entt::entity)m_SelectedEntityID;
-                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
-                    auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
-                    glm::vec3 p = tc.Translation;
-                    glm::vec2 s = { tc.Scale.x, tc.Scale.y };
-                    glm::vec4 c = { 1.0f, 1.0f, 0.0f, 1.0f };
-                    Renderer2D::DrawLine({p.x - s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y - s.y/2, 0.1f}, c);
-                    Renderer2D::DrawLine({p.x + s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y + s.y/2, 0.1f}, c);
-                    Renderer2D::DrawLine({p.x + s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y + s.y/2, 0.1f}, c);
-                    Renderer2D::DrawLine({p.x - s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y - s.y/2, 0.1f}, c);
+                if (s_ActiveScene) s_ActiveScene->OnUpdate(deltaTime);
+                if (m_IsEditor && m_SelectedEntityID != 0xFFFFFFFF) {
+                    entt::entity handle = (entt::entity)m_SelectedEntityID;
+                    if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
+                        auto& tc = s_ActiveScene->GetRegistry().get<TransformComponent>(handle);
+                        glm::vec3 p = tc.Translation; glm::vec2 s = { tc.Scale.x, tc.Scale.y };
+                        glm::vec4 c = { 1.0f, 1.0f, 0.0f, 1.0f };
+                        Renderer2D::DrawLine({p.x - s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y - s.y/2, 0.1f}, c);
+                        Renderer2D::DrawLine({p.x + s.x/2, p.y - s.y/2, 0.1f}, {p.x + s.x/2, p.y + s.y/2, 0.1f}, c);
+                        Renderer2D::DrawLine({p.x + s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y + s.y/2, 0.1f}, c);
+                        Renderer2D::DrawLine({p.x - s.x/2, p.y + s.y/2, 0.1f}, {p.x - s.x/2, p.y - s.y/2, 0.1f}, c);
+                    }
                 }
+                Renderer2D::EndScene();
             }
-
-            Renderer2D::EndScene();
 
             if (m_FrameBuffer) {
                 glFinish(); 
                 m_FrameBuffer->CopyToSharedMemory();
                 m_FrameBuffer->Unbind();
             }
+            
             SDL_GL_SwapWindow(m_Window);
+            if (totalFrames < 5) {
+                std::cout << "[Debug] Frame " << totalFrames << " End" << std::endl;
+                std::cout.flush();
+            }
 
             frames++;
+            totalFrames++;
             if (currentTime - lastTelemetryTime >= 500) {
                 float fps = frames / ((currentTime - lastTelemetryTime) / 1000.0f);
                 auto stats = Renderer2D::GetStats();
