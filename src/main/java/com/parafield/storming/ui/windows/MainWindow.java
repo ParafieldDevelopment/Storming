@@ -181,6 +181,13 @@ public class MainWindow extends JFrame {
                 updateHierarchy(entities);
             } else if ("entity_details".equals(type)) {
                 if (inspectorPanel != null) inspectorPanel.updateDetails(json);
+            } else if ("event".equals(type)) {
+                String action = json.get("action").getAsString();
+                if ("viewport_resized".equals(action)) {
+                    int w = json.get("width").getAsInt();
+                    int h = json.get("height").getAsInt();
+                    if (sceneViewPanel != null) sceneViewPanel.onEngineResized(w, h);
+                }
             } else if ("scene_data_dump".equals(type)) {
                 performDiskSave(json.get("data").getAsString());
             }

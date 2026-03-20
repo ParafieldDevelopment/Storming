@@ -195,6 +195,15 @@ namespace Storming {
                                     if (s_Camera) s_Camera->SetProjection(-aspectRatio, aspectRatio, -1.0f, 1.0f);
                                     
                                     if (s_ActiveScene) s_ActiveScene->OnViewportResize(w, h);
+
+                                    // Send Handshake Confirmation
+                                    json event;
+                                    event["type"] = "event";
+                                    event["action"] = "viewport_resized";
+                                    event["width"] = w;
+                                    event["height"] = h;
+                                    std::cout << "[TELEMETRY]" << event.dump() << std::endl;
+                                    std::cout.flush();
                                 }
                             } else if (action == "request_save") {
                                 if (s_ActiveScene) {

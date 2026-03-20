@@ -19,7 +19,6 @@ import java.util.Map;
 
 /**
  * Provides a real-time viewport for the game engine's output.
- * Features a Godot-style toolbar and interactive transform dragging.
  */
 public class SceneViewPanel extends JPanel {
 
@@ -54,7 +53,6 @@ public class SceneViewPanel extends JPanel {
         setBackground(new Color(20, 20, 25));
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         
-        // --- Debounced Resize Logic ---
         resizeTimer = new Timer(150, e -> performResize());
         resizeTimer.setRepeats(false);
 
@@ -67,7 +65,6 @@ public class SceneViewPanel extends JPanel {
             }
         });
         
-        // --- PRO TOOLBAR ---
         overlayToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 2));
         overlayToolbar.setOpaque(true);
         overlayToolbar.setBackground(new Color(40, 40, 45, 220));
@@ -81,13 +78,8 @@ public class SceneViewPanel extends JPanel {
         toolButtons.put("SCALE", createToolButton("Scale (R)", Icons.SCALE, "SCALE", toolGroup));
         
         for (String id : new String[]{"SELECT", "MOVE", "ROTATE", "SCALE"}) overlayToolbar.add(toolButtons.get(id));
-        
-        JSeparator sep1 = new JSeparator(SwingConstants.VERTICAL);
-        sep1.setPreferredSize(new Dimension(2, 20));
-        overlayToolbar.add(sep1);
-        
+        overlayToolbar.add(new JSeparator(SwingConstants.VERTICAL));
         overlayToolbar.add(createOverlayToggle("Grid", Icons.GRID, showGrid, b -> showGrid = b));
-        overlayToolbar.add(createOverlayToggle("Snap", Icons.MAGNET, true, b -> {}));
         
         overlayToolbar.setBounds(20, 15, 420, 32);
         add(overlayToolbar);
@@ -102,20 +94,21 @@ public class SceneViewPanel extends JPanel {
         frameTimer.start();
     }
 
+    public void onEngineResized(int w, int h) {
+        SwingUtilities.invokeLater(() -> {
+            this.width = w;
+            this.height = h;
+            this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            this.shmPtr = null;
+            if (currentShmName != null) attemptConnection();
+        });
+    }
+
     private void performResize() {
         int w = getWidth();
         int h = getHeight();
-        if (w == width && h == height) return;
-
-        this.width = w;
-        this.height = h;
-        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        if (w <= 0 || h <= 0 || (w == width && h == height)) return;
         
-        if (isStreaming) {
-            shmPtr = null; // Invalidate old mapping
-            attemptConnection(); 
-        }
-
         MainWindow.getInstance().getEngineLauncher().sendCommand(
             String.format("{\"type\":\"command\",\"action\":\"resize\",\"width\":%d,\"height\":%d}", w, h)
         );
@@ -126,8 +119,7 @@ public class SceneViewPanel extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 requestFocusInWindow();
-                lastMouseX = e.getX();
-                lastMouseY = e.getY();
+                lastMouseX = e.getX(); lastMouseY = e.getY();
                 if (!isStreaming) return;
                 if (activeTool.equals("SELECT")) {
                     float normX = (float) e.getX() / getWidth() * 2.0f - 1.0f;
@@ -172,7 +164,9 @@ public class SceneViewPanel extends JPanel {
         if (btn != null) btn.setSelected(true);
     }
 
-    public void setToolbarVisible(boolean visible) { overlayToolbar.setVisible(visible); }
+    public void setToolbarVisible(boolean visible) {
+        overlayToolbar.setVisible(visible);
+    }
 
     private JToggleButton createToolButton(String tip, Icon icon, String toolId, ButtonGroup group) {
         JToggleButton btn = new JToggleButton(icon); btn.setToolTipText(tip); btn.setPreferredSize(new Dimension(28, 28));
@@ -190,6 +184,7 @@ public class SceneViewPanel extends JPanel {
     }
 
     public void startStreaming(String shmName) { this.currentShmName = shmName; attemptConnection(); }
+    public void stopStreaming() { isStreaming = false; shmPtr = null; currentShmName = null; }
 
     private void attemptConnection() {
         if (currentShmName == null) return;
@@ -202,8 +197,6 @@ public class SceneViewPanel extends JPanel {
             }
         } catch (Exception ignored) {}
     }
-
-    public void stopStreaming() { isStreaming = false; shmPtr = null; currentShmName = null; }
 
     private void updateImage() {
         if (shmPtr == null) return;
