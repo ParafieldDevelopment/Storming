@@ -8,6 +8,7 @@ import com.parafield.storming.ui.utils.UIUtils;
 import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -91,6 +92,10 @@ public class InspectorPanel extends JPanel {
                     scrollContent.add(createCollapsibleSection("Sprite Renderer", createSpriteUI(components.getAsJsonObject("SpriteRenderer"))), gbc);
                     gbc.gridy++;
                 }
+                if (components.has("Script")) {
+                    scrollContent.add(createCollapsibleSection("Script", createScriptUI(components.getAsJsonObject("Script"))), gbc);
+                    gbc.gridy++;
+                }
             }
 
             // 3. Add Component Button
@@ -98,6 +103,7 @@ public class InspectorPanel extends JPanel {
             JButton addCompBtn = new JButton("Add Component", Icons.PLUS);
             addCompBtn.putClientProperty(FlatClientProperties.STYLE, "background: #34495e; foreground: #ffffff; arc: 20");
             addCompBtn.setFont(UIUtils.getFont(Font.BOLD, 11f));
+            addCompBtn.addActionListener(e -> showAddComponentMenu(addCompBtn));
             scrollContent.add(addCompBtn, gbc);
             gbc.gridy++;
 
@@ -106,6 +112,16 @@ public class InspectorPanel extends JPanel {
             scrollContent.revalidate();
             scrollContent.repaint();
         });
+    }
+
+    private void showAddComponentMenu(Component invoker) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.add(new JMenuItem("Script")).addActionListener(e -> 
+            MainWindow.getInstance().getEngineLauncher().sendCommand(
+                String.format("{\"type\":\"command\",\"action\":\"add_component\",\"id\":%d,\"component\":\"script\"}", currentEntityId)
+            )
+        );
+        menu.show(invoker, 0, invoker.getHeight());
     }
 
     private JPanel createCollapsibleSection(String title, JPanel body) {
@@ -158,7 +174,6 @@ public class InspectorPanel extends JPanel {
         JPanel p = new JPanel(new BorderLayout(10, 0));
         p.setOpaque(false);
 
-        // We use Z-axis for 2D rotation
         float currentRad = rotation.get(2).getAsFloat();
         int currentDeg = (int) Math.toDegrees(currentRad) % 360;
         if (currentDeg < 0) currentDeg += 360;
@@ -196,14 +211,9 @@ public class InspectorPanel extends JPanel {
 
     private void updateRotation(int degrees) {
         float radians = (float) Math.toRadians(degrees);
-        // Send specifically to index 2 (Z axis)
-        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"transform\",\"field\":\"translation\",\"index\":2,\"value\":%.4f}",
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"transform\",\"field\":\"rotation\",\"index\":2,\"value\":%.4f}",
                 currentEntityId, radians);
-        // Wait, the action logic in Application.cpp uses "translation" for all transform fields? 
-        // Let me check my previous edit. Ah, I see: if (field == "rotation") tc.Rotation[index] = value;
-        String correctCmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"transform\",\"field\":\"rotation\",\"index\":2,\"value\":%.4f}",
-                currentEntityId, radians);
-        MainWindow.getInstance().getEngineLauncher().sendCommand(correctCmd);
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
     }
 
     private JPanel createSpriteUI(JsonObject data) {
@@ -240,7 +250,6 @@ public class InspectorPanel extends JPanel {
             BorderFactory.createEmptyBorder(0, 5, 0, 5)
         ));
 
-        // --- Drag & Drop Support ---
         texSlot.setTransferHandler(new TransferHandler() {
             @Override
             public boolean canImport(TransferSupport support) {
@@ -252,7 +261,6 @@ public class InspectorPanel extends JPanel {
                     String path = (String) support.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor);
                     if (path.toLowerCase().endsWith(".png") || path.toLowerCase().endsWith(".jpg")) {
                         updateTexture(path);
-                        // Refresh will happen via engine telemetry
                         return true;
                     }
                 } catch (Exception ignored) {}
@@ -263,6 +271,58 @@ public class InspectorPanel extends JPanel {
         addPropertyRow(p, 0, "Color", colorBox);
         addPropertyRow(p, 1, "Texture", texSlot);
         return p;
+    }
+
+    private JPanel createScriptUI(JsonObject data) {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        
+        String path = data.has("path") ? data.get("path").getAsString() : "";
+        String fileName = path.isEmpty() ? "None (Lua)" : new java.io.File(path).getName();
+
+        JPanel fileBox = new JPanel(new BorderLayout(5, 0));
+        fileBox.setOpaque(false);
+        
+        JTextField pathField = new JTextField(fileName);
+        pathField.setEditable(false);
+        pathField.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        pathField.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%); borderWidth: 0;");
+        
+        JButton pickBtn = new JButton("...");
+        pickBtn.setPreferredSize(new Dimension(24, 22));
+        pickBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser(new java.io.File("Plugins")); // Default to plugins dir
+            fc.setFileFilter(new FileNameExtensionFilter("Lua Scripts (*.lua)", "lua"));
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                updateScript(fc.getSelectedFile().getAbsolutePath());
+            }
+        });
+
+        fileBox.add(pathField, BorderLayout.CENTER);
+        fileBox.add(pickBtn, BorderLayout.EAST);
+
+        // Drag & Drop for Scripts
+        pathField.setTransferHandler(new TransferHandler() {
+            @Override public boolean canImport(TransferSupport support) {
+                return support.isDataFlavorSupported(java.awt.datatransfer.DataFlavor.stringFlavor);
+            }
+            @Override public boolean importData(TransferSupport support) {
+                try {
+                    String p = (String) support.getTransferable().getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor);
+                    if (p.endsWith(".lua")) { updateScript(p); return true; }
+                } catch (Exception ignored) {}
+                return false;
+            }
+        });
+
+        addPropertyRow(p, 0, "Source", fileBox);
+        return p;
+    }
+
+    private void updateScript(String path) {
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"script\",\"field\":\"path\",\"path\":\"%s\"}",
+                currentEntityId, path.replace("\\", "/"));
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
     }
 
     private void updateTexture(String path) {

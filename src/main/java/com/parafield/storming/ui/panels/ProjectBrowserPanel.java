@@ -7,21 +7,19 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
+import java.nio.file.Files;
 
 /**
  * Provides a file system explorer for the current project.
- * Displays a hierarchical tree of files and directories with custom icons and refreshing capabilities.
  */
 public class ProjectBrowserPanel extends JPanel {
 
     private final JTree fileTree;
     private final File rootDir;
 
-    /**
-     * Constructs a ProjectBrowserPanel, initializing the file tree with the specified directory.
-     * @param root The project root directory to browse.
-     */
     public ProjectBrowserPanel(File root) {
         this.rootDir = root;
         setLayout(new BorderLayout());
@@ -68,37 +66,77 @@ public class ProjectBrowserPanel extends JPanel {
             @Override public int getSourceActions(JComponent c) { return COPY; }
         });
 
+        fileTree.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e) { if (e.isPopupTrigger()) showPopup(e); }
+            @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showPopup(e); }
+        });
+
         JScrollPane scrollPane = new JScrollPane(fileTree);
         scrollPane.setBorder(null);
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    /**
-     * Refreshes the file tree by re-scanning the root directory.
-     */
+    private void showPopup(MouseEvent e) {
+        int row = fileTree.getClosestRowForLocation(e.getX(), e.getY());
+        if (row != -1) fileTree.setSelectionRow(row);
+        
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileTree.getLastSelectedPathComponent();
+        File file = (node != null) ? (File) node.getUserObject() : rootDir;
+        File targetDir = file.isDirectory() ? file : file.getParentFile();
+
+        JPopupMenu menu = new JPopupMenu();
+        JMenu newMenu = new JMenu("New");
+        newMenu.add(new JMenuItem("Normal Script (.lua)")).addActionListener(ev -> createScript(targetDir, "Normal"));
+        newMenu.add(new JMenuItem("Module Script (.lua)")).addActionListener(ev -> createScript(targetDir, "Module"));
+        menu.add(newMenu);
+        menu.addSeparator();
+        menu.add(new JMenuItem("Refresh")).addActionListener(ev -> refreshTree());
+        
+        menu.show(e.getComponent(), e.getX(), e.getY());
+    }
+
+    private void createScript(File dir, String type) {
+        String name = JOptionPane.showInputDialog(this, "Enter script name:", "New " + type + " Script", JOptionPane.PLAIN_MESSAGE);
+        if (name == null || name.trim().isEmpty()) return;
+        if (!name.endsWith(".lua")) name += ".lua";
+
+        File newFile = new File(dir, name);
+        try {
+            String content = type.equals("Normal") ? 
+                "-- Normal Script Template\n\nfunction OnCreate(self)\n    Log(\"Entity Created!\")\nend\n\nfunction OnUpdate(self, dt)\n    -- Logic here\nend\n" :
+                "-- Module Script Template\nlocal M = {}\n\nfunction M.greet()\n    Log(\"Hello from Module!\")\nend\n\nreturn M\n";
+            Files.writeString(newFile.toPath(), content);
+            refreshTree();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to create script: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void refreshTree() {
         DefaultMutableTreeNode rootNode = createTreeNodes(rootDir);
         fileTree.setModel(new DefaultTreeModel(rootNode));
     }
 
-    /**
-     * Recursively creates tree nodes for a given file or directory.
-     * @param file The root file or directory to scan.
-     * @return A DefaultMutableTreeNode representing the file/directory and its children.
-     */
+    private final java.util.Set<String> HIDDEN_FOLDERS = java.util.Set.of(
+        "src", "Engine", "gradle", ".gradle", ".idea", ".git", ".github", "build", 
+        "dependences", "packaging", "bin", "obj", "target", ".settings"
+    );
+
     private DefaultMutableTreeNode createTreeNodes(File file) {
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(file); // Store File object directly
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(file);
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
-                // Sort files: directories first
                 java.util.Arrays.sort(files, (f1, f2) -> {
                     if (f1.isDirectory() && !f2.isDirectory()) return -1;
                     if (!f1.isDirectory() && f2.isDirectory()) return 1;
                     return f1.getName().compareToIgnoreCase(f2.getName());
                 });
                 for (File child : files) {
-                    if (child.getName().startsWith(".")) continue; // Skip hidden files
+                    if (child.getName().startsWith(".")) continue;
+                    // HIDE SOURCE AND BUILD FOLDERS
+                    if (HIDDEN_FOLDERS.contains(child.getName())) continue;
+                    
                     node.add(createTreeNodes(child));
                 }
             }
@@ -106,7 +144,6 @@ public class ProjectBrowserPanel extends JPanel {
         return node;
     }
 
-    /** Custom tree cell renderer to provide distinct icons for files and folders. */
     private static class FileTreeCellRenderer extends DefaultTreeCellRenderer {
         @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean exp, boolean leaf, int row, boolean hasFocus) {
@@ -114,11 +151,8 @@ public class ProjectBrowserPanel extends JPanel {
             Object userObj = ((DefaultMutableTreeNode) value).getUserObject();
             if (userObj instanceof File file) {
                 setText(file.getName().isEmpty() ? file.getPath() : file.getName());
-                if (file.isDirectory()) {
-                    setIcon(Icons.FOLDER);
-                } else {
-                    setIcon(UIManager.getIcon("FileView.fileIcon"));
-                }
+                if (file.isDirectory()) setIcon(Icons.FOLDER);
+                else setIcon(UIManager.getIcon("FileView.fileIcon"));
             }
             return this;
         }
@@ -130,13 +164,8 @@ public class ProjectBrowserPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
-        
-        int size = 80;
-        int x = getWidth() - size - 25;
-        int y = getHeight() - size - 25;
-        if (Icons.FOLDER_80 != null) {
-            Icons.FOLDER_80.paintIcon(this, g2, x, y);
-        }
+        int size = 80; int x = getWidth() - size - 25; int y = getHeight() - size - 25;
+        if (Icons.FOLDER_80 != null) Icons.FOLDER_80.paintIcon(this, g2, x, y);
         g2.dispose();
     }
 }

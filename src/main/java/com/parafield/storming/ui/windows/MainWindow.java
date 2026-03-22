@@ -150,21 +150,68 @@ public class MainWindow extends JFrame {
         editorLauncher.buildEngine(new EngineLauncher.BuildListener() {
             @Override public void onStatus(String status) { SwingUtilities.invokeLater(() -> statusLabel.setText(status)); }
             @Override public void onProgress(int progress) { SwingUtilities.invokeLater(() -> bar.setValue(progress)); }
-            @Override public void onFinished(boolean success) {
+            @Override public void onFinished(boolean success, String logs) {
                 SwingUtilities.invokeLater(() -> {
                     dialog.dispose();
                     if (success) {
                         startBackgroundEngine();
                     } else {
-                        JOptionPane.showMessageDialog(MainWindow.this, 
-                            "Engine build failed. Check console for technical details.", 
-                            "Build Error", JOptionPane.ERROR_MESSAGE);
+                        showBuildFailureDialog(logs);
                     }
                 });
             }
         });
 
         dialog.setVisible(true);
+    }
+
+    private void showBuildFailureDialog(String logs) {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setPreferredSize(new Dimension(450, 80));
+
+        JLabel msgLabel = new JLabel("<html><b>Failed to build the Storming Engine core.</b><br>" +
+                "Compilation or configuration error occurred.</html>");
+        msgLabel.setIcon(Icons.WARN);
+        msgLabel.setIconTextGap(15);
+        panel.add(msgLabel, BorderLayout.NORTH);
+
+        JPanel detailsPanel = new JPanel(new BorderLayout());
+        detailsPanel.setVisible(false);
+        
+        JTextArea textArea = new JTextArea(12, 45);
+        textArea.setText("--- CMake / Compiler Output ---\n" + logs);
+        textArea.setEditable(false);
+        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        textArea.setBackground(new Color(35, 35, 40));
+        textArea.setForeground(new Color(200, 200, 200));
+        
+        JScrollPane scroll = new JScrollPane(textArea);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100, 50)));
+        detailsPanel.add(scroll, BorderLayout.CENTER);
+        detailsPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+        JButton toggleBtn = new JButton("View technical details ▼");
+        toggleBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        toggleBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        toggleBtn.addActionListener(e -> {
+            boolean visible = !detailsPanel.isVisible();
+            detailsPanel.setVisible(visible);
+            toggleBtn.setText(visible ? "Hide technical details ▲" : "View technical details ▼");
+            panel.setPreferredSize(visible ? new Dimension(550, 350) : new Dimension(450, 80));
+            Window win = SwingUtilities.getWindowAncestor(panel);
+            if (win != null) win.pack();
+        });
+
+        JPanel midPanel = new JPanel(new BorderLayout());
+        midPanel.add(toggleBtn, BorderLayout.NORTH);
+        midPanel.add(detailsPanel, BorderLayout.CENTER);
+        panel.add(midPanel, BorderLayout.CENTER);
+
+        Object[] options = {"Retry Build", "Close"};
+        int choice = JOptionPane.showOptionDialog(this, panel, "Build Failed",
+                JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+        if (choice == 0) showBuildDialog();
     }
 
     private void handleGlobalTelemetry(String jsonStr) {

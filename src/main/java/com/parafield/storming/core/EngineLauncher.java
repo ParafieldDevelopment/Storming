@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +34,7 @@ public class EngineLauncher {
     public interface BuildListener {
         void onStatus(String status);
         void onProgress(int progress);
-        void onFinished(boolean success);
+        void onFinished(boolean success, String buildLogs);
     }
 
     public EngineLauncher(String enginePath) {
@@ -87,22 +88,28 @@ public class EngineLauncher {
 
     public void buildEngine(BuildListener listener) {
         new Thread(() -> {
+            StringBuilder logs = new StringBuilder();
             try {
                 String os = System.getProperty("os.name").toLowerCase();
                 java.io.File buildDir = new java.io.File("Engine/2D/build");
                 if (!buildDir.exists()) buildDir.mkdirs();
 
-                listener.onStatus("Configuring Project (CMake)...");
-                listener.onProgress(10);
+                listener.onStatus("Initializing CMake...");
+                listener.onProgress(5);
+                
                 ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
                 cmakePb.directory(buildDir);
-                if (cmakePb.start().waitFor() != 0) {
-                    listener.onFinished(false);
+                cmakePb.redirectErrorStream(true);
+                Process cmakeP = cmakePb.start();
+                
+                captureOutput(cmakeP.getInputStream(), logs, listener, 5, 40, "CMake");
+                
+                if (cmakeP.waitFor() != 0) {
+                    listener.onFinished(false, logs.toString());
                     return;
                 }
 
                 listener.onStatus("Compiling Engine Core...");
-                listener.onProgress(40);
                 List<String> cmd = new ArrayList<>();
                 if (os.contains("win")) {
                     cmd.addAll(List.of("cmake", "--build", "."));
@@ -112,25 +119,56 @@ public class EngineLauncher {
                 
                 ProcessBuilder buildPb = new ProcessBuilder(cmd);
                 buildPb.directory(buildDir);
+                buildPb.redirectErrorStream(true);
                 Process p = buildPb.start();
                 
-                // Read build output to update progress slightly
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                int count = 0;
-                while ((line = reader.readLine()) != null) {
-                    count++;
-                    if (count % 5 == 0 && count < 40) listener.onProgress(40 + (count / 2));
-                }
+                captureOutput(p.getInputStream(), logs, listener, 40, 100, "Build");
 
                 boolean success = p.waitFor() == 0;
-                listener.onProgress(100);
-                listener.onFinished(success);
+                listener.onFinished(success, logs.toString());
             } catch (Exception e) {
-                e.printStackTrace();
-                listener.onFinished(false);
+                listener.onFinished(false, logs.toString() + "\n[Internal Error] " + e.getMessage());
             }
         }).start();
+    }
+
+    /**
+     * Reads output byte-by-character to ensure the UI updates even without newlines (crucial for downloads).
+     */
+    private void captureOutput(InputStream is, StringBuilder logAccumulator, BuildListener listener, int startProgress, int endProgress, String prefix) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder lineBuffer = new StringBuilder();
+        int c;
+        int lineCount = 0;
+        
+        while ((c = reader.read()) != -1) {
+            char charRead = (char) c;
+            lineBuffer.append(charRead);
+            
+            if (charRead == '\n' || charRead == '\r') {
+                String line = lineBuffer.toString().trim();
+                if (!line.isEmpty()) {
+                    broadcast("[" + prefix + "] " + line);
+                    logAccumulator.append(line).append("\n");
+                    
+                    // Update Status
+                    String status = line;
+                    if (status.startsWith("--")) status = status.substring(2).trim();
+                    if (status.length() > 60) status = status.substring(0, 57) + "...";
+                    listener.onStatus(prefix + ": " + status);
+                    
+                    // Fake progress increment to keep the bar moving
+                    lineCount++;
+                    int current = startProgress + Math.min(endProgress - startProgress - 1, lineCount / 3);
+                    listener.onProgress(current);
+                }
+                lineBuffer.setLength(0);
+            } else if (lineBuffer.length() > 120) { // Safety for very long non-newline output
+                String partial = lineBuffer.toString().trim();
+                listener.onStatus(prefix + ": " + partial);
+                lineBuffer.setLength(0);
+            }
+        }
     }
 
     public void stop() {

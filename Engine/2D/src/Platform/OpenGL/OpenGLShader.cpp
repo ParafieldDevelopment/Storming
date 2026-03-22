@@ -19,7 +19,7 @@ namespace Storming {
             std::vector<GLchar> infoLog(maxLength);
             glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
             glDeleteShader(vertexShader);
-            std::cerr << "[Shader] Vertex Compile Error: " << infoLog.data() << std::endl;
+            std::cerr << "[Shader Error] Vertex: " << &infoLog[0] << std::endl;
             return;
         }
 
@@ -36,7 +36,7 @@ namespace Storming {
             glGetShaderInfoLog(fragmentShader, maxLength, &maxLength, &infoLog[0]);
             glDeleteShader(fragmentShader);
             glDeleteShader(vertexShader);
-            std::cerr << "[Shader] Fragment Compile Error: " << infoLog.data() << std::endl;
+            std::cerr << "[Shader Error] Fragment: " << &infoLog[0] << std::endl;
             return;
         }
 
@@ -46,7 +46,7 @@ namespace Storming {
         glLinkProgram(m_RendererID);
 
         GLint isLinked = 0;
-        glGetProgramiv(m_RendererID, GL_LINK_STATUS, &isLinked);
+        glGetProgramiv(m_RendererID, GL_LINK_STATUS, (int*)&isLinked);
         if (isLinked == GL_FALSE) {
             GLint maxLength = 0;
             glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &maxLength);
@@ -55,7 +55,7 @@ namespace Storming {
             glDeleteProgram(m_RendererID);
             glDeleteShader(vertexShader);
             glDeleteShader(fragmentShader);
-            std::cerr << "[Shader] Program Link Error: " << infoLog.data() << std::endl;
+            std::cerr << "[Shader Error] Linking: " << &infoLog[0] << std::endl;
             return;
         }
 
@@ -68,7 +68,7 @@ namespace Storming {
     }
 
     void OpenGLShader::Bind() const {
-        glUseProgram(m_RendererID);
+        if (m_RendererID != 0) glUseProgram(m_RendererID);
     }
 
     void OpenGLShader::Unbind() const {
@@ -77,32 +77,27 @@ namespace Storming {
 
     void OpenGLShader::SetInt(const std::string& name, int value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        if (location != -1)
-            glUniform1i(location, value);
+        if (location != -1) glUniform1i(location, value);
     }
 
     void OpenGLShader::SetIntArray(const std::string& name, int* values, uint32_t count) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        if (location != -1)
-            glUniform1iv(location, count, values);
+        if (location != -1) glUniform1iv(location, count, values);
     }
 
     void OpenGLShader::SetFloat(const std::string& name, float value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        if (location != -1)
-            glUniform1f(location, value);
+        if (location != -1) glUniform1f(location, value);
     }
 
     void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        if (location != -1)
-            glUniform3f(location, value.x, value.y, value.z);
+        if (location != -1) glUniform3f(location, value.x, value.y, value.z);
     }
 
     void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value) {
         GLint location = glGetUniformLocation(m_RendererID, name.c_str());
-        if (location != -1)
-            glUniform4f(location, value.x, value.y, value.z, value.w);
+        if (location != -1) glUniform4f(location, value.x, value.y, value.z, value.w);
     }
 
     void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value) {
