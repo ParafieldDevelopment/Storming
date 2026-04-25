@@ -23,14 +23,22 @@ import java.util.Map;
 public class SceneViewPanel extends JPanel {
 
     public interface LibRT extends Library {
-        LibRT INSTANCE = Native.load("rt", LibRT.class);
+        LibRT INSTANCE = (System.getProperty("os.name").toLowerCase().contains("linux")) ? Native.load("rt", LibRT.class) : null;
         int shm_open(String name, int oflag, int mode);
     }
 
     public interface LibC extends Library {
-        LibC INSTANCE = Native.load("c", LibC.class);
+        LibC INSTANCE = (System.getProperty("os.name").toLowerCase().contains("linux")) ? Native.load("c", LibC.class) : null;
         Pointer mmap(Pointer addr, long length, int prot, int flags, int fd, long offset);
         int close(int fd);
+    }
+
+    public interface Kernel32 extends Library {
+        Kernel32 INSTANCE = (System.getProperty("os.name").toLowerCase().contains("win")) ? Native.load("kernel32", Kernel32.class) : null;
+        Pointer OpenFileMappingA(int dwDesiredAccess, boolean bInheritHandle, String lpName);
+        Pointer MapViewOfFile(Pointer hFileMappingObject, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, long dwNumberOfBytesToMap);
+        boolean UnmapViewOfFile(Pointer lpBaseAddress);
+        boolean CloseHandle(Pointer hObject);
     }
 
     private BufferedImage image;
@@ -189,11 +197,25 @@ public class SceneViewPanel extends JPanel {
     private void attemptConnection() {
         if (currentShmName == null) return;
         try {
-            int fd = LibRT.INSTANCE.shm_open(currentShmName, 0, 0);
-            if (fd >= 0) {
-                shmPtr = LibC.INSTANCE.mmap(null, (long) width * height * 4, 1, 1, fd, 0);
-                LibC.INSTANCE.close(fd);
-                isStreaming = (shmPtr != null);
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                if (Kernel32.INSTANCE != null) {
+                    Pointer hMap = Kernel32.INSTANCE.OpenFileMappingA(0x000F001F, false, currentShmName); // FILE_MAP_ALL_ACCESS
+                    if (hMap != null) {
+                        shmPtr = Kernel32.INSTANCE.MapViewOfFile(hMap, 0x000F001F, 0, 0, (long) width * height * 4);
+                        Kernel32.INSTANCE.CloseHandle(hMap);
+                        isStreaming = (shmPtr != null);
+                    }
+                }
+            } else {
+                if (LibRT.INSTANCE != null && LibC.INSTANCE != null) {
+                    int fd = LibRT.INSTANCE.shm_open(currentShmName, 0, 0);
+                    if (fd >= 0) {
+                        shmPtr = LibC.INSTANCE.mmap(null, (long) width * height * 4, 1, 1, fd, 0);
+                        LibC.INSTANCE.close(fd);
+                        isStreaming = (shmPtr != null);
+                    }
+                }
             }
         } catch (Exception ignored) {}
     }

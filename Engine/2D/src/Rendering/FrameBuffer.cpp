@@ -1,15 +1,20 @@
 #include "Rendering/FrameBuffer.hpp"
 #include <iostream>
+#include <cstring>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <cstring>
+#endif
 
 namespace Storming {
 
     /**
      * Constructs a FrameBuffer and sets up off-screen rendering.
-     * Also initializes a Linux Shared Memory (POSIX) segment for IPC.
+     * Also initializes a Cross-Platform Shared Memory segment for IPC.
      */
     FrameBuffer::FrameBuffer(uint32_t width, uint32_t height, const std::string& shmName)
         : m_Width(width), m_Height(height), m_ShmName(shmName) 
@@ -35,10 +40,25 @@ namespace Storming {
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // 3. Initialize POSIX Shared Memory
+        // 3. Initialize Shared Memory
         if (!m_ShmName.empty()) {
             size_t size = (size_t)m_Width * m_Height * 4;
             
+#ifdef _WIN32
+            m_ShmHandle = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (DWORD)size, m_ShmName.c_str());
+            if (!m_ShmHandle) {
+                std::cerr << "[Engine] ERROR: Failed to create SHM '" << m_ShmName << "': " << GetLastError() << std::endl;
+                return;
+            }
+
+            m_ShmPtr = MapViewOfFile(m_ShmHandle, FILE_MAP_ALL_ACCESS, 0, 0, size);
+            if (!m_ShmPtr) {
+                std::cerr << "[Engine] ERROR: Failed to map SHM: " << GetLastError() << std::endl;
+                CloseHandle(m_ShmHandle);
+                m_ShmHandle = nullptr;
+                return;
+            }
+#else
             // Try to open existing first to avoid permission issues if zombie exists
             m_ShmFd = shm_open(m_ShmName.c_str(), O_RDWR | O_CREAT, 0666);
             if (m_ShmFd < 0) {
@@ -61,6 +81,7 @@ namespace Storming {
                 m_ShmFd = -1;
                 return;
             }
+#endif
             
             std::cout << "[Engine] Shared Memory initialized: " << m_ShmName << " (" << size << " bytes)" << std::endl;
         }
@@ -70,6 +91,10 @@ namespace Storming {
         glDeleteFramebuffers(1, &m_FBO);
         glDeleteTextures(1, &m_ColorAttachment);
         
+#ifdef _WIN32
+        if (m_ShmPtr) UnmapViewOfFile(m_ShmPtr);
+        if (m_ShmHandle) CloseHandle(m_ShmHandle);
+#else
         if (m_ShmPtr && m_ShmPtr != MAP_FAILED) {
             size_t size = (size_t)m_Width * m_Height * 4;
             munmap(m_ShmPtr, size);
@@ -80,6 +105,7 @@ namespace Storming {
         if (!m_ShmName.empty()) {
             shm_unlink(m_ShmName.c_str());
         }
+#endif
     }
 
     void FrameBuffer::Bind() {
@@ -105,6 +131,13 @@ namespace Storming {
         if (!m_ShmName.empty()) {
             size_t size = (size_t)m_Width * m_Height * 4;
             
+#ifdef _WIN32
+            if (m_ShmPtr) UnmapViewOfFile(m_ShmPtr);
+            if (m_ShmHandle) CloseHandle(m_ShmHandle);
+
+            m_ShmHandle = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (DWORD)size, m_ShmName.c_str());
+            m_ShmPtr = MapViewOfFile(m_ShmHandle, FILE_MAP_ALL_ACCESS, 0, 0, size);
+#else
             // Clean up old mapping
             if (m_ShmPtr && m_ShmPtr != MAP_FAILED) munmap(m_ShmPtr, size);
             
@@ -119,12 +152,17 @@ namespace Storming {
                     m_ShmPtr = nullptr;
                 }
             }
+#endif
             std::cout << "[Engine] Shared Memory Resized: " << m_ShmName << " (" << size << " bytes)" << std::endl;
         }
     }
 
     void FrameBuffer::CopyToSharedMemory() {
+#ifdef _WIN32
+        if (!m_ShmPtr) return;
+#else
         if (!m_ShmPtr || m_ShmPtr == MAP_FAILED) return;
+#endif
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FBO);
         glReadPixels(0, 0, m_Width, m_Height, GL_BGRA, GL_UNSIGNED_BYTE, m_ShmPtr);

@@ -11,7 +11,27 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # --- Dependencies ---
 
 # 1. SDL3 (Windowing, Input)
-find_package(SDL3 REQUIRED)
+find_package(SDL3 QUIET)
+if(NOT SDL3_FOUND)
+    message(STATUS "SDL3 not found locally, fetching from GitHub...")
+    include(FetchContent)
+    FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.2.0
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+    )
+    # Speed up SDL3 build by disabling unneeded features
+    set(SDL_SHARED ON CACHE BOOL "Build shared SDL library" FORCE)
+    set(SDL_STATIC OFF CACHE BOOL "Build static SDL library" FORCE)
+    set(SDL_TEST OFF CACHE BOOL "Build SDL tests" FORCE)
+    set(SDL_EXAMPLES OFF CACHE BOOL "Build SDL examples" FORCE)
+    set(SDL_DOCS OFF CACHE BOOL "Build SDL documentation" FORCE)
+    set(SDL_INSTALL OFF CACHE BOOL "Enable SDL installation" FORCE)
+    
+    FetchContent_MakeAvailable(SDL3)
+endif()
 
 # 2. EnTT (ECS)
 include(FetchContent)
@@ -77,14 +97,24 @@ target_include_directories(StormingEngine PRIVATE
 )
 
 # Link libraries
-target_link_libraries(StormingEngine PRIVATE 
-    SDL3::SDL3
-    EnTT::EnTT
-    glad
-    glm::glm
-    nlohmann_json::nlohmann_json
-    rt
-)
+if(WIN32)
+    target_link_libraries(StormingEngine PRIVATE 
+        SDL3::SDL3
+        EnTT::EnTT
+        glad
+        glm::glm
+        nlohmann_json::nlohmann_json
+    )
+else()
+    target_link_libraries(StormingEngine PRIVATE 
+        SDL3::SDL3
+        EnTT::EnTT
+        glad
+        glm::glm
+        nlohmann_json::nlohmann_json
+        rt
+    )
+endif()
 
 # Compiler definitions
 if(MSVC)

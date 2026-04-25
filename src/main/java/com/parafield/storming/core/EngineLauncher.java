@@ -34,6 +34,7 @@ public class EngineLauncher {
         void onStatus(String status);
         void onProgress(int progress);
         void onFinished(boolean success);
+        default void onLog(String log) {}
     }
 
     public EngineLauncher(String enginePath) {
@@ -88,45 +89,58 @@ public class EngineLauncher {
     public void buildEngine(BuildListener listener) {
         new Thread(() -> {
             try {
-                String os = System.getProperty("os.name").toLowerCase();
                 java.io.File buildDir = new java.io.File("Engine/2D/build");
                 if (!buildDir.exists()) buildDir.mkdirs();
 
+                broadcast("[System] Starting Engine Build...");
                 listener.onStatus("Configuring Project (CMake)...");
                 listener.onProgress(10);
+                
                 ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
                 cmakePb.directory(buildDir);
-                if (cmakePb.start().waitFor() != 0) {
+                cmakePb.redirectErrorStream(true);
+                Process cmakeP = cmakePb.start();
+                
+                BufferedReader cmakeReader = new BufferedReader(new InputStreamReader(cmakeP.getInputStream()));
+                String cl;
+                while ((cl = cmakeReader.readLine()) != null) {
+                    broadcast("[CMake] " + cl);
+                    listener.onLog("[CMake] " + cl);
+                }
+
+                if (cmakeP.waitFor() != 0) {
+                    broadcast("[Error] CMake configuration failed.");
                     listener.onFinished(false);
                     return;
                 }
 
                 listener.onStatus("Compiling Engine Core...");
                 listener.onProgress(40);
-                List<String> cmd = new ArrayList<>();
-                if (os.contains("win")) {
-                    cmd.addAll(List.of("cmake", "--build", "."));
-                } else {
-                    cmd.addAll(List.of("make", "-j" + Runtime.getRuntime().availableProcessors()));
-                }
                 
-                ProcessBuilder buildPb = new ProcessBuilder(cmd);
+                ProcessBuilder buildPb = new ProcessBuilder("cmake", "--build", ".");
                 buildPb.directory(buildDir);
+                buildPb.redirectErrorStream(true);
                 Process p = buildPb.start();
                 
-                // Read build output to update progress slightly
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 int count = 0;
                 while ((line = reader.readLine()) != null) {
+                    broadcast("[Build] " + line);
+                    listener.onLog("[Build] " + line);
                     count++;
                     if (count % 5 == 0 && count < 40) listener.onProgress(40 + (count / 2));
                 }
 
                 boolean success = p.waitFor() == 0;
+                if (!success) broadcast("[Error] Build failed. Check the logs above.");
+                else broadcast("[System] Build successful!");
+                
                 listener.onProgress(100);
                 listener.onFinished(success);
             } catch (Exception e) {
+                broadcast("[Error] Build process exception: " + e.getMessage());
+                listener.onLog("[Error] " + e.getMessage());
                 e.printStackTrace();
                 listener.onFinished(false);
             }

@@ -86,7 +86,20 @@ public class MainWindow extends JFrame {
         rootPane.putClientProperty("apple.awt.transparentTitleBar", true);
         rootPane.putClientProperty("flatlaf.showWindowIcon", false);
 
-        String enginePath = "Engine/2D/build/bin/StormingEngine";
+        String os = System.getProperty("os.name").toLowerCase();
+        String enginePath;
+        if (os.contains("win")) {
+            // Check for both bin/StormingEngine.exe and bin/Debug/StormingEngine.exe (standard MSVC output)
+            if (new java.io.File("Engine/2D/build/bin/Debug/StormingEngine.exe").exists()) {
+                enginePath = "Engine/2D/build/bin/Debug/StormingEngine.exe";
+            } else if (new java.io.File("Engine/2D/build/bin/Release/StormingEngine.exe").exists()) {
+                enginePath = "Engine/2D/build/bin/Release/StormingEngine.exe";
+            } else {
+                enginePath = "Engine/2D/build/bin/StormingEngine.exe";
+            }
+        } else {
+            enginePath = "Engine/2D/build/bin/StormingEngine";
+        }
         consolePanel = new ConsolePanel();
         DiscordRPCManager.addLogListener(consolePanel::log);
         
@@ -129,12 +142,12 @@ public class MainWindow extends JFrame {
     private void showBuildDialog() {
         JDialog dialog = new JDialog(this, "Building Engine Core", true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(450, 160);
+        dialog.setSize(450, 180);
         dialog.setLocationRelativeTo(this);
-        dialog.setResizable(false);
+        dialog.setResizable(true);
 
         JPanel p = new JPanel(new BorderLayout(15, 10));
-        p.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel statusLabel = new JLabel("Preparing build environment...");
         statusLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
@@ -145,19 +158,50 @@ public class MainWindow extends JFrame {
         bar.setStringPainted(true);
         p.add(bar, BorderLayout.CENTER);
 
+        JTextArea logArea = new JTextArea(10, 40);
+        logArea.setEditable(false);
+        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+        logArea.setBackground(new Color(30, 30, 35));
+        logArea.setForeground(new Color(180, 180, 180));
+        JScrollPane scroll = new JScrollPane(logArea);
+        scroll.setVisible(false);
+        p.add(scroll, BorderLayout.SOUTH);
+
+        JButton toggleLog = new JButton("Show Logs");
+        toggleLog.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        toggleLog.addActionListener(e -> {
+            boolean visible = !scroll.isVisible();
+            scroll.setVisible(visible);
+            toggleLog.setText(visible ? "Hide Logs" : "Show Logs");
+            dialog.setSize(450, visible ? 450 : 180);
+            dialog.revalidate();
+        });
+        
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.add(toggleLog);
+        dialog.add(bottomPanel, BorderLayout.SOUTH);
         dialog.add(p, BorderLayout.CENTER);
 
         editorLauncher.buildEngine(new EngineLauncher.BuildListener() {
             @Override public void onStatus(String status) { SwingUtilities.invokeLater(() -> statusLabel.setText(status)); }
             @Override public void onProgress(int progress) { SwingUtilities.invokeLater(() -> bar.setValue(progress)); }
+            @Override public void onLog(String log) { 
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(log + "\n");
+                    logArea.setCaretPosition(logArea.getDocument().getLength());
+                });
+            }
             @Override public void onFinished(boolean success) {
                 SwingUtilities.invokeLater(() -> {
-                    dialog.dispose();
                     if (success) {
+                        dialog.dispose();
                         startBackgroundEngine();
                     } else {
-                        JOptionPane.showMessageDialog(MainWindow.this, 
-                            "Engine build failed. Check console for technical details.", 
+                        statusLabel.setText("Build Failed!");
+                        bar.setForeground(new Color(231, 76, 60));
+                        if (!scroll.isVisible()) toggleLog.doClick();
+                        JOptionPane.showMessageDialog(dialog, 
+                            "Engine build failed. Check logs for details.", 
                             "Build Error", JOptionPane.ERROR_MESSAGE);
                     }
                 });
