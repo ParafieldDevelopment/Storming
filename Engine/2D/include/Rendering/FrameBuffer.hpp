@@ -38,6 +38,7 @@ namespace Storming {
     private:
         uint32_t m_FBO = 0;
         uint32_t m_ColorAttachment = 0;
+        uint32_t m_PBO = 0;
         uint32_t m_Width, m_Height;
         
         std::string m_ShmName;

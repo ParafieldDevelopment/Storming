@@ -202,7 +202,7 @@ namespace Storming {
         entt::entity picked = entt::null;
 
         // Iterate all sprites to check bounds
-        view.each([&](auto entity, auto& tc, auto& src) {
+        view.each([&](auto entity, auto& tc, auto& /*src*/) {
             float halfWidth = tc.Scale.x / 2.0f;
             float halfHeight = tc.Scale.y / 2.0f;
             
@@ -225,7 +225,7 @@ namespace Storming {
      * 
      * @param ts TimeStep (delta time) in seconds.
      */
-    void Scene::OnUpdate(float ts) {
+    void Scene::OnUpdate(float /*ts*/) {
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
         for (auto entity : view) {
             auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);

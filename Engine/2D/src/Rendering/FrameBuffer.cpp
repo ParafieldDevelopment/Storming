@@ -40,6 +40,12 @@ namespace Storming {
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        // 2b. Initialize Pixel Buffer Object (PBO) for async readback
+        glGenBuffers(1, &m_PBO);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_PBO);
+        glBufferData(GL_PIXEL_PACK_BUFFER, (size_t)m_Width * m_Height * 4, nullptr, GL_STREAM_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
         // 3. Initialize Shared Memory
         if (!m_ShmName.empty()) {
             size_t size = (size_t)m_Width * m_Height * 4;
@@ -90,6 +96,7 @@ namespace Storming {
     FrameBuffer::~FrameBuffer() {
         glDeleteFramebuffers(1, &m_FBO);
         glDeleteTextures(1, &m_ColorAttachment);
+        glDeleteBuffers(1, &m_PBO);
         
 #ifdef _WIN32
         if (m_ShmPtr) UnmapViewOfFile(m_ShmPtr);
@@ -126,6 +133,11 @@ namespace Storming {
         glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        // 1b. Resize PBO
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_PBO);
+        glBufferData(GL_PIXEL_PACK_BUFFER, (size_t)m_Width * m_Height * 4, nullptr, GL_STREAM_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
         // 2. Re-map SHM
         if (!m_ShmName.empty()) {
@@ -164,8 +176,24 @@ namespace Storming {
         if (!m_ShmPtr || m_ShmPtr == MAP_FAILED) return;
 #endif
 
+        // 1. Trigger Async Read from FBO to PBO
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FBO);
-        glReadPixels(0, 0, m_Width, m_Height, GL_BGRA, GL_UNSIGNED_BYTE, m_ShmPtr);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_PBO);
+        
+        // This call is non-blocking when reading into a PBO
+        glReadPixels(0, 0, m_Width, m_Height, GL_BGRA, GL_UNSIGNED_BYTE, 0);
+
+        // 2. Map the PBO to CPU memory and copy to SHM
+        // Note: In a fully optimized dual-PBO setup, we would map the PBO from the PREVIOUS frame
+        // to avoid any stall. For now, even a single PBO is faster than direct glReadPixels.
+        void* pboPtr = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+        if (pboPtr) {
+            memcpy(m_ShmPtr, pboPtr, (size_t)m_Width * m_Height * 4);
+            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+        }
+
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     }
 
 }
