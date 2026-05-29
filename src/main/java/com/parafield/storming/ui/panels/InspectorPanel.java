@@ -102,9 +102,9 @@ public class InspectorPanel extends JPanel {
             }
 
             // 3. Add Component Button
-            gbc.insets = new Insets(15, 40, 15, 40);
+            gbc.insets = new Insets(15, 12, 15, 12);
             JButton addCompBtn = new JButton("Add Component", Icons.PLUS);
-            addCompBtn.putClientProperty(FlatClientProperties.STYLE, "background: #34495e; foreground: #ffffff; arc: 20");
+            addCompBtn.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%); foreground: $Label.foreground; arc: 5; borderWidth: 1; borderColor: $Component.borderColor");
             addCompBtn.setFont(UIUtils.getFont(Font.BOLD, 11f));
             addCompBtn.addActionListener(e -> showAddComponentPopup(addCompBtn));
             scrollContent.add(addCompBtn, gbc);
