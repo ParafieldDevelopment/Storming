@@ -3,6 +3,7 @@ package com.parafield.storming.ui.panels;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.parafield.storming.Icons;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
