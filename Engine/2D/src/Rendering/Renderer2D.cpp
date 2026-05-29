@@ -112,20 +112,17 @@ namespace Storming {
         s_Data.QuadVertexBufferBase = new Vertex[s_Data.MaxVertices];
 
         s_Data.QuadVertexArray = RendererAPI::CreateVertexArray();
-        s_Data.QuadVertexArray->Bind();
-
+        
         s_Data.QuadVertexBuffer = RendererAPI::CreateVertexBuffer(nullptr, s_Data.MaxVertices * sizeof(Vertex));
         
-        // ... (rest of attribute binding) ...
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(sizeof(float) * 3));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(sizeof(float) * 7));
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)(sizeof(float) * 9));
+        BufferLayout layout = {
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float4, "a_Color" },
+            { ShaderDataType::Float2, "a_TexCoord" },
+            { ShaderDataType::Float,  "a_TexIndex" }
+        };
+        s_Data.QuadVertexBuffer->SetLayout(layout);
+        s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
         uint32_t* quadIndices = new uint32_t[s_Data.MaxIndices];
         uint32_t offset = 0;
@@ -134,22 +131,21 @@ namespace Storming {
             quadIndices[i + 3] = offset + 2; quadIndices[i + 4] = offset + 3; quadIndices[i + 5] = offset + 0;
             offset += 4;
         }
-        glGenBuffers(1, &s_Data.QuadIBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s_Data.QuadIBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, s_Data.MaxIndices * sizeof(uint32_t), quadIndices, GL_STATIC_DRAW);
+        s_Data.QuadIndexBuffer = RendererAPI::CreateIndexBuffer(quadIndices, s_Data.MaxIndices);
+        s_Data.QuadVertexArray->SetIndexBuffer(s_Data.QuadIndexBuffer);
         delete[] quadIndices;
 
         // Lines
         s_Data.LineVertexBufferBase = new LineVertex[s_Data.MaxLineVertices];
-        glGenVertexArrays(1, &s_Data.LineVAO);
-        glBindVertexArray(s_Data.LineVAO);
-        glGenBuffers(1, &s_Data.LineVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, s_Data.LineVBO);
-        glBufferData(GL_ARRAY_BUFFER, s_Data.MaxLineVertices * sizeof(LineVertex), nullptr, GL_DYNAMIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(LineVertex), (const void*)(sizeof(float) * 3));
+        s_Data.LineVertexArray = RendererAPI::CreateVertexArray();
+        s_Data.LineVertexBuffer = RendererAPI::CreateVertexBuffer(nullptr, s_Data.MaxLineVertices * sizeof(LineVertex));
+        
+        BufferLayout lineLayout = {
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float4, "a_Color" }
+        };
+        s_Data.LineVertexBuffer->SetLayout(lineLayout);
+        s_Data.LineVertexArray->AddVertexBuffer(s_Data.LineVertexBuffer);
 
         s_Data.WhiteTexture = Texture2D::Create(1, 1);
         uint32_t whiteTextureData = 0xffffffff;
