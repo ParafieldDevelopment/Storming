@@ -107,8 +107,9 @@ namespace Storming {
 
         gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 
-        m_RendererAPI = RendererAPI::Create();
-        m_RendererAPI->Init();
+        RendererAPI::SetInstance(RendererAPI::Create());
+        RendererAPI::Get().Init();
+        
         glDisable(GL_DEPTH_TEST); 
 
         if (!m_Config.ShmName.empty()) {

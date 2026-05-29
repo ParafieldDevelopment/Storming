@@ -21,9 +21,10 @@ namespace Storming {
         static const uint32_t MaxLines = 10000;
         static const uint32_t MaxLineVertices = MaxLines * 2;
 
-        GLuint QuadVAO = 0;
-        GLuint QuadVBO = 0;
-        GLuint QuadIBO = 0;
+        std::shared_ptr<VertexArray> QuadVertexArray;
+        std::shared_ptr<VertexBuffer> QuadVertexBuffer;
+        std::shared_ptr<IndexBuffer> QuadIndexBuffer;
+        
         std::unique_ptr<Shader> QuadShader;
         std::shared_ptr<Texture2D> WhiteTexture;
 
@@ -35,8 +36,8 @@ namespace Storming {
         uint32_t TextureSlotIndex = 1; // 0 = White Texture
 
         // Lines
-        GLuint LineVAO = 0;
-        GLuint LineVBO = 0;
+        std::shared_ptr<VertexArray> LineVertexArray;
+        std::shared_ptr<VertexBuffer> LineVertexBuffer;
         std::unique_ptr<Shader> LineShader;
         uint32_t LineVertexCount = 0;
         LineVertex* LineVertexBufferBase = nullptr;

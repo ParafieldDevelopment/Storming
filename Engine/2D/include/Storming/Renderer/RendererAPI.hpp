@@ -44,8 +44,12 @@ namespace Storming {
         /** Factory method to create an API instance based on the active backend. */
         static std::unique_ptr<RendererAPI> Create();
 
+        static RendererAPI& Get() { return *s_Instance; }
+        static void SetInstance(std::unique_ptr<RendererAPI> instance) { s_Instance = std::move(instance); }
+
     private:
         static RendererBackend s_Backend;
+        static std::unique_ptr<RendererAPI> s_Instance;
     };
 
 }

@@ -5,6 +5,7 @@
 namespace Storming {
 
     RendererBackend RendererAPI::s_Backend = RendererBackend::OpenGL;
+    std::unique_ptr<RendererAPI> RendererAPI::s_Instance = nullptr;
 
     std::shared_ptr<VertexBuffer> RendererAPI::CreateVertexBuffer(float* vertices, uint32_t size) {
         switch (s_Backend) {
