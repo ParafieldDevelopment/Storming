@@ -68,7 +68,7 @@ public class GitPanel extends JPanel {
         commitMessage.setLineWrap(true);
         commitMessage.setWrapStyleWord(true);
         commitMessage.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        commitMessage.putClientProperty(FlatClientProperties.STYLE, "arc: 8; background: darken($Panel.background, 3%)");
+        commitMessage.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 3%)");
         
         JScrollPane msgScroll = new JScrollPane(commitMessage);
         msgScroll.setPreferredSize(new Dimension(0, 80));
