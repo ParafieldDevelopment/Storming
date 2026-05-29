@@ -108,7 +108,7 @@ namespace Storming {
         json tree;
         tree["type"] = "scene_tree";
         tree["entities"] = json::array();
-        
+
         auto view = m_Registry.view<TagComponent>();
         for (auto entity : view) {
             auto& tag = view.get<TagComponent>(entity);
@@ -119,6 +119,7 @@ namespace Storming {
         }
         std::cout << "[TELEMETRY]" << tree.dump() << std::endl;
         std::cout.flush();
+    }
     }
 
     /**
