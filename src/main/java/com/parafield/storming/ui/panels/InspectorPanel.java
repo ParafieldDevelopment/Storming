@@ -300,7 +300,6 @@ public class InspectorPanel extends JPanel {
         JSlider slider = new JSlider(0, 360, currentDeg);
         slider.setOpaque(false);
         slider.setPreferredSize(new Dimension(100, 20));
-        slider.putClientProperty(FlatClientProperties.STYLE, "thumbWidth: 12; trackHeight: 2;");
 
         slider.addChangeListener(e -> {
             if (slider.getValueIsAdjusting()) {

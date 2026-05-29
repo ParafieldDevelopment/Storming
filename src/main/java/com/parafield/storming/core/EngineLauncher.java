@@ -51,6 +51,7 @@ public class EngineLauncher {
     public void removeLogListener(Consumer<String> listener) { logListeners.remove(listener); }
 
     private void broadcast(String message) {
+        System.out.println(message);
         synchronized (lastLogs) {
             lastLogs.add(message);
             if (lastLogs.size() > MAX_SAVED_LOGS) lastLogs.remove(0);
