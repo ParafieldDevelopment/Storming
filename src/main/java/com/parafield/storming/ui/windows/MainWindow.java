@@ -246,6 +246,10 @@ public class MainWindow extends JFrame {
                     int w = json.get("width").getAsInt();
                     int h = json.get("height").getAsInt();
                     if (sceneViewPanel != null) sceneViewPanel.onEngineResized(w, h);
+                } else if ("asset_loaded".equals(action)) {
+                    String path = json.get("path").getAsString();
+                    String status = json.get("status").getAsString();
+                    consolePanel.appendLog("[Asset] " + path + " loaded: " + status);
                 }
             } else if ("scene_data_dump".equals(type)) {
                 performDiskSave(json.get("data").getAsString());
