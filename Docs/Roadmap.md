@@ -30,7 +30,8 @@ Storming is designed to be a high-performance, extremely flexible engine that sc
 *   **Visual Scripting Prototype:** Early stage node-based logic system.
 
 ## Phase 4: High-Performance Graphics (v2026.4.0)
-*   **Vulkan RHI:** Moving beyond OpenGL 4.5 to a modern Vulkan Rendering Hardware Interface.
+*   **[Done] RHI Abstraction:** Decoupled Renderer2D from OpenGL via abstract buffer interfaces and API factory.
+*   **Vulkan RHI:** Full implementation of the Vulkan RHI for peak performance.
 *   **3D Core:** PBR (Physically Based Rendering), Model loading (glTF), and 3D Camera systems.
 *   **Global Illumination:** Basic implementation of advanced lighting techniques.
 
@@ -38,3 +39,4 @@ Storming is designed to be a high-performance, extremely flexible engine that sc
 *   **Plugin API:** Java-based API for expanding Editor functionality.
 *   **Storming Store:** A package manager for sharing assets and scripts.
 *   **Multi-Platform Export:** One-click export for Windows, Linux, and Mac.
+
