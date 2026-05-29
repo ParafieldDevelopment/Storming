@@ -473,7 +473,12 @@ public class MainWindow extends JFrame {
     }
 
     private JSplitPane createSplit(int orient, JComponent left, JComponent right, int loc, double weight) {
-        JSplitPane split = new JSplitPane(orient, left, right); split.setDividerLocation(loc); split.setDividerSize(3); split.setBorder(null); split.setResizeWeight(weight); return split;
+        JSplitPane split = new JSplitPane(orient, left, right); 
+        split.setDividerLocation(loc); 
+        split.setDividerSize(2); 
+        split.setBorder(null); 
+        split.setResizeWeight(weight); 
+        return split;
     }
 
     private void handlePlay() { if (simulationLauncher.isRunning()) simulationLauncher.stop(); new SimulationWindow(simulationLauncher).startSimulation(); }

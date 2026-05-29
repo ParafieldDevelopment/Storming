@@ -65,6 +65,12 @@ public class ToolWindow extends JPanel {
         header.add(actions, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
-        add(content, BorderLayout.CENTER);
+        
+        JPanel contentContainer = new JPanel(new BorderLayout());
+        contentContainer.setOpaque(false);
+        contentContainer.setBorder(new EmptyBorder(5, 5, 5, 5));
+        contentContainer.add(content, BorderLayout.CENTER);
+        
+        add(contentContainer, BorderLayout.CENTER);
     }
 }
