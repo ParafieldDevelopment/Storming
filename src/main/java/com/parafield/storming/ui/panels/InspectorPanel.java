@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.parafield.storming.Icons;
 import com.parafield.storming.ui.utils.UIUtils;
+import com.parafield.storming.ui.utils.UIAnimator;
 import com.parafield.storming.ui.windows.MainWindow;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
