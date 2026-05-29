@@ -8,6 +8,7 @@
 #include "ECS/Component.hpp"
 #include "Platform/OpenGL/OpenGLRendererAPI.hpp"
 #include "Physics/PhysicsBridge.hpp"
+#include "Core/AssetRegistry.hpp"
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 #include <nlohmann/json.hpp>
@@ -133,11 +134,6 @@ namespace Storming {
         uint32_t totalFrames = 0;
 
         while (m_Running) {
-            if (totalFrames < 5) {
-                std::cout << "[Debug] Frame " << totalFrames << " Start" << std::endl;
-                std::cout.flush();
-            }
-
             uint64_t currentTime = SDL_GetTicks();
             float deltaTime = (currentTime - lastTime) / 1000.0f;
             lastTime = currentTime;
@@ -209,6 +205,10 @@ namespace Storming {
                                     std::cout << "[TELEMETRY]" << event.dump() << std::endl;
                                     std::cout.flush();
                                 }
+                            } else if (action == "request_asset_load") {
+                                std::string path = cmd["path"];
+                                AssetRegistry::Get().LoadTextureAsync(path);
+                                ST_INFO("Started loading asset: {0}", path);
                             } else if (action == "request_save") {
                                 if (s_ActiveScene) {
                                     json dump;
@@ -238,23 +238,27 @@ namespace Storming {
 
                                     if (comp == "transform") {
                                         auto& tc = reg.get<TransformComponent>(handle);
-                                        if (field == "translation") tc.Translation[cmd["index"]] = cmd["value"];
-                                        else if (field == "rotation") tc.Rotation[cmd["index"]] = cmd["value"];
-                                        else if (field == "scale") tc.Scale[cmd["index"]] = cmd["value"];
+                                        if (field == "translation") {
+                                            tc.Translation[cmd["index"]] = cmd["value"];
+                                        } else if (field == "rotation") {
+                                            tc.Rotation[cmd["index"]] = cmd["value"];
+                                        } else if (field == "scale") {
+                                            tc.Scale[cmd["index"]] = cmd["value"];
+                                        }
                                     } else if (comp == "spriterenderer") {
                                         auto& src = reg.get<SpriteRendererComponent>(handle);
                                         if (field == "color") {
                                             src.Color = { (float)cmd["r"], (float)cmd["g"], (float)cmd["b"], (float)cmd["a"] };
                                         } else if (field == "texture") {
                                             std::string path = cmd["path"];
-                                            src.Texture = Texture2D::Create(path);
+                                            src.Texture = AssetRegistry::Get().GetTexture(path);
+                                            if (!src.Texture) src.Texture = Texture2D::Create(path); // Fallback
                                             src.TexturePath = path;
                                         }
                                     } else if (comp == "rigidbody2d") {
                                         auto& rb = reg.get_or_emplace<RigidBody2DComponent>(handle);
                                         if (field == "type") rb.Type = (RigidBody2DComponent::BodyType)cmd["value"];
                                         else if (field == "fixed_rotation") rb.FixedRotation = cmd["value"];
-                                        // Reset runtime body to force recreation with new settings
                                         rb.RuntimeBody = nullptr;
                                     } else if (comp == "boxcollider2d") {
                                         auto& bc = reg.get_or_emplace<BoxCollider2DComponent>(handle);
@@ -264,7 +268,6 @@ namespace Storming {
                                         else if (field == "friction") bc.Friction = cmd["value"];
                                         else if (field == "restitution") bc.Restitution = cmd["value"];
                                         
-                                        // Force rigidbody recreation if it exists to update collider
                                         if (reg.all_of<RigidBody2DComponent>(handle))
                                             reg.get<RigidBody2DComponent>(handle).RuntimeBody = nullptr;
                                     }
@@ -324,11 +327,7 @@ namespace Storming {
             }
             
             SDL_GL_SwapWindow(m_Window);
-            if (totalFrames < 5) {
-                std::cout << "[Debug] Frame " << totalFrames << " End" << std::endl;
-                std::cout.flush();
-            }
-
+            
             frames++;
             totalFrames++;
             if (currentTime - lastTelemetryTime >= 500) {
