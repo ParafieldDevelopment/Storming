@@ -11,6 +11,10 @@ Engine/3D/build
 Engine/Physics/target/
 **/Cargo.lock
 
+# Project Persistence
+*.user.storm
+*.local.storm
+
 # IDE
 .idea/
 *.iml
@@ -24,7 +28,6 @@ bin/
 *.dylib
 *.a
 *.lib
-
 
 # OS junk
 .DS_Store

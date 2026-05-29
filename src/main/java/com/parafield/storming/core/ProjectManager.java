@@ -2,6 +2,8 @@ package com.parafield.storming.core;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import java.io.File;
 import java.io.FileReader;
@@ -93,28 +95,44 @@ public class ProjectManager {
     }
 
     /**
-     * Scans the default StormingProjects directory for valid .storm projects.
+     * Loads the tiered configuration for a project:
+     * 1. project.storm (Base - Shared)
+     * 2. user.storm (Overrides - Private)
+     * 3. local.storm (Overrides - Machine-specific)
      */
-    private static List<ProjectEntry> scanForProjects() {
-        List<ProjectEntry> found = new ArrayList<>();
-        Path defaultPath = Paths.get(System.getProperty("user.home"), "StormingProjects");
-        
-        if (!Files.exists(defaultPath)) return found;
-
-        try {
-            Files.list(defaultPath).forEach(p -> {
-                if (Files.isDirectory(p)) {
-                    // Look for a .storm file inside
-                    try {
-                        Files.list(p).filter(f -> f.toString().endsWith(".storm")).findFirst().ifPresent(f -> {
-                            found.add(new ProjectEntry(p.getFileName().toString(), p.toAbsolutePath().toString(), 0));
-                        });
-                    } catch (IOException ignored) {}
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static JsonObject loadProjectConfig(File projectRoot) {
+        JsonObject config = new JsonObject();
+        File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm") && !name.endsWith(".user.storm") && !name.endsWith(".local.storm"));
+        if (files != null && files.length > 0) {
+            try {
+                config = JsonParser.parseString(Files.readString(files[0].toPath())).getAsJsonObject();
+                mergeConfig(config, loadTier(projectRoot, files[0].getName().replace(".storm", ".user.storm")));
+                mergeConfig(config, loadTier(projectRoot, files[0].getName().replace(".storm", ".local.storm")));
+            } catch (IOException e) { e.printStackTrace(); }
         }
-        return found;
+        return config;
     }
-}
+
+    private static JsonObject loadTier(File root, String fileName) {
+        File f = new File(root, fileName);
+        if (!f.exists()) return new JsonObject();
+        try {
+            return JsonParser.parseString(Files.readString(f.toPath())).getAsJsonObject();
+        } catch (IOException e) { return new JsonObject(); }
+    }
+
+    private static void mergeConfig(JsonObject target, JsonObject source) {
+        for (String key : source.keySet()) {
+            target.add(key, source.get(key));
+        }
+    }
+
+    public static void saveUserConfig(File projectRoot, JsonObject config) {
+        File[] files = projectRoot.listFiles((dir, name) -> name.endsWith(".storm") && !name.endsWith(".user.storm") && !name.endsWith(".local.storm"));
+        if (files != null && files.length > 0) {
+            try (FileWriter writer = new FileWriter(new File(projectRoot, files[0].getName().replace(".storm", ".user.storm")))) {
+                GSON.toJson(config, writer);
+            } catch (IOException e) { e.printStackTrace(); }
+        }
+    }
+
