@@ -12,6 +12,7 @@ Storming is designed to be a high-performance, extremely flexible engine that sc
 *   **[Done]** **Modern Editor UI:** FlatLaf-based IntelliJ-style workspace.
 *   **[Done]** **ECS Core:** Data-oriented architecture using EnTT.
 *   **[Done]** **Inspector Binding:** Real-time bi-directional property editing between Java and C++.
+*   **[Done]** **Project Persistence:** Implemented Auto-save and disk serialization for scenes.
 *   **[In Progress]** **Project Format:** Standardized `.storm` and `.storm_scene` JSON serialization.
 *   **[Next]** **The Asset Pipeline:** Threaded texture/mesh loading and asset registry.
 

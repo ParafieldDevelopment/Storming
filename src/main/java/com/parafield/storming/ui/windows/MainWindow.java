@@ -115,6 +115,21 @@ public class MainWindow extends JFrame {
         loadProject();
         checkEngineBinary();
         
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                saveScene();
+            }
+        });
+
+        addWindowFocusListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowLostFocus(java.awt.event.WindowEvent e) {
+                // Autosave logic (can be toggled in settings later)
+                saveScene();
+            }
+        });
+
         SwingUtilities.invokeLater(() -> {
             mainHorizontalSplit.setDividerLocation(0);
             rightSplit.setDividerLocation(1400); 
