@@ -136,3 +136,27 @@ public class ProjectManager {
         }
     }
 
+    private static List<ProjectEntry> scanForProjects() {
+        List<ProjectEntry> found = new ArrayList<>();
+        Path defaultPath = Paths.get(System.getProperty("user.home"), "StormingProjects");
+        
+        if (!Files.exists(defaultPath)) return found;
+
+        try {
+            Files.list(defaultPath).forEach(p -> {
+                if (Files.isDirectory(p)) {
+                    try {
+                        Files.list(p).filter(f -> f.toString().endsWith(".storm")).findFirst().ifPresent(f -> {
+                            found.add(new ProjectEntry(p.getFileName().toString(), p.toAbsolutePath().toString(), 0));
+                        });
+                    } catch (IOException ignored) {}
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return found;
+    }
+}
+
+

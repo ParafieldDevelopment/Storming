@@ -147,6 +147,10 @@ public class ConsolePanel extends JPanel {
         }
     }
 
+    public void appendLog(String msg) {
+        log(msg);
+    }
+
     private boolean shouldDisplay(LogEntry entry) {
         boolean typeMatch = switch (entry.type()) {
             case INFO, SYSTEM, ENGINE -> showInfo;
