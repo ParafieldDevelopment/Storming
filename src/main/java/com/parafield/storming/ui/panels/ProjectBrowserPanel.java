@@ -25,6 +25,7 @@ public class ProjectBrowserPanel extends JPanel {
     public ProjectBrowserPanel(File root) {
         this.rootDir = root;
         setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(8, 8, 8, 8));
         
         // --- 1. Toolbar ---
         JToolBar toolbar = new JToolBar();
