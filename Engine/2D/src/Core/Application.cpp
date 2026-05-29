@@ -277,11 +277,14 @@ namespace Storming {
                                 if (s_ActiveScene) {
                                     auto e = s_ActiveScene->CreateEntity(cmd.value("name", "New Entity"));
                                     if (cmd.contains("sprite")) e.AddComponent<SpriteRendererComponent>();
+                                    s_ActiveScene->BroadcastSceneTree();
                                 }
                             } else if (action == "delete_entity") {
                                 entt::entity handle = (entt::entity)((uint32_t)cmd["id"]);
-                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle))
+                                if (s_ActiveScene && s_ActiveScene->GetRegistry().valid(handle)) {
                                     s_ActiveScene->DestroyEntity({handle, s_ActiveScene});
+                                    s_ActiveScene->BroadcastSceneTree();
+                                }
                             }
                         }
                     } catch (...) {}

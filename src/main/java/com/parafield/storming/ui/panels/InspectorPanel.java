@@ -181,7 +181,7 @@ public class InspectorPanel extends JPanel {
             final int index = i;
             JTextField f = new JTextField(String.format("%.2f", values.get(index).getAsFloat()));
             f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-            f.putClientProperty(FlatClientProperties.STYLE, "padding: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+            f.putClientProperty(FlatClientProperties.STYLE, "textInsets: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
             f.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, axisColors[i]));
             f.addActionListener(e -> applyValue(f, comp, field, index));
             p.add(f);
@@ -436,7 +436,7 @@ public class InspectorPanel extends JPanel {
             f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
             f.setHorizontalAlignment(JTextField.LEFT);
             f.setPreferredSize(new Dimension(0, 20));
-            f.putClientProperty(FlatClientProperties.STYLE, "padding: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+            f.putClientProperty(FlatClientProperties.STYLE, "textInsets: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
             f.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, axisColors[i]));
             f.addActionListener(e -> applyValue(f, comp, field, index));
             f.addFocusListener(new java.awt.event.FocusAdapter() {
