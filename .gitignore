@@ -15,6 +15,9 @@ Engine/Physics/target/
 *.user.storm
 *.local.storm
 
+# Private Skills and Memory
+.gemini/
+
 # IDE
 .idea/
 *.iml
