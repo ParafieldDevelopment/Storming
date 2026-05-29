@@ -52,6 +52,7 @@ public class ConsolePanel extends JPanel {
         
         JButton clearBtn = new JButton("Clear");
         clearBtn.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        clearBtn.putClientProperty(FlatClientProperties.STYLE, "hoverBackground: darken($Panel.background, 10%)");
         clearBtn.addActionListener(e -> {
             logHistory.clear();
             refreshConsole();

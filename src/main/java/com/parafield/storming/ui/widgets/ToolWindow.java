@@ -31,7 +31,7 @@ public class ToolWindow extends JPanel {
         setBorder(BorderFactory.createMatteBorder(0, 1, 0, 1, UIManager.getColor("Component.borderColor")));
 
         header = new JPanel(new BorderLayout());
-        header.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 3%)");
+        header.putClientProperty(FlatClientProperties.STYLE, "background: darken($Panel.background, 5%)");
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Component.borderColor")));
         header.setPreferredSize(new Dimension(0, 28));
 
@@ -67,8 +67,8 @@ public class ToolWindow extends JPanel {
         add(header, BorderLayout.NORTH);
         
         JPanel contentContainer = new JPanel(new BorderLayout());
-        contentContainer.setOpaque(false);
-        contentContainer.setBorder(new EmptyBorder(5, 5, 5, 5));
+        contentContainer.setBackground(UIManager.getColor("Panel.background"));
+        contentContainer.setBorder(new EmptyBorder(8, 8, 8, 8));
         contentContainer.add(content, BorderLayout.CENTER);
         
         add(contentContainer, BorderLayout.CENTER);
