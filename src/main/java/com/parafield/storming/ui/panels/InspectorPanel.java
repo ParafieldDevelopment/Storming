@@ -191,9 +191,36 @@ public class InspectorPanel extends JPanel {
     private JTextField createFloatInput(float value, String comp, String field) {
         JTextField f = new JTextField(String.format("%.2f", value));
         f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
-        f.putClientProperty(FlatClientProperties.STYLE, "borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+        
+        Color bg = (Color) UIManager.get("Panel.background");
+        Color darkBg = com.formdev.flatlaf.util.ColorFunctions.darken(bg, 0.05f);
+        Color focusBg = com.formdev.flatlaf.util.ColorFunctions.lighten(darkBg, 0.05f);
+        
+        f.setBackground(darkBg);
+        f.putClientProperty(FlatClientProperties.STYLE, "borderWidth: 0; focusWidth: 0;");
+        
+        f.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) {
+                UIAnimator.animate(0.0f, 1.0f, 200, progress -> {
+                    f.setBackground(lerpColor(darkBg, focusBg, progress));
+                }, null);
+            }
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                applyValue(f, comp, field, -1);
+                UIAnimator.animate(0.0f, 1.0f, 200, progress -> {
+                    f.setBackground(lerpColor(focusBg, darkBg, progress));
+                }, null);
+            }
+        });
         f.addActionListener(e -> applyValue(f, comp, field, -1));
         return f;
+    }
+
+    private Color lerpColor(Color start, Color end, float progress) {
+        int r = start.getRed() + (int)((end.getRed() - start.getRed()) * progress);
+        int g = start.getGreen() + (int)((end.getGreen() - start.getGreen()) * progress);
+        int b = start.getBlue() + (int)((end.getBlue() - start.getBlue()) * progress);
+        return new Color(r, g, b);
     }
 
     private void applyBool(String component, String field, boolean value) {
