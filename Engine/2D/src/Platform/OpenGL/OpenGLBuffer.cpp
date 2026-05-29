@@ -1,0 +1,44 @@
+#include "OpenGLBuffer.hpp"
+
+namespace Storming {
+
+    // --- VertexBuffer ---
+    OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size) {
+        glGenBuffers(1, &m_RendererID);
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
+    }
+    OpenGLVertexBuffer::~OpenGLVertexBuffer() { glDeleteBuffers(1, &m_RendererID); }
+    void OpenGLVertexBuffer::Bind() const { glBindBuffer(GL_ARRAY_BUFFER, m_RendererID); }
+    void OpenGLVertexBuffer::Unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+    void OpenGLVertexBuffer::SetData(const void* data, uint32_t size) {
+        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+    }
+
+    // --- IndexBuffer ---
+    OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count) : m_Count(count) {
+        glGenBuffers(1, &m_RendererID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    }
+    OpenGLIndexBuffer::~OpenGLIndexBuffer() { glDeleteBuffers(1, &m_RendererID); }
+    void OpenGLIndexBuffer::Bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID); }
+    void OpenGLIndexBuffer::Unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+
+    // --- VertexArray ---
+    OpenGLVertexArray::OpenGLVertexArray() { glGenVertexArrays(1, &m_RendererID); }
+    OpenGLVertexArray::~OpenGLVertexArray() { glDeleteVertexArrays(1, &m_RendererID); }
+    void OpenGLVertexArray::Bind() const { glBindVertexArray(m_RendererID); }
+    void OpenGLVertexArray::Unbind() const { glBindVertexArray(0); }
+    void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) {
+        glBindVertexArray(m_RendererID);
+        vertexBuffer->Bind();
+        m_VertexBuffers.push_back(vertexBuffer);
+    }
+    void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) {
+        glBindVertexArray(m_RendererID);
+        indexBuffer->Bind();
+        m_IndexBuffer = indexBuffer;
+    }
+}

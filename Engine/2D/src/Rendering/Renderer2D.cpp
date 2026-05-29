@@ -111,12 +111,12 @@ namespace Storming {
     void Renderer2D::Init() {
         s_Data.QuadVertexBufferBase = new Vertex[s_Data.MaxVertices];
 
-        glGenVertexArrays(1, &s_Data.QuadVAO);
-        glBindVertexArray(s_Data.QuadVAO);
+        s_Data.QuadVertexArray = RendererAPI::CreateVertexArray();
+        s_Data.QuadVertexArray->Bind();
 
-        glGenBuffers(1, &s_Data.QuadVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, s_Data.QuadVBO);
-        glBufferData(GL_ARRAY_BUFFER, s_Data.MaxVertices * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+        s_Data.QuadVertexBuffer = RendererAPI::CreateVertexBuffer(nullptr, s_Data.MaxVertices * sizeof(Vertex));
+        
+        // ... (rest of attribute binding) ...
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);

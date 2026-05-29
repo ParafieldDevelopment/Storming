@@ -2,6 +2,9 @@
 
 #include <memory>
 #include <string>
+#include "Rendering/VertexBuffer.hpp"
+#include "Rendering/IndexBuffer.hpp"
+#include "Rendering/VertexArray.hpp"
 
 namespace Storming {
 
@@ -29,6 +32,11 @@ namespace Storming {
 
         /** Issues a single indexed draw call to the GPU. */
         virtual void DrawIndexed(uint32_t indexCount) = 0;
+
+        // Factory methods
+        static std::shared_ptr<VertexBuffer> CreateVertexBuffer(float* vertices, uint32_t size);
+        static std::shared_ptr<IndexBuffer> CreateIndexBuffer(uint32_t* indices, uint32_t count);
+        static std::shared_ptr<VertexArray> CreateVertexArray();
 
         static RendererBackend GetBackend() { return s_Backend; }
         static void SetBackend(RendererBackend backend) { s_Backend = backend; }
