@@ -86,6 +86,21 @@ set_target_properties(storming_physics PROPERTIES
     IMPORTED_LOCATION ${RUST_LIB_PATH}
 )
 
+# 8. Scripting (Lua + sol2)
+FetchContent_Declare(
+    lua
+    GIT_REPOSITORY https://github.com/lua/lua.git
+    GIT_TAG v5.4.6
+)
+FetchContent_MakeAvailable(lua)
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
+    GIT_TAG v3.3.0
+)
+FetchContent_MakeAvailable(sol2)
+
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"

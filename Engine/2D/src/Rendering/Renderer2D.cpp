@@ -1,5 +1,10 @@
 #include "Rendering/Renderer2D.hpp"
 #include "Rendering/Shader.hpp"
+#include "Storming/Renderer/RendererAPI.hpp"
+#include "Rendering/Buffer.hpp"
+#include "Rendering/VertexBuffer.hpp"
+#include "Rendering/IndexBuffer.hpp"
+#include "Rendering/VertexArray.hpp"
 #include <glad/glad.h>
 #include <memory>
 #include <array>
@@ -24,7 +29,11 @@ namespace Storming {
         std::shared_ptr<VertexArray> QuadVertexArray;
         std::shared_ptr<VertexBuffer> QuadVertexBuffer;
         std::shared_ptr<IndexBuffer> QuadIndexBuffer;
-        
+
+        GLuint QuadVAO = 0;
+        GLuint QuadVBO = 0;
+        GLuint QuadIBO = 0;
+
         std::unique_ptr<Shader> QuadShader;
         std::shared_ptr<Texture2D> WhiteTexture;
 
@@ -33,9 +42,11 @@ namespace Storming {
         Vertex* QuadVertexBufferPtr = nullptr;
 
         std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> TextureSlots;
-        uint32_t TextureSlotIndex = 1; // 0 = White Texture
+        uint32_t TextureSlotIndex = 1;
 
         // Lines
+        GLuint LineVAO = 0;
+        GLuint LineVBO = 0;
         std::shared_ptr<VertexArray> LineVertexArray;
         std::shared_ptr<VertexBuffer> LineVertexBuffer;
         std::unique_ptr<Shader> LineShader;
@@ -44,7 +55,7 @@ namespace Storming {
         LineVertex* LineVertexBufferPtr = nullptr;
 
         Renderer2D::Statistics Stats;
-    };
+        };
 
     static Renderer2DData s_Data;
 
