@@ -11,12 +11,14 @@ Storming is designed to be a high-performance, extremely flexible engine that sc
 ## Phase 1: Core & Property Sync (v2026.1.0) - [CURRENT]
 *   **[Done]** **Modern Editor UI:** FlatLaf-based IntelliJ-style workspace.
 *   **[Done]** **ECS Core:** Data-oriented architecture using EnTT.
-*   **[In Progress]** **Inspector Binding:** Real-time bi-directional property editing between Java and C++.
+*   **[Done]** **Inspector Binding:** Real-time bi-directional property editing between Java and C++.
 *   **[In Progress]** **Project Format:** Standardized `.storm` and `.storm_scene` JSON serialization.
 *   **[Next]** **The Asset Pipeline:** Threaded texture/mesh loading and asset registry.
 
 ## Phase 2: The Physics & Build Bridge (v2026.2.0)
-*   **Rust/Rapier Integration:** Implementing the Rapier physics engine via a Rust-C++ FFI bridge.
+*   **[Done] Rust/Rapier Integration:** Implementing the Rapier physics engine via a Rust-C++ FFI bridge.
+*   **[Done] FFI Bridge:** Successfully established manual linking for MinGW and basic world control.
+*   **[Done] ECS Integration:** Synchronizing EnTT entities with Rapier RigidBodies.
 *   **Corrosion Build System:** Native integration of Cargo into the CMake build flow.
 *   **Deterministic Physics:** Setting the stage for multi-platform consistency.
 *   **2D-to-3D Scaling:** Designing physics components to handle both Rapier2D and Rapier3D seamlessly.

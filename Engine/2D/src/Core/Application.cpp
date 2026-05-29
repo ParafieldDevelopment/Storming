@@ -7,6 +7,7 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Component.hpp"
 #include "Platform/OpenGL/OpenGLRendererAPI.hpp"
+#include "Physics/PhysicsBridge.hpp"
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 #include <nlohmann/json.hpp>
@@ -119,6 +120,9 @@ namespace Storming {
         s_Camera = new OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
 
         s_ActiveScene = new Scene();
+
+        st_physics_init_test();
+
         ST_INFO("Storming Engine Initialized Successfully");
     }
 
@@ -224,6 +228,14 @@ namespace Storming {
                                     auto& reg = s_ActiveScene->GetRegistry();
                                     std::string comp = cmd["component"];
                                     std::string field = cmd["field"];
+
+                                    if (field == "init") {
+                                        if (comp == "rigidbody2d") reg.get_or_emplace<RigidBody2DComponent>(handle);
+                                        else if (comp == "boxcollider2d") reg.get_or_emplace<BoxCollider2DComponent>(handle);
+                                        else if (comp == "spriterenderer") reg.get_or_emplace<SpriteRendererComponent>(handle);
+                                        return;
+                                    }
+
                                     if (comp == "transform") {
                                         auto& tc = reg.get<TransformComponent>(handle);
                                         if (field == "translation") tc.Translation[cmd["index"]] = cmd["value"];
@@ -238,6 +250,23 @@ namespace Storming {
                                             src.Texture = Texture2D::Create(path);
                                             src.TexturePath = path;
                                         }
+                                    } else if (comp == "rigidbody2d") {
+                                        auto& rb = reg.get_or_emplace<RigidBody2DComponent>(handle);
+                                        if (field == "type") rb.Type = (RigidBody2DComponent::BodyType)cmd["value"];
+                                        else if (field == "fixed_rotation") rb.FixedRotation = cmd["value"];
+                                        // Reset runtime body to force recreation with new settings
+                                        rb.RuntimeBody = nullptr;
+                                    } else if (comp == "boxcollider2d") {
+                                        auto& bc = reg.get_or_emplace<BoxCollider2DComponent>(handle);
+                                        if (field == "size") bc.Size[cmd["index"]] = cmd["value"];
+                                        else if (field == "offset") bc.Offset[cmd["index"]] = cmd["value"];
+                                        else if (field == "density") bc.Density = cmd["value"];
+                                        else if (field == "friction") bc.Friction = cmd["value"];
+                                        else if (field == "restitution") bc.Restitution = cmd["value"];
+                                        
+                                        // Force rigidbody recreation if it exists to update collider
+                                        if (reg.all_of<RigidBody2DComponent>(handle))
+                                            reg.get<RigidBody2DComponent>(handle).RuntimeBody = nullptr;
                                     }
                                 }
                             } else if (action == "create_entity") {

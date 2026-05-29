@@ -93,8 +93,29 @@ public class EngineLauncher {
                 if (!buildDir.exists()) buildDir.mkdirs();
 
                 broadcast("[System] Starting Engine Build...");
+                
+                // --- Step 1: Build Rust Physics ---
+                listener.onStatus("Compiling Physics Engine (Rust)...");
+                listener.onProgress(5);
+                ProcessBuilder rustPb = new ProcessBuilder("cargo", "build", "--target", "x86_64-pc-windows-gnu");
+                rustPb.directory(new java.io.File("Engine/Physics"));
+                rustPb.redirectErrorStream(true);
+                Process rustP = rustPb.start();
+                BufferedReader rustReader = new BufferedReader(new InputStreamReader(rustP.getInputStream()));
+                String rl;
+                while ((rl = rustReader.readLine()) != null) {
+                    broadcast("[Rust] " + rl);
+                    listener.onLog("[Rust] " + rl);
+                }
+                if (rustP.waitFor() != 0) {
+                    broadcast("[Error] Rust physics build failed.");
+                    listener.onFinished(false);
+                    return;
+                }
+
+                // --- Step 2: CMake Configure ---
                 listener.onStatus("Configuring Project (CMake)...");
-                listener.onProgress(10);
+                listener.onProgress(20);
                 
                 ProcessBuilder cmakePb = new ProcessBuilder("cmake", "..");
                 cmakePb.directory(buildDir);

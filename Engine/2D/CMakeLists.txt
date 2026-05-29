@@ -79,6 +79,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(stb)
 
+# 7. Rust Physics Library (Manual Link)
+set(RUST_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../Physics/target/x86_64-pc-windows-gnu/debug/libstorming_physics.a)
+add_library(storming_physics STATIC IMPORTED)
+set_target_properties(storming_physics PROPERTIES
+    IMPORTED_LOCATION ${RUST_LIB_PATH}
+)
+
 # --- Sources ---
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"
@@ -104,6 +111,11 @@ if(WIN32)
         glad
         glm::glm
         nlohmann_json::nlohmann_json
+        storming_physics
+        ws2_32
+        ntdll
+        userenv
+        bcrypt
     )
 else()
     target_link_libraries(StormingEngine PRIVATE 
@@ -112,6 +124,7 @@ else()
         glad
         glm::glm
         nlohmann_json::nlohmann_json
+        storming_physics
         rt
     )
 endif()

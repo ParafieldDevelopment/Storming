@@ -47,4 +47,39 @@ namespace Storming {
         SpriteRendererComponent(const glm::vec4& color) : Color(color) {}
     };
 
+    /**
+     * Physics RigidBody component.
+     * Links an entity to the Rapier physics world.
+     */
+    struct RigidBody2DComponent {
+        enum class BodyType { Static = 0, Dynamic, Kinematic };
+        BodyType Type = BodyType::Static;
+        bool FixedRotation = false;
+
+        // Internal handle used by the PhysicsSystem
+        void* RuntimeBody = nullptr;
+
+        RigidBody2DComponent() = default;
+        RigidBody2DComponent(const RigidBody2DComponent&) = default;
+    };
+
+    /**
+     * Physics Box Collider component.
+     */
+    struct BoxCollider2DComponent {
+        glm::vec2 Offset = { 0.0f, 0.0f };
+        glm::vec2 Size = { 0.5f, 0.5f };
+
+        float Density = 1.0f;
+        float Friction = 0.5f;
+        float Restitution = 0.0f;
+        float RestitutionThreshold = 0.5f;
+
+        // Internal handle used by the PhysicsSystem
+        void* RuntimeFixture = nullptr;
+
+        BoxCollider2DComponent() = default;
+        BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
+    };
+
 }

@@ -2,6 +2,7 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Component.hpp"
 #include "Rendering/Renderer2D.hpp"
+#include "Physics/PhysicsSystem.hpp"
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
@@ -10,8 +11,13 @@ namespace Storming {
 
     using json = nlohmann::json;
 
-    Scene::Scene() {}
-    Scene::~Scene() {}
+    Scene::Scene() {
+        m_PhysicsSystem = new PhysicsSystem();
+    }
+
+    Scene::~Scene() {
+        delete m_PhysicsSystem;
+    }
 
     /**
      * Creates a new entity in the scene with a Tag and Transform component.
@@ -69,6 +75,26 @@ namespace Storming {
                     {"texture", src.TexturePath}
                 };
             }
+
+            if (m_Registry.all_of<RigidBody2DComponent>(entity)) {
+                auto& rb = m_Registry.get<RigidBody2DComponent>(entity);
+                eJson["components"]["RigidBody2D"] = {
+                    {"type", (int)rb.Type},
+                    {"fixed_rotation", rb.FixedRotation}
+                };
+            }
+
+            if (m_Registry.all_of<BoxCollider2DComponent>(entity)) {
+                auto& bc = m_Registry.get<BoxCollider2DComponent>(entity);
+                eJson["components"]["BoxCollider2D"] = {
+                    {"size", {bc.Size.x, bc.Size.y}},
+                    {"offset", {bc.Offset.x, bc.Offset.y}},
+                    {"density", bc.Density},
+                    {"friction", bc.Friction},
+                    {"restitution", bc.Restitution}
+                };
+            }
+
             data["entities"].push_back(eJson);
         }
         return data.dump(4);
@@ -130,6 +156,25 @@ namespace Storming {
             };
         }
 
+        if (m_Registry.all_of<RigidBody2DComponent>(handle)) {
+            auto& rb = m_Registry.get<RigidBody2DComponent>(handle);
+            data["components"]["RigidBody2D"] = {
+                {"type", (int)rb.Type},
+                {"fixed_rotation", rb.FixedRotation}
+            };
+        }
+
+        if (m_Registry.all_of<BoxCollider2DComponent>(handle)) {
+            auto& bc = m_Registry.get<BoxCollider2DComponent>(handle);
+            data["components"]["BoxCollider2D"] = {
+                {"size", {bc.Size.x, bc.Size.y}},
+                {"offset", {bc.Offset.x, bc.Offset.y}},
+                {"density", bc.Density},
+                {"friction", bc.Friction},
+                {"restitution", bc.Restitution}
+            };
+        }
+
         std::cout << "[TELEMETRY]" << data.dump() << std::endl;
         std::cout.flush();
     }
@@ -183,6 +228,23 @@ namespace Storming {
                             }
                         }
                     }
+
+                    if (comps.contains("RigidBody2D")) {
+                        auto& rb = entity.AddComponent<RigidBody2DComponent>();
+                        rb.Type = (RigidBody2DComponent::BodyType)comps["RigidBody2D"]["type"];
+                        rb.FixedRotation = comps["RigidBody2D"]["fixed_rotation"];
+                    }
+
+                    if (comps.contains("BoxCollider2D")) {
+                        auto& bc = entity.AddComponent<BoxCollider2DComponent>();
+                        auto s = comps["BoxCollider2D"]["size"];
+                        bc.Size = { s[0], s[1] };
+                        auto o = comps["BoxCollider2D"]["offset"];
+                        bc.Offset = { o[0], o[1] };
+                        bc.Density = comps["BoxCollider2D"]["density"];
+                        bc.Friction = comps["BoxCollider2D"]["friction"];
+                        bc.Restitution = comps["BoxCollider2D"]["restitution"];
+                    }
                 }
             }
         }
@@ -225,7 +287,10 @@ namespace Storming {
      * 
      * @param ts TimeStep (delta time) in seconds.
      */
-    void Scene::OnUpdate(float /*ts*/) {
+    void Scene::OnUpdate(float ts) {
+        if (m_PhysicsSystem)
+            m_PhysicsSystem->OnUpdate(this, ts);
+
         auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
         for (auto entity : view) {
             auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);

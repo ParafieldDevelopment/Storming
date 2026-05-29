@@ -91,6 +91,14 @@ public class InspectorPanel extends JPanel {
                     scrollContent.add(createCollapsibleSection("Sprite Renderer", createSpriteUI(components.getAsJsonObject("SpriteRenderer"))), gbc);
                     gbc.gridy++;
                 }
+                if (components.has("RigidBody2D")) {
+                    scrollContent.add(createCollapsibleSection("RigidBody 2D", createRigidBodyUI(components.getAsJsonObject("RigidBody2D"))), gbc);
+                    gbc.gridy++;
+                }
+                if (components.has("BoxCollider2D")) {
+                    scrollContent.add(createCollapsibleSection("Box Collider 2D", createBoxColliderUI(components.getAsJsonObject("BoxCollider2D"))), gbc);
+                    gbc.gridy++;
+                }
             }
 
             // 3. Add Component Button
@@ -98,6 +106,7 @@ public class InspectorPanel extends JPanel {
             JButton addCompBtn = new JButton("Add Component", Icons.PLUS);
             addCompBtn.putClientProperty(FlatClientProperties.STYLE, "background: #34495e; foreground: #ffffff; arc: 20");
             addCompBtn.setFont(UIUtils.getFont(Font.BOLD, 11f));
+            addCompBtn.addActionListener(e -> showAddComponentPopup(addCompBtn));
             scrollContent.add(addCompBtn, gbc);
             gbc.gridy++;
 
@@ -106,6 +115,97 @@ public class InspectorPanel extends JPanel {
             scrollContent.revalidate();
             scrollContent.repaint();
         });
+    }
+
+    private void showAddComponentPopup(JButton btn) {
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem rbItem = new JMenuItem("RigidBody 2D");
+        rbItem.addActionListener(e -> addComponent("rigidbody2d"));
+        menu.add(rbItem);
+
+        JMenuItem bcItem = new JMenuItem("Box Collider 2D");
+        bcItem.addActionListener(e -> addComponent("boxcollider2d"));
+        menu.add(bcItem);
+
+        menu.show(btn, 0, btn.getHeight());
+    }
+
+    private void addComponent(String component) {
+        // We use the same update_component protocol but with a special field to trigger add
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"%s\",\"field\":\"init\"}",
+                currentEntityId, component);
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+        // Refresh
+        MainWindow.getInstance().getEngineLauncher().sendCommand("{\"type\":\"command\",\"action\":\"select_entity\",\"id\":" + currentEntityId + "}");
+    }
+
+    private JPanel createRigidBodyUI(JsonObject data) {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+
+        String[] types = {"Static", "Dynamic", "Kinematic"};
+        JComboBox<String> typeCombo = new JComboBox<>(types);
+        typeCombo.setSelectedIndex(data.get("type").getAsInt());
+        typeCombo.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        typeCombo.addActionListener(e -> applyValue("rigidbody2d", "type", typeCombo.getSelectedIndex()));
+        addPropertyRow(p, 0, "Body Type", typeCombo);
+
+        JCheckBox fixedRot = new JCheckBox("", data.get("fixed_rotation").getAsBoolean());
+        fixedRot.setOpaque(false);
+        fixedRot.addActionListener(e -> applyBool("rigidbody2d", "fixed_rotation", fixedRot.isSelected()));
+        addPropertyRow(p, 1, "Fixed Rotation", fixedRot);
+
+        return p;
+    }
+
+    private JPanel createBoxColliderUI(JsonObject data) {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+
+        addPropertyRow(p, 0, "Size", createVector2Inputs(data.getAsJsonArray("size"), "boxcollider2d", "size"));
+        addPropertyRow(p, 1, "Offset", createVector2Inputs(data.getAsJsonArray("offset"), "boxcollider2d", "offset"));
+        
+        addPropertyRow(p, 2, "Density", createFloatInput(data.get("density").getAsFloat(), "boxcollider2d", "density"));
+        addPropertyRow(p, 3, "Friction", createFloatInput(data.get("friction").getAsFloat(), "boxcollider2d", "friction"));
+        addPropertyRow(p, 4, "Restitution", createFloatInput(data.get("restitution").getAsFloat(), "boxcollider2d", "restitution"));
+
+        return p;
+    }
+
+    private JPanel createVector2Inputs(JsonArray values, String comp, String field) {
+        JPanel p = new JPanel(new GridLayout(1, 2, 4, 0));
+        p.setOpaque(false);
+        Color[] axisColors = {new Color(231, 76, 60), new Color(46, 204, 113)};
+        for (int i = 0; i < 2; i++) {
+            final int index = i;
+            JTextField f = new JTextField(String.format("%.2f", values.get(index).getAsFloat()));
+            f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+            f.putClientProperty(FlatClientProperties.STYLE, "padding: 0,2,0,2; borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+            f.setBorder(BorderFactory.createMatteBorder(0, 2, 0, 0, axisColors[i]));
+            f.addActionListener(e -> applyValue(f, comp, field, index));
+            p.add(f);
+        }
+        return p;
+    }
+
+    private JTextField createFloatInput(float value, String comp, String field) {
+        JTextField f = new JTextField(String.format("%.2f", value));
+        f.setFont(UIUtils.getFont(Font.PLAIN, 10f));
+        f.putClientProperty(FlatClientProperties.STYLE, "borderWidth: 0; focusWidth: 0; background: darken($Panel.background, 5%)");
+        f.addActionListener(e -> applyValue(f, comp, field, -1));
+        return f;
+    }
+
+    private void applyBool(String component, String field, boolean value) {
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"%s\",\"field\":\"%s\",\"value\":%b}",
+                currentEntityId, component, field, value);
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
+    }
+
+    private void applyValue(String component, String field, int value) {
+        String cmd = String.format("{\"type\":\"command\",\"action\":\"update_component\",\"id\":%d,\"component\":\"%s\",\"field\":\"%s\",\"value\":%d}",
+                currentEntityId, component, field, value);
+        MainWindow.getInstance().getEngineLauncher().sendCommand(cmd);
     }
 
     private JPanel createCollapsibleSection(String title, JPanel body) {
